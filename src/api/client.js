@@ -1,13 +1,16 @@
 import axios from 'axios';
 
+export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || '',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 15000,
 });
 
-// Attach JWT token to all outbound requests if present
+// Request Interceptor: Automatically inject JWT token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -19,10 +22,23 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Intercept responses for consistent error message extraction
+// Response Interceptor: Standardize responses & handle 401 session expiration
 api.interceptors.response.use(
-  (response) => response.data,
+  (response) => {
+    // Backend wraps response in { success: true, data: ..., message: ... }
+    return response.data;
+  },
   (error) => {
+    if (error.response?.status === 401) {
+      // If token expired or invalid, clear stored token
+      const currentPath = window.location.pathname;
+      if (currentPath !== '/login' && currentPath !== '/register') {
+        localStorage.removeItem('token');
+        // Dispatch custom auth-expired event so AuthContext can update state
+        window.dispatchEvent(new Event('auth:unauthorized'));
+      }
+    }
+
     const message =
       error.response?.data?.error?.message ||
       error.response?.data?.message ||
@@ -31,6 +47,7 @@ api.interceptors.response.use(
 
     const customError = new Error(message);
     customError.status = error.response?.status;
+    customError.code = error.response?.data?.error?.code;
     customError.data = error.response?.data;
     return Promise.reject(customError);
   }

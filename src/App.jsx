@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import Navbar from './components/Navbar.jsx';
@@ -6,6 +6,9 @@ import ProtectedRoute from './components/ProtectedRoute.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
+import ClientsProjectsPage from './pages/ClientsProjectsPage.jsx';
+import UsersPage from './pages/UsersPage.jsx';
+import AccessPage from './pages/AccessPage.jsx';
 import './App.css';
 
 function HomeRedirect() {
@@ -24,6 +27,7 @@ export default function App() {
             <Route path="/" element={<HomeRedirect />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+
             <Route
               path="/dashboard"
               element={
@@ -32,6 +36,34 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+
+            <Route
+              path="/clients"
+              element={
+                <ProtectedRoute>
+                  <ClientsProjectsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/users"
+              element={
+                <ProtectedRoute>
+                  <UsersPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/access"
+              element={
+                <ProtectedRoute>
+                  <AccessPage />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Catch-all fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
