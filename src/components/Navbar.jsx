@@ -1,11 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import { API_BASE_URL } from '../api/client.js';
 import {
   Menu, X, Shield, Users, FolderKanban,
-  LayoutDashboard, ExternalLink, LogOut,
-  ChevronDown, User, RefreshCw,
+  LayoutDashboard, LogOut,
+  ChevronDown, User,
 } from 'lucide-react';
 
 // ─── Tooltip wrapper ──────────────────────────────────────────────────────────
@@ -32,7 +31,7 @@ export function Tooltip({ text, children, side = 'bottom' }) {
 }
 
 // ─── Profile dropdown ─────────────────────────────────────────────────────────
-function ProfileDropdown({ user, isAdmin, onLogout, onRefresh }) {
+function ProfileDropdown({ user, isAdmin, onLogout }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
@@ -85,23 +84,6 @@ function ProfileDropdown({ user, isAdmin, onLogout, onRefresh }) {
               <User className="w-3.5 h-3.5 text-slate-400" />
               My Overview
             </Link>
-            <button
-              onClick={() => { onRefresh(); setOpen(false); }}
-              className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 transition cursor-pointer"
-            >
-              <RefreshCw className="w-3.5 h-3.5 text-slate-400" />
-              Refresh Permissions
-            </button>
-            <a
-              href={`${API_BASE_URL}/api-docs`}
-              target="_blank"
-              rel="noreferrer"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 hover:bg-slate-50 transition cursor-pointer"
-            >
-              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-              API Docs
-            </a>
           </div>
 
           <div className="border-t border-slate-100 py-1">
@@ -121,7 +103,7 @@ function ProfileDropdown({ user, isAdmin, onLogout, onRefresh }) {
 
 // ─── Main Navbar ──────────────────────────────────────────────────────────────
 export default function Navbar() {
-  const { user, isAuthenticated, logout, isAdmin, capabilities, refreshUser } = useAuth();
+  const { user, isAuthenticated, logout, isAdmin, capabilities } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -209,7 +191,6 @@ export default function Navbar() {
               user={user}
               isAdmin={isAdmin}
               onLogout={handleLogout}
-              onRefresh={refreshUser}
             />
           ) : (
             <div className="flex items-center gap-2">
@@ -289,21 +270,6 @@ export default function Navbar() {
 
                 {/* Footer actions */}
                 <div className="pt-2 mt-2 border-t border-slate-100 space-y-1">
-                  <button
-                    onClick={() => { refreshUser(); setMobileMenuOpen(false); }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-md transition cursor-pointer"
-                  >
-                    <RefreshCw className="w-4 h-4 text-slate-400" />Refresh Permissions
-                  </button>
-                  <a
-                    href={`${API_BASE_URL}/api-docs`}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2.5 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-md transition cursor-pointer"
-                  >
-                    <ExternalLink className="w-4 h-4 text-slate-400" />API Docs
-                  </a>
                   <button
                     onClick={handleLogout}
                     className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md transition cursor-pointer"
