@@ -36,7 +36,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-center items-center px-4 py-16 bg-slate-50">
+    <div className="flex-1 flex flex-col justify-center items-center px-4 py-12 sm:py-16">
       <div className="w-full max-w-sm">
         {/* Header */}
         <div className="mb-6">

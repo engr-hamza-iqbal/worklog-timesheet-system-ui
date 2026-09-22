@@ -42,6 +42,15 @@ export function AuthProvider({ children }) {
     }
 
     loadUser();
+
+    const handleUnauthorized = () => {
+      setToken(null);
+      setUser(null);
+      setCapabilities({});
+    };
+
+    window.addEventListener('auth:unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('auth:unauthorized', handleUnauthorized);
   }, [token]);
 
   async function login(email, password) {
