@@ -94,7 +94,8 @@ function CreateUserForm({ onSuccess, onCancel }) {
 
 // ─── Assign Project Form ──────────────────────────────────────────────────────
 
-function AssignProjectForm({ user, onSuccess, onCancel }) {
+// assignedProjectIds: Set of project IDs already assigned to this user (from live state)
+function AssignProjectForm({ user, assignedProjectIds, onSuccess, onCancel }) {
   const [projects, setProjects] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [loading, setLoading] = useState(false);
@@ -106,12 +107,14 @@ function AssignProjectForm({ user, onSuccess, onCancel }) {
     api.get('/api/projects?activeOnly=true')
       .then((res) => {
         const list = Array.isArray(res.data) ? res.data : [];
-        setProjects(list);
-        if (list.length > 0) setSelectedProjectId(list[0].id);
+        // Filter out projects already assigned to this user
+        const available = list.filter((p) => !assignedProjectIds.has(p.id));
+        setProjects(available);
+        if (available.length > 0) setSelectedProjectId(available[0].id);
       })
       .catch(() => setError('Failed to load projects.'))
       .finally(() => setFetching(false));
-  }, []);
+  }, [assignedProjectIds]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -140,7 +143,9 @@ function AssignProjectForm({ user, onSuccess, onCancel }) {
       </p>
       <ErrorAlert message={error} onDismiss={() => setError('')} />
       {projects.length === 0 ? (
-        <p className="text-xs text-slate-400 italic">No active projects available.</p>
+        <p className="text-xs text-slate-400 italic">
+          {error ? null : 'All active projects are already assigned to this user.'}
+        </p>
       ) : (
         <div>
           <label className="block text-xs font-medium text-slate-700 mb-1.5">Project</label>
@@ -248,6 +253,9 @@ function UserAssignments({ user, canAssign, onAssigned }) {
         <div className="mt-3 p-3 bg-white border border-slate-200 rounded">
           <AssignProjectForm
             user={user}
+            // Pass a Set of currently-assigned project IDs so the form can filter them out.
+            // We use the live `assignments` state (not the stale prop) so removals are reflected immediately.
+            assignedProjectIds={new Set(assignments.map((p) => p.id))}
             onSuccess={() => {
               setShowAssignForm(false);
               onAssigned(); // parent re-fetches users so activeAssignments is refreshed
