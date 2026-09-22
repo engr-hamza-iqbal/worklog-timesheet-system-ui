@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Users, Plus, UserCheck, UserX, AlertCircle, RefreshCw,
-  Search, FolderOpen,
+  Search, FolderOpen, ChevronDown, ChevronUp,
 } from 'lucide-react';
 import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -11,21 +11,14 @@ import EmptyState from '../components/EmptyState.jsx';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function FormField({ label, children }) {
+function ErrorAlert({ message, onDismiss }) {
+  if (!message) return null;
   return (
-    <div>
-      <label className="block text-xs font-medium text-slate-700 mb-1.5">{label}</label>
-      {children}
+    <div className="p-3 rounded bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2">
+      <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+      <span className="flex-1">{message}</span>
+      {onDismiss && <button onClick={onDismiss} className="text-red-400 hover:text-red-600 ml-auto">✕</button>}
     </div>
-  );
-}
-
-function Input(props) {
-  return (
-    <input
-      className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition"
-      {...props}
-    />
   );
 }
 
@@ -44,6 +37,7 @@ function CreateUserForm({ onSuccess, onCancel }) {
     setLoading(true);
     setError('');
     try {
+      // POST /api/users → { success, data: { id, name, email, accountType, isActive, createdAt }, message }
       const res = await api.post('/api/users', form);
       onSuccess(res.data);
     } catch (err) {
@@ -55,36 +49,42 @@ function CreateUserForm({ onSuccess, onCancel }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {error && (
-        <div className="p-3 rounded bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2">
-          <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-          {error}
-        </div>
-      )}
-      <FormField label="Full name">
-        <Input type="text" value={form.name} onChange={set('name')} placeholder="Jane Smith" required autoFocus />
-      </FormField>
-      <FormField label="Work email">
-        <Input type="email" value={form.email} onChange={set('email')} placeholder="jane@company.com" required />
-      </FormField>
-      <FormField label="Password">
-        <Input type="password" value={form.password} onChange={set('password')} placeholder="Min. 8 characters" required />
-      </FormField>
-      <FormField label="Account type">
-        <select
-          value={form.accountType}
-          onChange={set('accountType')}
-          className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition bg-white"
-        >
+      <ErrorAlert message={error} onDismiss={() => setError('')} />
+
+      <div>
+        <label className="block text-xs font-medium text-slate-700 mb-1.5">Full name</label>
+        <input type="text" value={form.name} onChange={set('name')} placeholder="Jane Smith" required autoFocus
+          className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition" />
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-slate-700 mb-1.5">Work email</label>
+        <input type="email" value={form.email} onChange={set('email')} placeholder="jane@company.com" required
+          className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition" />
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-slate-700 mb-1.5">Password</label>
+        <input type="password" value={form.password} onChange={set('password')} placeholder="Min. 8 characters" required
+          className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition" />
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-slate-700 mb-1.5">Account type</label>
+        <select value={form.accountType} onChange={set('accountType')}
+          className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 bg-white transition">
           <option value="EMPLOYEE">Employee</option>
           <option value="ADMIN">Administrator</option>
         </select>
-      </FormField>
+      </div>
+
       <div className="flex gap-2 pt-1">
-        <button type="button" onClick={onCancel} className="flex-1 py-2 px-3 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded transition cursor-pointer">
+        <button type="button" onClick={onCancel}
+          className="flex-1 py-2 px-3 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded transition cursor-pointer">
           Cancel
         </button>
-        <button type="submit" disabled={loading} className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-xs font-medium rounded transition cursor-pointer disabled:cursor-not-allowed">
+        <button type="submit" disabled={loading}
+          className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-xs font-medium rounded transition cursor-pointer disabled:cursor-not-allowed">
           {loading ? 'Creating...' : 'Create user'}
         </button>
       </div>
@@ -102,13 +102,15 @@ function AssignProjectForm({ user, onSuccess, onCancel }) {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    api.get('/api/projects?activeOnly=true').then((res) => {
-      const list = Array.isArray(res.data) ? res.data : res.data?.projects || [];
-      setProjects(list);
-      if (list.length > 0) setSelectedProjectId(list[0].id);
-    }).catch(() => {
-      setError('Failed to load projects.');
-    }).finally(() => setFetching(false));
+    // GET /api/projects?activeOnly=true → { success, data: [{ id, name, clientName, status, ... }], message }
+    api.get('/api/projects?activeOnly=true')
+      .then((res) => {
+        const list = Array.isArray(res.data) ? res.data : [];
+        setProjects(list);
+        if (list.length > 0) setSelectedProjectId(list[0].id);
+      })
+      .catch(() => setError('Failed to load projects.'))
+      .finally(() => setFetching(false));
   }, []);
 
   const handleSubmit = async (e) => {
@@ -117,6 +119,7 @@ function AssignProjectForm({ user, onSuccess, onCancel }) {
     setLoading(true);
     setError('');
     try {
+      // POST /api/projects/:id/assignments → { success, data: { id, projectId, userId, ... }, message }
       await api.post(`/api/projects/${selectedProjectId}/assignments`, { userId: user.id });
       onSuccess();
     } catch (err) {
@@ -135,29 +138,33 @@ function AssignProjectForm({ user, onSuccess, onCancel }) {
       <p className="text-xs text-slate-500">
         Assigning <span className="font-medium text-slate-900">{user.name}</span> to a project.
       </p>
-      {error && (
-        <div className="p-3 rounded bg-red-50 border border-red-200 text-xs text-red-700">{error}</div>
-      )}
+      <ErrorAlert message={error} onDismiss={() => setError('')} />
       {projects.length === 0 ? (
-        <p className="text-xs text-slate-500 italic">No active projects available.</p>
+        <p className="text-xs text-slate-400 italic">No active projects available.</p>
       ) : (
-        <FormField label="Project">
+        <div>
+          <label className="block text-xs font-medium text-slate-700 mb-1.5">Project</label>
           <select
             value={selectedProjectId}
             onChange={(e) => setSelectedProjectId(e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition bg-white"
+            className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 bg-white transition"
           >
             {projects.map((p) => (
-              <option key={p.id} value={p.id}>{p.client?.name ? `${p.client.name} — ` : ''}{p.name}</option>
+              // clientName comes from service getProjects mapping
+              <option key={p.id} value={p.id}>
+                {p.clientName ? `${p.clientName} — ` : ''}{p.name}
+              </option>
             ))}
           </select>
-        </FormField>
+        </div>
       )}
       <div className="flex gap-2 pt-1">
-        <button type="button" onClick={onCancel} className="flex-1 py-2 px-3 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded transition cursor-pointer">
+        <button type="button" onClick={onCancel}
+          className="flex-1 py-2 px-3 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded transition cursor-pointer">
           Cancel
         </button>
-        <button type="submit" disabled={loading || projects.length === 0} className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-xs font-medium rounded transition cursor-pointer disabled:cursor-not-allowed">
+        <button type="submit" disabled={loading || projects.length === 0}
+          className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-xs font-medium rounded transition cursor-pointer disabled:cursor-not-allowed">
           {loading ? 'Assigning...' : 'Assign'}
         </button>
       </div>
@@ -165,32 +172,26 @@ function AssignProjectForm({ user, onSuccess, onCancel }) {
   );
 }
 
-// ─── User Row Detail (assignments) ────────────────────────────────────────────
+// ─── User Row (expanded assignments) ─────────────────────────────────────────
 
-function UserDetail({ user, canManageUsers, canAssign, onRefresh }) {
-  const [assignments, setAssignments] = useState(null);
-  const [loading, setLoading] = useState(true);
+function UserAssignments({ user, canAssign, onAssigned }) {
+  // activeAssignments comes directly from getUsers() service mapping:
+  // activeAssignments: u.assignments.map((a) => a.project)
+  // each = { id, name, status }
+  const [assignments, setAssignments] = useState(user.activeAssignments || []);
+  const [showAssignForm, setShowAssignForm] = useState(false);
   const [removingId, setRemovingId] = useState(null);
-  const [showAssign, setShowAssign] = useState(false);
-
-  useEffect(() => {
-    api.get('/api/projects').then((res) => {
-      const projects = Array.isArray(res.data) ? res.data : res.data?.projects || [];
-      // Filter to projects where this user is currently assigned (removedAt is null)
-      const userProjects = projects.filter((p) =>
-        p.assignments?.some((a) => a.userId === user.id && !a.removedAt)
-      );
-      setAssignments(userProjects);
-    }).catch(() => setAssignments([])).finally(() => setLoading(false));
-  }, [user.id]);
+  const [error, setError] = useState('');
 
   const handleRemove = async (projectId) => {
     setRemovingId(projectId);
+    setError('');
     try {
+      // DELETE /api/projects/:projectId/assignments/:userId
       await api.delete(`/api/projects/${projectId}/assignments/${user.id}`);
       setAssignments((prev) => prev.filter((p) => p.id !== projectId));
     } catch (err) {
-      // silently ignore — user sees no change
+      setError(err.message || 'Failed to remove assignment.');
     } finally {
       setRemovingId(null);
     }
@@ -199,62 +200,59 @@ function UserDetail({ user, canManageUsers, canAssign, onRefresh }) {
   return (
     <div className="px-5 py-4 bg-slate-50/70 border-t border-slate-100">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Project Assignments</span>
+        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+          Project Assignments
+        </span>
         {canAssign && (
           <button
-            onClick={() => setShowAssign(true)}
+            onClick={() => setShowAssignForm((v) => !v)}
             className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 rounded transition cursor-pointer"
           >
-            <Plus className="w-3 h-3" />
-            Assign
+            <Plus className="w-3 h-3" />Assign to project
           </button>
         )}
       </div>
 
-      {loading ? (
-        <div className="flex items-center gap-2 text-xs text-slate-400">
-          <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Loading...
-        </div>
-      ) : assignments && assignments.length > 0 ? (
-        <div className="flex flex-wrap gap-2">
-          {assignments.map((p) => (
-            <div key={p.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-slate-200 rounded text-xs text-slate-700">
+      <ErrorAlert message={error} onDismiss={() => setError('')} />
+
+      {assignments.length > 0 ? (
+        <div className="flex flex-wrap gap-2 mt-2">
+          {assignments.map((project) => (
+            <div key={project.id} className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white border border-slate-200 rounded text-xs text-slate-700">
               <FolderOpen className="w-3 h-3 text-slate-400" />
-              <span>{p.name}</span>
+              <span>{project.name}</span>
+              <Badge
+                variant={project.status === 'ACTIVE' ? 'active' : 'closed'}
+                label={project.status === 'ACTIVE' ? 'Active' : 'Closed'}
+              />
               {canAssign && (
                 <button
-                  onClick={() => handleRemove(p.id)}
-                  disabled={removingId === p.id}
-                  className="text-slate-300 hover:text-red-500 transition cursor-pointer disabled:opacity-50 ml-0.5"
-                  aria-label={`Remove assignment from ${p.name}`}
+                  onClick={() => handleRemove(project.id)}
+                  disabled={removingId === project.id}
+                  className="ml-1 text-slate-300 hover:text-red-500 transition cursor-pointer disabled:opacity-50"
+                  aria-label={`Remove from ${project.name}`}
                 >
-                  ×
+                  {removingId === project.id
+                    ? <RefreshCw className="w-3 h-3 animate-spin" />
+                    : '×'}
                 </button>
               )}
             </div>
           ))}
         </div>
       ) : (
-        <p className="text-xs text-slate-400 italic">Not assigned to any projects.</p>
+        <p className="text-xs text-slate-400 italic mt-1">Not assigned to any projects.</p>
       )}
 
-      {showAssign && (
+      {showAssignForm && (
         <div className="mt-3 p-3 bg-white border border-slate-200 rounded">
           <AssignProjectForm
             user={user}
             onSuccess={() => {
-              setShowAssign(false);
-              // Re-fetch assignments
-              setLoading(true);
-              api.get('/api/projects').then((res) => {
-                const projects = Array.isArray(res.data) ? res.data : res.data?.projects || [];
-                const userProjects = projects.filter((p) =>
-                  p.assignments?.some((a) => a.userId === user.id && !a.removedAt)
-                );
-                setAssignments(userProjects);
-              }).finally(() => setLoading(false));
+              setShowAssignForm(false);
+              onAssigned(); // parent re-fetches users so activeAssignments is refreshed
             }}
-            onCancel={() => setShowAssign(false)}
+            onCancel={() => setShowAssignForm(false)}
           />
         </div>
       )}
@@ -269,6 +267,8 @@ export default function UsersPage() {
   const canManageUsers = isAdmin || !!capabilities['MANAGE_USERS'];
   const canAssign = isAdmin || !!capabilities['ASSIGN_PROJECTS'];
 
+  // User shape from getUsers() service:
+  // { id, name, email, accountType, isActive, createdAt, updatedAt, activeAssignments: [{id, name, status}], activeCapabilitiesCount }
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -276,10 +276,12 @@ export default function UsersPage() {
   const [expandedId, setExpandedId] = useState(null);
   const [modal, setModal] = useState(null);
 
+  // GET /api/users → { success, data: [...users], message }
   const fetchUsers = useCallback(async () => {
+    setLoading(true);
     try {
       const res = await api.get('/api/users');
-      const list = Array.isArray(res.data) ? res.data : res.data?.users || [];
+      const list = Array.isArray(res.data) ? res.data : [];
       setUsers(list);
     } catch (err) {
       setError(err.message || 'Failed to load users.');
@@ -290,13 +292,17 @@ export default function UsersPage() {
 
   useEffect(() => { fetchUsers(); }, []);
 
+  // PATCH /api/users/:id/status → { success, data: { id, name, email, accountType, isActive, updatedAt }, message }
   const handleToggleStatus = async (user) => {
-    if (user.id === currentUser?.id) { setError("You can't deactivate your own account."); return; }
+    if (user.id === currentUser?.id) {
+      setError("You can't deactivate your own account.");
+      return;
+    }
+    setError('');
     try {
-      await api.patch(`/api/users/${user.id}/status`, { isActive: !user.isActive });
-      setUsers((prev) =>
-        prev.map((u) => u.id === user.id ? { ...u, isActive: !u.isActive } : u)
-      );
+      const res = await api.patch(`/api/users/${user.id}/status`, { isActive: !user.isActive });
+      const updated = res.data;
+      setUsers((prev) => prev.map((u) => u.id === updated.id ? { ...u, isActive: updated.isActive } : u));
     } catch (err) {
       setError(err.message || 'Failed to update user status.');
     }
@@ -329,21 +335,18 @@ export default function UsersPage() {
             onClick={() => setModal('createUser')}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 rounded transition cursor-pointer self-start sm:self-auto"
           >
-            <Plus className="w-3.5 h-3.5" />
-            New User
+            <Plus className="w-3.5 h-3.5" />New User
           </button>
         )}
       </div>
 
       {error && (
-        <div className="mt-4 p-3 rounded bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
-          <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-          {error}
-          <button onClick={() => setError('')} className="ml-auto text-red-400 hover:text-red-600">✕</button>
+        <div className="mt-4">
+          <ErrorAlert message={error} onDismiss={() => setError('')} />
         </div>
       )}
 
-      {/* Search bar */}
+      {/* Search */}
       <div className="mt-6 relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
         <input
@@ -355,7 +358,7 @@ export default function UsersPage() {
         />
       </div>
 
-      {/* Users table */}
+      {/* Users list */}
       <div className="mt-4 bg-white rounded-lg border border-slate-200 overflow-hidden">
         {filtered.length === 0 ? (
           <EmptyState
@@ -363,37 +366,36 @@ export default function UsersPage() {
             title={search ? 'No users match your search.' : 'No users found.'}
             message={!search && canManageUsers ? 'Create your first team member.' : undefined}
             action={
-              !search && canManageUsers && (
+              !search && canManageUsers ? (
                 <button
                   onClick={() => setModal('createUser')}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 rounded transition cursor-pointer"
                 >
-                  <Plus className="w-3.5 h-3.5" />
-                  New User
+                  <Plus className="w-3.5 h-3.5" />New User
                 </button>
-              )
+              ) : null
             }
           />
         ) : (
           <div>
-            {/* Table header */}
+            {/* Table header - desktop */}
             <div className="hidden sm:grid grid-cols-12 gap-4 px-5 py-2.5 bg-slate-50 border-b border-slate-200 text-[10px] font-medium text-slate-500 uppercase tracking-wider">
-              <div className="col-span-5">Name / Email</div>
+              <div className="col-span-4">Name / Email</div>
               <div className="col-span-2">Type</div>
-              <div className="col-span-3">Status</div>
-              {canManageUsers && <div className="col-span-2 text-right">Actions</div>}
+              <div className="col-span-2">Status</div>
+              <div className="col-span-2">Projects</div>
+              {(canManageUsers || canAssign) && <div className="col-span-2 text-right">Actions</div>}
             </div>
 
             {filtered.map((user) => (
               <div key={user.id} className="border-b border-slate-100 last:border-0">
+                {/* Row */}
                 <div
-                  className="grid grid-cols-12 gap-4 px-5 py-3.5 items-center hover:bg-slate-50/60 transition cursor-pointer"
-                  onClick={() =>
-                    setExpandedId((prev) => (prev === user.id ? null : user.id))
-                  }
+                  onClick={() => setExpandedId((prev) => prev === user.id ? null : user.id)}
+                  className="grid grid-cols-12 gap-2 sm:gap-4 px-5 py-3.5 items-center hover:bg-slate-50/60 transition cursor-pointer"
                 >
                   {/* Name + email */}
-                  <div className="col-span-8 sm:col-span-5 min-w-0">
+                  <div className="col-span-7 sm:col-span-4 min-w-0">
                     <div className="flex items-center gap-2 min-w-0">
                       <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-xs font-semibold text-slate-600 shrink-0">
                         {user.name.charAt(0).toUpperCase()}
@@ -414,43 +416,49 @@ export default function UsersPage() {
                   </div>
 
                   {/* Status */}
-                  <div className="hidden sm:block col-span-3">
-                    <Badge
-                      variant={user.isActive ? 'active' : 'inactive'}
-                      label={user.isActive ? 'Active' : 'Inactive'}
-                      dot
-                    />
+                  <div className="hidden sm:block col-span-2">
+                    <Badge variant={user.isActive ? 'active' : 'inactive'} label={user.isActive ? 'Active' : 'Inactive'} dot />
+                  </div>
+
+                  {/* Active project count */}
+                  <div className="hidden sm:flex col-span-2 items-center gap-1 text-xs text-slate-500">
+                    <FolderOpen className="w-3.5 h-3.5 text-slate-400" />
+                    {/* activeAssignments is the array of project objects */}
+                    {(user.activeAssignments || []).length}
                   </div>
 
                   {/* Actions */}
-                  {canManageUsers && (
-                    <div className="col-span-4 sm:col-span-2 flex items-center justify-end gap-1.5">
+                  <div className="col-span-5 sm:col-span-2 flex items-center justify-end gap-1.5">
+                    {canManageUsers && (
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleToggleStatus(user);
-                        }}
+                        onClick={(e) => { e.stopPropagation(); handleToggleStatus(user); }}
                         disabled={user.id === currentUser?.id}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                         title={user.id === currentUser?.id ? "Can't deactivate yourself" : ''}
+                        className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                       >
-                        {user.isActive ? (
-                          <><UserX className="w-3 h-3" /><span className="hidden sm:inline">Deactivate</span></>
-                        ) : (
-                          <><UserCheck className="w-3 h-3" /><span className="hidden sm:inline">Activate</span></>
-                        )}
+                        {user.isActive
+                          ? <><UserX className="w-3 h-3" /><span className="hidden sm:inline">Deactivate</span></>
+                          : <><UserCheck className="w-3 h-3" /><span className="hidden sm:inline">Activate</span></>}
                       </button>
-                    </div>
-                  )}
+                    )}
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setExpandedId((prev) => prev === user.id ? null : user.id); }}
+                      className="p-1 text-slate-400 hover:text-slate-700"
+                    >
+                      {expandedId === user.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
-                {/* Expanded detail row */}
+                {/* Expanded assignments */}
                 {expandedId === user.id && (
-                  <UserDetail
+                  <UserAssignments
                     user={user}
-                    canManageUsers={canManageUsers}
                     canAssign={canAssign}
-                    onRefresh={fetchUsers}
+                    onAssigned={() => {
+                      // Re-fetch so activeAssignments is fresh
+                      fetchUsers();
+                    }}
                   />
                 )}
               </div>
@@ -465,14 +473,12 @@ export default function UsersPage() {
       </p>
 
       {/* Create user modal */}
-      <Modal
-        isOpen={modal === 'createUser'}
-        onClose={() => setModal(null)}
-        title="Create User"
-      >
+      <Modal isOpen={modal === 'createUser'} onClose={() => setModal(null)} title="Create User">
         <CreateUserForm
-          onSuccess={(user) => {
-            setUsers((prev) => [user, ...prev]);
+          onSuccess={(newUser) => {
+            // newUser = { id, name, email, accountType, isActive, createdAt } from createUser service
+            // Add with empty activeAssignments so it renders correctly before next full fetch
+            setUsers((prev) => [{ ...newUser, activeAssignments: [], activeCapabilitiesCount: 0 }, ...prev]);
             setModal(null);
           }}
           onCancel={() => setModal(null)}

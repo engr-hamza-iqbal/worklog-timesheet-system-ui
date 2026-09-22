@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Shield, CheckCircle, XCircle, Plus, RefreshCw,
-  AlertCircle, ChevronDown, ChevronUp, Clock,
+  Shield, XCircle, Plus, RefreshCw, AlertCircle,
+  ChevronDown, ChevronUp, Clock, CheckCircle,
 } from 'lucide-react';
 import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -9,23 +9,43 @@ import Modal from '../components/Modal.jsx';
 import Badge from '../components/Badge.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 
-// ─── Capability descriptions ───────────────────────────────────────────────────
+// ─── Capability metadata ───────────────────────────────────────────────────────
 
 const CAP_META = {
-  VIEW_OTHER_RECORDS:     { label: 'View Other Records',      desc: 'Read work logs and timesheets of other staff members.' },
-  REVIEW_TIME:            { label: 'Review Time',             desc: 'Approve or return submitted time entries (within scope).' },
-  DECIDE_TIME_OFF:        { label: 'Decide Time Off',         desc: 'Approve or decline employee time-off requests (within scope).' },
-  MANAGE_CLIENTS_PROJECTS:{ label: 'Manage Clients & Projects', desc: 'Create and configure clients, projects, and billing rates.' },
-  ASSIGN_PROJECTS:        { label: 'Assign Projects',         desc: 'Assign and remove employees on client projects.' },
-  MANAGE_USERS:           { label: 'Manage Users',            desc: 'Create and manage user accounts.' },
-  VIEW_REPORTS:           { label: 'View Reports',            desc: 'Access cross-project summary reports and CSV exports.' },
-  VIEW_ANALYTICS:         { label: 'View Analytics',          desc: 'View utilization rates and billable hours distribution.' },
-  VIEW_BILLING:           { label: 'View Billing',            desc: 'Access sensitive billing rate figures and monetary totals.' },
+  VIEW_OTHER_RECORDS:      { label: 'View Other Records',         desc: "Read work logs and timesheets of other staff members." },
+  REVIEW_TIME:             { label: 'Review Time',                desc: "Approve or return submitted time entries (within scope)." },
+  DECIDE_TIME_OFF:         { label: 'Decide Time Off',            desc: "Approve or decline employee time-off requests (within scope)." },
+  MANAGE_CLIENTS_PROJECTS: { label: 'Manage Clients & Projects',  desc: "Create and configure clients, projects, and billing rates." },
+  ASSIGN_PROJECTS:         { label: 'Assign Projects',            desc: "Assign and remove employees on client projects." },
+  MANAGE_USERS:            { label: 'Manage Users',               desc: "Create and manage user accounts." },
+  VIEW_REPORTS:            { label: 'View Reports',               desc: "Access cross-project summary reports and CSV exports." },
+  VIEW_ANALYTICS:          { label: 'View Analytics',             desc: "View utilization rates and billable hours distribution." },
+  VIEW_BILLING:            { label: 'View Billing',               desc: "Access sensitive billing rate figures and monetary totals." },
 };
+
+const ALL_CAP_CODES = Object.keys(CAP_META);
+
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function ErrorAlert({ message, onDismiss }) {
+  if (!message) return null;
+  return (
+    <div className="p-3 rounded bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2">
+      <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+      <span className="flex-1">{message}</span>
+      {onDismiss && <button onClick={onDismiss} className="ml-auto text-red-400 hover:text-red-600">✕</button>}
+    </div>
+  );
+}
 
 // ─── Grant Capability Form ────────────────────────────────────────────────────
 
-function GrantForm({ targetUser, availableCodes, users, projects, onSuccess, onCancel }) {
+function GrantForm({ targetUser, grantedCodes, users, projects, onSuccess, onCancel }) {
+  const availableCodes = ALL_CAP_CODES.filter((c) => !grantedCodes.has(c));
+
   const [form, setForm] = useState({
     capabilityCode: availableCodes[0] || '',
     scopeType: 'GLOBAL',
@@ -41,9 +61,7 @@ function GrantForm({ targetUser, availableCodes, users, projects, onSuccess, onC
   const toggleId = (field, id) => {
     setForm((prev) => ({
       ...prev,
-      [field]: prev[field].includes(id)
-        ? prev[field].filter((x) => x !== id)
-        : [...prev[field], id],
+      [field]: prev[field].includes(id) ? prev[field].filter((x) => x !== id) : [...prev[field], id],
     }));
   };
 
@@ -59,16 +77,18 @@ function GrantForm({ targetUser, availableCodes, users, projects, onSuccess, onC
     setLoading(true);
     setError('');
     try {
-      const payload = {
+      // POST /api/access/grants
+      // Body: { userId, capabilityCode, expiresAt?, scopeType?, targetUserIds?, targetProjectIds? }
+      // Response: { success, data: { id, userId, capabilityId, grantedById, expiresAt, ... }, message }
+      await api.post('/api/access/grants', {
         userId: targetUser.id,
         capabilityCode: form.capabilityCode,
         expiresAt: form.expiresAt || undefined,
         scopeType: form.scopeType === 'GLOBAL' ? undefined : form.scopeType,
         targetUserIds: form.scopeType === 'USER' ? form.targetUserIds : undefined,
         targetProjectIds: form.scopeType === 'PROJECT' ? form.targetProjectIds : undefined,
-      };
-      const res = await api.post('/api/access/grants', payload);
-      onSuccess(res.data);
+      });
+      onSuccess();
     } catch (err) {
       setError(err.message || 'Failed to grant capability.');
     } finally {
@@ -76,27 +96,26 @@ function GrantForm({ targetUser, availableCodes, users, projects, onSuccess, onC
     }
   };
 
+  if (availableCodes.length === 0) {
+    return (
+      <div className="py-4 text-center text-xs text-slate-500">
+        All capabilities are already granted to this user.
+      </div>
+    );
+  }
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <p className="text-xs text-slate-500">
         Granting capability to <span className="font-medium text-slate-900">{targetUser.name}</span>.
       </p>
+      <ErrorAlert message={error} onDismiss={() => setError('')} />
 
-      {error && (
-        <div className="p-3 rounded bg-red-50 border border-red-200 text-xs text-red-700 flex items-start gap-2">
-          <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" /> {error}
-        </div>
-      )}
-
-      {/* Capability selector */}
+      {/* Capability */}
       <div>
         <label className="block text-xs font-medium text-slate-700 mb-1.5">Capability</label>
-        <select
-          value={form.capabilityCode}
-          onChange={set('capabilityCode')}
-          className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 bg-white transition"
-          required
-        >
+        <select value={form.capabilityCode} onChange={set('capabilityCode')}
+          className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 bg-white transition" required>
           {availableCodes.map((code) => (
             <option key={code} value={code}>{CAP_META[code]?.label || code}</option>
           ))}
@@ -111,9 +130,7 @@ function GrantForm({ targetUser, availableCodes, users, projects, onSuccess, onC
         <label className="block text-xs font-medium text-slate-700 mb-1.5">Scope</label>
         <div className="flex gap-2">
           {['GLOBAL', 'USER', 'PROJECT'].map((s) => (
-            <button
-              key={s}
-              type="button"
+            <button key={s} type="button"
               onClick={() => setForm((prev) => ({ ...prev, scopeType: s, targetUserIds: [], targetProjectIds: [] }))}
               className={`flex-1 py-1.5 text-xs font-medium rounded border transition cursor-pointer ${
                 form.scopeType === s
@@ -121,32 +138,26 @@ function GrantForm({ targetUser, availableCodes, users, projects, onSuccess, onC
                   : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
               }`}
             >
-              {s === 'GLOBAL' ? 'Global' : s === 'USER' ? 'User-scoped' : 'Project-scoped'}
+              {s === 'GLOBAL' ? 'Global' : s === 'USER' ? 'User' : 'Project'}
             </button>
           ))}
         </div>
         <p className="mt-1 text-[11px] text-slate-400">
-          {form.scopeType === 'GLOBAL'
-            ? 'Applies to all users and projects.'
-            : form.scopeType === 'USER'
-            ? 'Restricted to specific users only.'
+          {form.scopeType === 'GLOBAL' ? 'Applies to all users and projects.'
+            : form.scopeType === 'USER' ? 'Restricted to specific users only.'
             : 'Restricted to specific projects only.'}
         </p>
       </div>
 
-      {/* User scope multi-select */}
+      {/* User scope picker */}
       {form.scopeType === 'USER' && (
         <div>
           <label className="block text-xs font-medium text-slate-700 mb-1.5">Target users</label>
           <div className="max-h-36 overflow-y-auto border border-slate-200 rounded divide-y divide-slate-100">
             {users.filter((u) => u.id !== targetUser.id && u.isActive).map((u) => (
               <label key={u.id} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={form.targetUserIds.includes(u.id)}
-                  onChange={() => toggleId('targetUserIds', u.id)}
-                  className="rounded border-slate-300"
-                />
+                <input type="checkbox" checked={form.targetUserIds.includes(u.id)}
+                  onChange={() => toggleId('targetUserIds', u.id)} className="rounded border-slate-300" />
                 <span className="text-xs text-slate-700">{u.name}</span>
                 <span className="text-[11px] text-slate-400 ml-auto truncate">{u.email}</span>
               </label>
@@ -155,21 +166,18 @@ function GrantForm({ targetUser, availableCodes, users, projects, onSuccess, onC
         </div>
       )}
 
-      {/* Project scope multi-select */}
+      {/* Project scope picker */}
       {form.scopeType === 'PROJECT' && (
         <div>
           <label className="block text-xs font-medium text-slate-700 mb-1.5">Target projects</label>
           <div className="max-h-36 overflow-y-auto border border-slate-200 rounded divide-y divide-slate-100">
             {projects.filter((p) => p.status === 'ACTIVE').map((p) => (
               <label key={p.id} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={form.targetProjectIds.includes(p.id)}
-                  onChange={() => toggleId('targetProjectIds', p.id)}
-                  className="rounded border-slate-300"
-                />
+                <input type="checkbox" checked={form.targetProjectIds.includes(p.id)}
+                  onChange={() => toggleId('targetProjectIds', p.id)} className="rounded border-slate-300" />
                 <span className="text-xs text-slate-700">{p.name}</span>
-                <span className="text-[11px] text-slate-400 ml-auto truncate">{p.client?.name}</span>
+                {/* clientName from getProjects service */}
+                <span className="text-[11px] text-slate-400 ml-auto truncate">{p.clientName}</span>
               </label>
             ))}
           </div>
@@ -178,21 +186,21 @@ function GrantForm({ targetUser, availableCodes, users, projects, onSuccess, onC
 
       {/* Expiry */}
       <div>
-        <label className="block text-xs font-medium text-slate-700 mb-1.5">Expiry date <span className="text-slate-400 font-normal">(optional)</span></label>
-        <input
-          type="date"
-          value={form.expiresAt}
-          onChange={set('expiresAt')}
+        <label className="block text-xs font-medium text-slate-700 mb-1.5">
+          Expiry date <span className="text-slate-400 font-normal">(optional)</span>
+        </label>
+        <input type="date" value={form.expiresAt} onChange={set('expiresAt')}
           min={new Date().toISOString().split('T')[0]}
-          className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition"
-        />
+          className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition" />
       </div>
 
       <div className="flex gap-2 pt-1">
-        <button type="button" onClick={onCancel} className="flex-1 py-2 px-3 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded transition cursor-pointer">
+        <button type="button" onClick={onCancel}
+          className="flex-1 py-2 px-3 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded transition cursor-pointer">
           Cancel
         </button>
-        <button type="submit" disabled={loading} className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-xs font-medium rounded transition cursor-pointer disabled:cursor-not-allowed">
+        <button type="submit" disabled={loading}
+          className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-xs font-medium rounded transition cursor-pointer disabled:cursor-not-allowed">
           {loading ? 'Granting...' : 'Grant capability'}
         </button>
       </div>
@@ -202,7 +210,13 @@ function GrantForm({ targetUser, availableCodes, users, projects, onSuccess, onC
 
 // ─── User Access Panel ────────────────────────────────────────────────────────
 
-function UserAccessPanel({ targetUser, capabilities, users, projects, currentUserId }) {
+function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
+  // GET /api/access/users/:userId/grants → { success, data: [grants], message }
+  // Each grant: { id, userId, capabilityId, grantedById, expiresAt, revokedAt, createdAt,
+  //               capability: { id, code, description },
+  //               grantedBy: { id, name, email },
+  //               scopes: [{ id, grantId, scopeType, targetUserId, targetProjectId,
+  //                          targetUser: {id, name}, targetProject: {id, name} }] }
   const [grants, setGrants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -211,10 +225,11 @@ function UserAccessPanel({ targetUser, capabilities, users, projects, currentUse
 
   const fetchGrants = useCallback(async () => {
     setLoading(true);
+    setError('');
     try {
       const res = await api.get(`/api/access/users/${targetUser.id}/grants`);
-      const data = Array.isArray(res.data) ? res.data : res.data?.grants || [];
-      setGrants(data);
+      const list = Array.isArray(res.data) ? res.data : [];
+      setGrants(list);
     } catch (err) {
       setError(err.message || 'Failed to load grants.');
     } finally {
@@ -224,12 +239,34 @@ function UserAccessPanel({ targetUser, capabilities, users, projects, currentUse
 
   useEffect(() => { fetchGrants(); }, [fetchGrants]);
 
+  // Only grants that are currently active (not revoked, not expired)
+  const now = new Date();
+  const activeGrants = grants.filter(
+    (g) => !g.revokedAt && (!g.expiresAt || new Date(g.expiresAt) > now)
+  );
+
+  // Map capability code → grant object for easy lookup
+  const activeByCode = {};
+  for (const g of activeGrants) {
+    if (g.capability?.code) {
+      activeByCode[g.capability.code] = g;
+    }
+  }
+
+  const grantedCodes = new Set(Object.keys(activeByCode));
+  const isSelf = targetUser.id === currentUserId;
+
+  // POST /api/access/grants/:grantId/revoke → { success, data: {...}, message }
   const handleRevoke = async (grantId) => {
+    if (!window.confirm('Revoke this capability immediately?')) return;
     setRevoking(grantId);
     setError('');
     try {
       await api.post(`/api/access/grants/${grantId}/revoke`);
-      setGrants((prev) => prev.filter((g) => g.id !== grantId));
+      // Optimistically update — remove from activeGrants by marking revokedAt
+      setGrants((prev) =>
+        prev.map((g) => g.id === grantId ? { ...g, revokedAt: new Date().toISOString() } : g)
+      );
     } catch (err) {
       setError(err.message || 'Failed to revoke grant.');
     } finally {
@@ -237,34 +274,28 @@ function UserAccessPanel({ targetUser, capabilities, users, projects, currentUse
     }
   };
 
-  const activeGrants = grants.filter((g) => !g.revokedAt && (!g.expiresAt || new Date(g.expiresAt) > new Date()));
-  const grantedCodes = new Set(activeGrants.map((g) => g.capability?.code));
-  const availableCodes = Object.keys(CAP_META).filter((code) => !grantedCodes.has(code));
-
-  const isSelf = targetUser.id === currentUserId;
-
-  const formatDate = (d) =>
-    d ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—';
+  const getScopeLabel = (grant) => {
+    const scopes = grant.scopes || [];
+    if (scopes.length === 0) return 'Global';
+    const type = scopes[0].scopeType;
+    return type === 'USER'
+      ? `${scopes.length} user${scopes.length > 1 ? 's' : ''}`
+      : `${scopes.length} project${scopes.length > 1 ? 's' : ''}`;
+  };
 
   return (
     <div>
-      {error && (
-        <div className="mb-3 p-3 rounded bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
-          <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {error}
-        </div>
-      )}
+      <ErrorAlert message={error} onDismiss={() => setError('')} />
 
-      {/* Capability rows */}
-      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-lg border border-slate-200 overflow-hidden mt-2">
         <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
           <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Capabilities</span>
-          {!isSelf && availableCodes.length > 0 && (
+          {!isSelf && grantedCodes.size < ALL_CAP_CODES.length && (
             <button
               onClick={() => setGrantModal(true)}
               className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 rounded transition cursor-pointer"
             >
-              <Plus className="w-3 h-3" />
-              Grant
+              <Plus className="w-3 h-3" />Grant
             </button>
           )}
         </div>
@@ -280,22 +311,15 @@ function UserAccessPanel({ targetUser, capabilities, users, projects, currentUse
                 <tr>
                   <th className="py-2.5 px-4">Capability</th>
                   <th className="py-2.5 px-4">Scope</th>
-                  <th className="py-2.5 px-4">Granted by</th>
-                  <th className="py-2.5 px-4">Expires</th>
-                  <th className="py-2.5 px-4 text-right">Status / Action</th>
+                  <th className="py-2.5 px-4 hidden sm:table-cell">Granted by</th>
+                  <th className="py-2.5 px-4 hidden sm:table-cell">Expires</th>
+                  <th className="py-2.5 px-4 text-right">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {Object.keys(CAP_META).map((code) => {
-                  const grant = activeGrants.find((g) => g.capability?.code === code);
+                {ALL_CAP_CODES.map((code) => {
+                  const grant = activeByCode[code];
                   const isGranted = !!grant;
-                  const scopeRows = grant?.scopes || [];
-                  const isGlobal = scopeRows.length === 0;
-                  const scopeLabel = isGlobal
-                    ? 'Global'
-                    : scopeRows[0]?.scopeType === 'USER'
-                    ? `${scopeRows.length} user(s)`
-                    : `${scopeRows.length} project(s)`;
 
                   return (
                     <tr key={code} className="hover:bg-slate-50/50 transition">
@@ -303,26 +327,31 @@ function UserAccessPanel({ targetUser, capabilities, users, projects, currentUse
                         <div className="font-medium text-slate-900">{CAP_META[code].label}</div>
                         <div className="text-[10px] font-mono text-slate-400">{code}</div>
                       </td>
+
                       <td className="py-3 px-4 text-slate-600">
-                        {isGranted ? scopeLabel : <span className="text-slate-300">—</span>}
-                      </td>
-                      <td className="py-3 px-4 text-slate-600">
-                        {isGranted && grant.grantedBy
-                          ? <span className="truncate max-w-[120px] block">{grant.grantedBy.name}</span>
+                        {isGranted
+                          ? getScopeLabel(grant)
                           : <span className="text-slate-300">—</span>}
                       </td>
-                      <td className="py-3 px-4 text-slate-600">
+
+                      <td className="py-3 px-4 text-slate-600 hidden sm:table-cell">
+                        {isGranted && grant.grantedBy
+                          ? <span className="truncate max-w-[100px] block">{grant.grantedBy.name}</span>
+                          : <span className="text-slate-300">—</span>}
+                      </td>
+
+                      <td className="py-3 px-4 hidden sm:table-cell">
                         {isGranted && grant.expiresAt ? (
-                          <span className="inline-flex items-center gap-1 text-amber-700">
-                            <Clock className="w-3 h-3" />
-                            {formatDate(grant.expiresAt)}
+                          <span className="inline-flex items-center gap-1 text-amber-700 text-[11px]">
+                            <Clock className="w-3 h-3" />{fmtDate(grant.expiresAt)}
                           </span>
                         ) : isGranted ? (
-                          <span className="text-slate-400">Never</span>
+                          <span className="text-slate-400 text-[11px]">Never</span>
                         ) : (
                           <span className="text-slate-300">—</span>
                         )}
                       </td>
+
                       <td className="py-3 px-4 text-right">
                         {isGranted ? (
                           <div className="flex items-center gap-2 justify-end">
@@ -330,14 +359,12 @@ function UserAccessPanel({ targetUser, capabilities, users, projects, currentUse
                             {!isSelf && (
                               <button
                                 onClick={() => handleRevoke(grant.id)}
-                                disabled={revoking === grant.id}
+                                disabled={!!revoking}
                                 className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-red-600 bg-white hover:bg-red-50 border border-red-200 rounded transition cursor-pointer disabled:opacity-50"
                               >
-                                {revoking === grant.id ? (
-                                  <RefreshCw className="w-3 h-3 animate-spin" />
-                                ) : (
-                                  <XCircle className="w-3 h-3" />
-                                )}
+                                {revoking === grant.id
+                                  ? <RefreshCw className="w-3 h-3 animate-spin" />
+                                  : <XCircle className="w-3 h-3" />}
                                 Revoke
                               </button>
                             )}
@@ -357,7 +384,7 @@ function UserAccessPanel({ targetUser, capabilities, users, projects, currentUse
         )}
       </div>
 
-      {/* Grant Modal */}
+      {/* Grant modal */}
       <Modal
         isOpen={grantModal}
         onClose={() => setGrantModal(false)}
@@ -366,13 +393,10 @@ function UserAccessPanel({ targetUser, capabilities, users, projects, currentUse
       >
         <GrantForm
           targetUser={targetUser}
-          availableCodes={availableCodes}
+          grantedCodes={grantedCodes}
           users={users}
           projects={projects}
-          onSuccess={() => {
-            setGrantModal(false);
-            fetchGrants();
-          }}
+          onSuccess={() => { setGrantModal(false); fetchGrants(); }}
           onCancel={() => setGrantModal(false)}
         />
       </Modal>
@@ -383,31 +407,45 @@ function UserAccessPanel({ targetUser, capabilities, users, projects, currentUse
 // ─── Audit Log ────────────────────────────────────────────────────────────────
 
 function AuditLog() {
+  // GET /api/access/audit-logs?limit=20 → { success, data: { logs: [...], total: N }, message }
   const [logs, setLogs] = useState([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
-    api.get('/api/access/audit-logs?limit=20').then((res) => {
-      const data = Array.isArray(res.data) ? res.data : res.data?.logs || [];
-      setLogs(data);
-    }).catch(() => {}).finally(() => setLoading(false));
+    api.get('/api/access/audit-logs?limit=20&offset=0')
+      .then((res) => {
+        // res.data = { logs: [...], total } because the service returns { logs, total }
+        // and the HTTP layer wraps it in { success, data: { logs, total }, message }
+        const data = res.data;
+        if (data && Array.isArray(data.logs)) {
+          setLogs(data.logs);
+          setTotal(data.total || data.logs.length);
+        } else if (Array.isArray(data)) {
+          // Fallback if shape differs
+          setLogs(data);
+          setTotal(data.length);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   const ACTION_COLORS = {
-    GRANT:         'text-emerald-700',
-    REVOKE:        'text-red-700',
-    CHANGE_SCOPE:  'text-blue-700',
-    CHANGE_EXPIRY: 'text-amber-700',
+    GRANT:         'text-emerald-700 bg-emerald-50',
+    REVOKE:        'text-red-700 bg-red-50',
+    CHANGE_SCOPE:  'text-blue-700 bg-blue-50',
+    CHANGE_EXPIRY: 'text-amber-700 bg-amber-50',
   };
 
-  const visible = expanded ? logs : logs.slice(0, 5);
+  const visible = expanded ? logs : logs.slice(0, 6);
 
   return (
     <div className="mt-8 bg-white rounded-lg border border-slate-200 overflow-hidden">
       <div className="px-5 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
         <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Access Audit Log</span>
-        <span className="text-[11px] text-slate-400">{logs.length} recent entries</span>
+        <span className="text-[11px] text-slate-400">{total} events</span>
       </div>
 
       {loading ? (
@@ -424,8 +462,8 @@ function AuditLog() {
                 <tr>
                   <th className="py-2 px-5">Action</th>
                   <th className="py-2 px-4">Capability</th>
-                  <th className="py-2 px-4">Actor</th>
-                  <th className="py-2 px-4">Target</th>
+                  <th className="py-2 px-4 hidden sm:table-cell">Actor</th>
+                  <th className="py-2 px-4 hidden sm:table-cell">Target</th>
                   <th className="py-2 px-4">When</th>
                 </tr>
               </thead>
@@ -433,14 +471,21 @@ function AuditLog() {
                 {visible.map((log) => (
                   <tr key={log.id} className="hover:bg-slate-50/50 transition">
                     <td className="py-2.5 px-5">
-                      <span className={`font-semibold ${ACTION_COLORS[log.action] || 'text-slate-700'}`}>
+                      <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${ACTION_COLORS[log.action] || 'text-slate-700'}`}>
                         {log.action}
                       </span>
                     </td>
-                    <td className="py-2.5 px-4 font-mono text-[11px] text-slate-600">{log.capabilityCode}</td>
-                    <td className="py-2.5 px-4 text-slate-600">{log.actor?.name || '—'}</td>
-                    <td className="py-2.5 px-4 text-slate-600">{log.targetUser?.name || '—'}</td>
-                    <td className="py-2.5 px-4 text-slate-500">
+                    <td className="py-2.5 px-4 font-mono text-[11px] text-slate-600">
+                      {log.capabilityCode}
+                    </td>
+                    {/* actor and targetUser from getAccessAuditLogs include */}
+                    <td className="py-2.5 px-4 text-slate-600 hidden sm:table-cell">
+                      {log.actor?.name || '—'}
+                    </td>
+                    <td className="py-2.5 px-4 text-slate-600 hidden sm:table-cell">
+                      {log.targetUser?.name || '—'}
+                    </td>
+                    <td className="py-2.5 px-4 text-slate-500 whitespace-nowrap">
                       {new Date(log.createdAt).toLocaleString('en-GB', {
                         day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
                       })}
@@ -450,12 +495,14 @@ function AuditLog() {
               </tbody>
             </table>
           </div>
-          {logs.length > 5 && (
+          {logs.length > 6 && (
             <button
               onClick={() => setExpanded((v) => !v)}
               className="w-full py-2.5 text-xs text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition flex items-center justify-center gap-1 border-t border-slate-100"
             >
-              {expanded ? <><ChevronUp className="w-3.5 h-3.5" /> Show less</> : <><ChevronDown className="w-3.5 h-3.5" /> Show all {logs.length} entries</>}
+              {expanded
+                ? <><ChevronUp className="w-3.5 h-3.5" />Show less</>
+                : <><ChevronDown className="w-3.5 h-3.5" />Show all {logs.length} entries</>}
             </button>
           )}
         </div>
@@ -468,9 +515,11 @@ function AuditLog() {
 
 export default function AccessPage() {
   const { user: currentUser } = useAuth();
+
+  // GET /api/users → { success, data: [...users], message }
+  // GET /api/projects → { success, data: [...projects], message }  projects have clientName
   const [users, setUsers] = useState([]);
   const [projects, setProjects] = useState([]);
-  const [capabilities, setCapabilities] = useState([]);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -479,16 +528,16 @@ export default function AccessPage() {
     Promise.all([
       api.get('/api/users'),
       api.get('/api/projects'),
-      api.get('/api/access/capabilities'),
-    ]).then(([usersRes, projectsRes, capsRes]) => {
-      const userList = Array.isArray(usersRes.data) ? usersRes.data : usersRes.data?.users || [];
-      const projList = Array.isArray(projectsRes.data) ? projectsRes.data : projectsRes.data?.projects || [];
-      const capList  = Array.isArray(capsRes.data) ? capsRes.data : capsRes.data?.capabilities || [];
-      setUsers(userList);
-      setProjects(projList);
-      setCapabilities(capList);
-      if (userList.length > 0) setSelectedUserId(userList[0].id);
-    }).catch(() => {}).finally(() => setLoading(false));
+    ])
+      .then(([usersRes, projectsRes]) => {
+        const userList = Array.isArray(usersRes.data) ? usersRes.data : [];
+        const projList = Array.isArray(projectsRes.data) ? projectsRes.data : [];
+        setUsers(userList);
+        setProjects(projList);
+        if (userList.length > 0) setSelectedUserId(userList[0].id);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   const filteredUsers = users.filter(
@@ -520,7 +569,7 @@ export default function AccessPage() {
       <div className="mt-6 flex flex-col lg:flex-row gap-6">
         {/* ── Left: User list ── */}
         <div className="w-full lg:w-64 xl:w-72 shrink-0">
-          <div className="bg-white rounded-lg border border-slate-200 overflow-hidden sticky top-20">
+          <div className="bg-white rounded-lg border border-slate-200 overflow-hidden lg:sticky lg:top-20">
             <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50">
               <input
                 type="text"
@@ -530,7 +579,7 @@ export default function AccessPage() {
                 className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition"
               />
             </div>
-            <ul className="divide-y divide-slate-100 max-h-[60vh] overflow-y-auto">
+            <ul className="divide-y divide-slate-100 max-h-[55vh] overflow-y-auto">
               {filteredUsers.map((user) => (
                 <li key={user.id}>
                   <button
@@ -570,8 +619,8 @@ export default function AccessPage() {
             </div>
           ) : (
             <div>
-              {/* User header */}
-              <div className="bg-white rounded-lg border border-slate-200 px-5 py-4 mb-4 flex flex-col sm:flex-row sm:items-center gap-3">
+              {/* User banner */}
+              <div className="bg-white rounded-lg border border-slate-200 px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-sm font-bold text-slate-600 shrink-0">
                   {selectedUser.name.charAt(0).toUpperCase()}
                 </div>
@@ -582,6 +631,7 @@ export default function AccessPage() {
                       variant={selectedUser.accountType === 'ADMIN' ? 'admin' : 'employee'}
                       label={selectedUser.accountType === 'ADMIN' ? 'Administrator' : 'Employee'}
                     />
+                    {!selectedUser.isActive && <Badge variant="inactive" label="Inactive" dot />}
                     {selectedUser.id === currentUser?.id && (
                       <span className="text-[11px] text-slate-400 italic">(you)</span>
                     )}
@@ -589,16 +639,17 @@ export default function AccessPage() {
                   <p className="text-xs text-slate-500 mt-0.5">{selectedUser.email}</p>
                 </div>
                 {selectedUser.accountType === 'ADMIN' && (
-                  <div className="flex items-center gap-1.5 px-3 py-2 rounded bg-violet-50 border border-violet-200 text-xs text-violet-700">
+                  <div className="flex items-center gap-1.5 px-3 py-2 rounded bg-violet-50 border border-violet-200 text-xs text-violet-700 shrink-0">
                     <CheckCircle className="w-3.5 h-3.5" />
-                    Administrators hold all capabilities by default.
+                    Holds all capabilities by default.
                   </div>
                 )}
               </div>
 
+              {/* Capability matrix — only meaningful for employees */}
               <UserAccessPanel
+                key={selectedUser.id}
                 targetUser={selectedUser}
-                capabilities={capabilities}
                 users={users}
                 projects={projects}
                 currentUserId={currentUser?.id}
