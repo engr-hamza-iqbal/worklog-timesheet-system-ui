@@ -9,6 +9,8 @@ import DashboardPage from './pages/DashboardPage.jsx';
 import ClientsProjectsPage from './pages/ClientsProjectsPage.jsx';
 import UsersPage from './pages/UsersPage.jsx';
 import AccessPage from './pages/AccessPage.jsx';
+import TimesheetsPage from './pages/TimesheetsPage.jsx';
+import ReviewPage from './pages/ReviewPage.jsx';
 import './App.css';
 
 function HomeRedirect() {
@@ -63,6 +65,9 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
+
+            <Route path="/timesheet" element={<ProtectedRoute><TimesheetsPage /></ProtectedRoute>} />
+            <Route path="/review" element={<ProtectedRoute><ReviewPage /></ProtectedRoute>} />
 
             {/* Catch-all fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />

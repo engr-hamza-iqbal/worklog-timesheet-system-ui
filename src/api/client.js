@@ -7,8 +7,14 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 15000,
+  timeout: 30000,
 });
+
+const GET_RETRY_LIMIT = 2;
+
+function wait(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
 
 // Request Interceptor: Automatically inject JWT token
 api.interceptors.request.use(
@@ -17,6 +23,7 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    config.__retryCount = config.__retryCount || 0;
     return config;
   },
   (error) => Promise.reject(error)
@@ -28,7 +35,17 @@ api.interceptors.response.use(
     // Backend wraps response in { success: true, data: ..., message: ... }
     return response.data;
   },
-  (error) => {
+  async (error) => {
+    const request = error.config;
+    const isRetryableGet = request?.method?.toLowerCase() === 'get'
+      && (!error.response || error.response.status >= 500);
+
+    if (isRetryableGet && request.__retryCount < GET_RETRY_LIMIT) {
+      request.__retryCount += 1;
+      await wait(request.__retryCount * 500);
+      return api(request);
+    }
+
     if (error.response?.status === 401) {
       // If token expired or invalid, clear stored token
       const currentPath = window.location.pathname;

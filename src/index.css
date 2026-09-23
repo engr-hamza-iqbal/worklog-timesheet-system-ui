@@ -14,6 +14,15 @@
     -webkit-font-smoothing: antialiased;
   }
 
+  button:not(:disabled),
+  [role="button"] {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
   #root {
     min-height: 100vh;
     display: flex;

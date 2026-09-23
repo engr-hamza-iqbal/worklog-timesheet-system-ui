@@ -3,7 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import {
   Menu, X, Shield, Users, FolderKanban,
-  LayoutDashboard, LogOut,
+  LayoutDashboard, LogOut, Clock3, ClipboardCheck,
   ChevronDown, User,
 } from 'lucide-react';
 
@@ -116,6 +116,7 @@ export default function Navbar() {
   const hasClientProjectAccess = isAdmin || !!capabilities['MANAGE_CLIENTS_PROJECTS'];
   const hasUserAccess = isAdmin || !!capabilities['MANAGE_USERS'] || !!capabilities['ASSIGN_PROJECTS'];
   const hasAccessManagement = isAdmin;
+  const hasReviewAccess = isAdmin || !!capabilities['REVIEW_TIME'];
 
   const navLinkClass = ({ isActive }) =>
     `px-3 py-1.5 text-sm font-medium rounded-md transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
@@ -133,7 +134,7 @@ export default function Navbar() {
 
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-6">
+      <div className="max-w-auto mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-6">
 
         {/* ── Brand ── */}
         <Link to="/" className="flex items-center gap-2 shrink-0">
@@ -154,6 +155,22 @@ export default function Navbar() {
                 Overview
               </NavLink>
             </Tooltip>
+
+            <Tooltip text="Record and submit your work" side="bottom">
+              <NavLink to="/timesheet" className={navLinkClass}>
+                <Clock3 className="w-3.5 h-3.5 text-slate-400" />
+                Timesheet
+              </NavLink>
+            </Tooltip>
+
+            {hasReviewAccess && (
+              <Tooltip text="Review submitted work" side="bottom">
+                <NavLink to="/review" className={navLinkClass}>
+                  <ClipboardCheck className="w-3.5 h-3.5 text-slate-400" />
+                  Review Queue
+                </NavLink>
+              </Tooltip>
+            )}
 
             {hasClientProjectAccess && (
               <Tooltip text="Manage clients, projects & billing rates" side="bottom">
@@ -249,6 +266,16 @@ export default function Navbar() {
                 <NavLink to="/dashboard" onClick={() => setMobileMenuOpen(false)} className={mobileNavLinkClass}>
                   <LayoutDashboard className="w-4 h-4 text-slate-400" />Overview
                 </NavLink>
+
+                <NavLink to="/timesheet" onClick={() => setMobileMenuOpen(false)} className={mobileNavLinkClass}>
+                  <Clock3 className="w-4 h-4 text-slate-400" />Timesheet
+                </NavLink>
+
+                {hasReviewAccess && (
+                  <NavLink to="/review" onClick={() => setMobileMenuOpen(false)} className={mobileNavLinkClass}>
+                    <ClipboardCheck className="w-4 h-4 text-slate-400" />Review Queue
+                  </NavLink>
+                )}
 
                 {hasClientProjectAccess && (
                   <NavLink to="/clients" onClick={() => setMobileMenuOpen(false)} className={mobileNavLinkClass}>
