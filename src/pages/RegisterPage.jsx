@@ -40,16 +40,16 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col justify-center items-center px-4 py-12 sm:py-16">
-      <div className="w-full max-w-sm">
+    <div className="flex-1 flex flex-col items-center px-4 py-12 sm:py-16">
+      <div className="w-full max-w-md">
         {/* Header */}
-        <div className="mb-6">
+        <div className="mb-4">
           <h1 className="text-xl font-semibold text-slate-900 tracking-tight">Create an account</h1>
           <p className="text-xs text-slate-500 mt-1">Register for the work log portal.</p>
         </div>
 
         {/* Card */}
-        <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-xs">
+        <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-md hover:shadow-lg">
           {errorMessage && (
             <div className="mb-4 p-3 rounded bg-red-50 border border-red-200 text-xs text-red-700">
               {errorMessage}

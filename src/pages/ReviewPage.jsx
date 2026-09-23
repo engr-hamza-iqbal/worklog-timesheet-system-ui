@@ -117,6 +117,10 @@ export default function ReviewPage() {
     });
   }
 
+  function toggleAllEntries(checked) {
+    setSelected(checked ? entries.map((entry) => entry.id) : []);
+  }
+
   async function returnEntry() {
     if (!returningId || comment.trim().length < 5) return;
     const entryId = returningId;
@@ -253,14 +257,12 @@ export default function ReviewPage() {
               <th className="p-3">
                 <input
                   type="checkbox"
+                  aria-label="Select all submitted entries"
+                  disabled={loading || !entries.length}
                   checked={
                     entries.length > 0 && selected.length === entries.length
                   }
-                  onChange={(e) =>
-                    setSelected(
-                      e.target.checked ? entries.map((entry) => entry.id) : [],
-                    )
-                  }
+                  onChange={(e) => toggleAllEntries(e.target.checked)}
                 />
               </th>
               <th className="p-3">Employee</th>
