@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import Modal from '../components/Modal.jsx';
 import Badge from '../components/Badge.jsx';
 import EmptyState from '../components/EmptyState.jsx';
+import ConfirmDialog from '../components/ConfirmDialog.jsx';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -246,6 +247,7 @@ export default function ClientsProjectsPage() {
   const [modal, setModal] = useState(null); // null | 'newClient' | 'editClient' | 'newProject' | 'addRate'
   const [editingClient, setEditingClient] = useState(null);
   const [rateProjectId, setRateProjectId] = useState(null);
+  const [confirmation, setConfirmation] = useState(null);
 
   // GET /api/clients → { success, data: [ { id, name, isActive, _count: { projects } } ], message }
   const fetchClients = useCallback(async () => {
@@ -290,7 +292,20 @@ export default function ClientsProjectsPage() {
   }, [selectedClientId]);
 
   // Archive / restore a client
-  const handleClientArchive = async (client) => {
+  const handleClientArchive = (client) => {
+    setConfirmation({
+      title: client.isActive ? 'Archive client' : 'Restore client',
+      message: client.isActive
+        ? `Archive ${client.name}? Its projects will remain available for history but should not receive new work.`
+        : `Restore ${client.name}? This will make the client active again.`,
+      confirmLabel: client.isActive ? 'Archive client' : 'Restore client',
+      tone: client.isActive ? 'danger' : 'primary',
+      onConfirm: () => updateClientStatus(client),
+    });
+  };
+
+  const updateClientStatus = async (client) => {
+    setConfirmation(null);
     try {
       const res = await api.put(`/api/clients/${client.id}`, { isActive: !client.isActive });
       // res.data = updated client object
@@ -302,8 +317,21 @@ export default function ClientsProjectsPage() {
 
   // Toggle project ACTIVE ↔ CLOSED
   // PATCH /api/projects/:id/status → { success, data: { id, status, ... }, message }
-  const handleProjectStatusToggle = async (project) => {
+  const handleProjectStatusToggle = (project) => {
     const newStatus = project.status === 'ACTIVE' ? 'CLOSED' : 'ACTIVE';
+    setConfirmation({
+      title: newStatus === 'CLOSED' ? 'Close project' : 'Reopen project',
+      message: newStatus === 'CLOSED'
+        ? `Close ${project.name}? Employees will no longer be able to log new time against it.`
+        : `Reopen ${project.name}? New time entries will be allowed again.`,
+      confirmLabel: newStatus === 'CLOSED' ? 'Close project' : 'Reopen project',
+      tone: newStatus === 'CLOSED' ? 'danger' : 'primary',
+      onConfirm: () => updateProjectStatus(project, newStatus),
+    });
+  };
+
+  const updateProjectStatus = async (project, newStatus) => {
+    setConfirmation(null);
     try {
       await api.patch(`/api/projects/${project.id}/status`, { status: newStatus });
       setProjects((prev) => prev.map((p) => p.id === project.id ? { ...p, status: newStatus } : p));
@@ -576,6 +604,15 @@ export default function ClientsProjectsPage() {
           onCancel={() => setModal(null)}
         />
       </Modal>
+      <ConfirmDialog
+        isOpen={Boolean(confirmation)}
+        onClose={() => setConfirmation(null)}
+        onConfirm={confirmation?.onConfirm}
+        title={confirmation?.title}
+        message={confirmation?.message}
+        confirmLabel={confirmation?.confirmLabel}
+        tone={confirmation?.tone}
+      />
     </main>
   );
 }

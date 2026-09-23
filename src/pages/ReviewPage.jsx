@@ -11,6 +11,7 @@ import {
 import api from "../api/client.js";
 import Badge from "../components/Badge.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+import ConfirmDialog from "../components/ConfirmDialog.jsx";
 
 export default function ReviewPage() {
   const { isAdmin } = useAuth();
@@ -28,6 +29,7 @@ export default function ReviewPage() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
+  const [confirmation, setConfirmation] = useState(null);
 
   async function load(filterValues = filters) {
     const query = Object.fromEntries(
@@ -74,12 +76,31 @@ export default function ReviewPage() {
     load(clearedFilters);
   }
 
+  function applyFilters(event) {
+    event.preventDefault();
+    if (filters.startDate && filters.endDate && filters.endDate < filters.startDate) {
+      setError("End date cannot be earlier than start date.");
+      return;
+    }
+    load();
+  }
+
   async function approve() {
     if (!selected.length) return;
+    setConfirmation({
+      title: "Approve submitted entries",
+      message: `Approve ${selected.length} submitted entr${selected.length === 1 ? "y" : "ies"}? This will lock the approved records from employee editing.`,
+      confirmLabel: "Approve",
+      onConfirm: () => approveConfirmed(selected),
+    });
+  }
+
+  async function approveConfirmed(entryIds) {
+    setConfirmation(null);
     try {
-      await api.post("/api/reviews/approve", { entryIds: selected });
+      await api.post("/api/reviews/approve", { entryIds });
       setNotice(
-        `${selected.length} entr${selected.length === 1 ? "y" : "ies"} approved.`,
+        `${entryIds.length} entr${entryIds.length === 1 ? "y" : "ies"} approved.`,
       );
       await load();
     } catch (err) {
@@ -88,19 +109,31 @@ export default function ReviewPage() {
   }
 
   async function approveOne(entryId) {
-    try {
-      await api.post("/api/reviews/approve", { entryIds: [entryId] });
-      setNotice("Entry approved.");
-      await load();
-    } catch (err) {
-      setError(err.message);
-    }
+    setConfirmation({
+      title: "Approve submitted entry",
+      message: "Approve this submitted entry? The employee will no longer be able to edit it.",
+      confirmLabel: "Approve",
+      onConfirm: () => approveConfirmed([entryId]),
+    });
   }
 
   async function returnEntry() {
     if (!returningId || comment.trim().length < 5) return;
+    const entryId = returningId;
+    const returnComment = comment.trim();
+    setConfirmation({
+      title: "Return entry for correction",
+      message: "Return this entry to the employee with the provided correction comment?",
+      confirmLabel: "Return entry",
+      tone: "danger",
+      onConfirm: () => returnConfirmed(entryId, returnComment),
+    });
+  }
+
+  async function returnConfirmed(entryId, returnComment) {
+    setConfirmation(null);
     try {
-      await api.post("/api/reviews/return", { entryId: returningId, comment });
+      await api.post("/api/reviews/return", { entryId, comment: returnComment });
       setReturningId(null);
       setComment("");
       setNotice("Entry returned for correction.");
@@ -110,13 +143,8 @@ export default function ReviewPage() {
     }
   }
 
-  const scopeText =
-    isAdmin || scope?.type === "GLOBAL"
-      ? "Global review scope"
-      : `Scoped review: ${scope?.projectIds?.length || 0} project(s), ${scope?.userIds?.length || 0} user(s)`;
-
   return (
-    <main className="max-w-auto mx-auto w-full px-4 sm:px-6 py-8">
+    <main className="mx-auto w-full max-w-auto px-4 py-8 sm:px-6 lg:px-10 2xl:px-14">
       <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -125,7 +153,6 @@ export default function ReviewPage() {
           <h1 className="text-2xl font-semibold">Review queue</h1>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-slate-600">{scopeText}</span>
           <button
             type="button"
             onClick={load}
@@ -149,11 +176,8 @@ export default function ReviewPage() {
         </div>
       )}
       <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          load();
-        }}
-        className="bg-white border border-slate-200 rounded-lg p-4 grid gap-3 md:grid-cols-6 mb-5"
+        onSubmit={applyFilters}
+        className="bg-white border border-slate-200 rounded-lg p-4 grid gap-4 md:grid-cols-2 lg:grid-cols-[minmax(220px,1.4fr)_minmax(180px,1fr)_minmax(150px,.85fr)_minmax(150px,.85fr)_auto_auto] mb-5 items-end"
       >
         <input
           placeholder="Employee name or email"
@@ -174,6 +198,7 @@ export default function ReviewPage() {
           <input
             aria-label="Start date"
             type="date"
+            max={filters.endDate || undefined}
             value={filters.startDate}
             onChange={(e) =>
               setFilters({ ...filters, startDate: e.target.value })
@@ -186,6 +211,7 @@ export default function ReviewPage() {
           <input
             aria-label="End date"
             type="date"
+            min={filters.startDate || undefined}
             value={filters.endDate}
             onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
             className="mt-1 w-full border rounded-md px-3 py-2 text-sm"
@@ -361,6 +387,15 @@ export default function ReviewPage() {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        isOpen={Boolean(confirmation)}
+        onClose={() => setConfirmation(null)}
+        onConfirm={confirmation?.onConfirm}
+        title={confirmation?.title}
+        message={confirmation?.message}
+        confirmLabel={confirmation?.confirmLabel}
+        tone={confirmation?.tone}
+      />
     </main>
   );
 }

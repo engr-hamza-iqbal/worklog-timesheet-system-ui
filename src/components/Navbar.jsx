@@ -6,6 +6,7 @@ import {
   LayoutDashboard, LogOut, Clock3, ClipboardCheck,
   ChevronDown, User,
 } from 'lucide-react';
+import ConfirmDialog from './ConfirmDialog.jsx';
 
 // ─── Tooltip wrapper ──────────────────────────────────────────────────────────
 export function Tooltip({ text, children, side = 'bottom' }) {
@@ -106,12 +107,16 @@ export default function Navbar() {
   const { user, isAuthenticated, logout, isAdmin, capabilities } = useAuth();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [logoutOpen, setLogoutOpen] = useState(false);
 
   const handleLogout = async () => {
+    setLogoutOpen(false);
     setMobileMenuOpen(false);
     await logout();
     navigate('/login');
   };
+
+  const requestLogout = () => setLogoutOpen(true);
 
   const hasClientProjectAccess = isAdmin || !!capabilities['MANAGE_CLIENTS_PROJECTS'];
   const hasUserAccess = isAdmin || !!capabilities['MANAGE_USERS'] || !!capabilities['ASSIGN_PROJECTS'];
@@ -207,7 +212,7 @@ export default function Navbar() {
             <ProfileDropdown
               user={user}
               isAdmin={isAdmin}
-              onLogout={handleLogout}
+              onLogout={requestLogout}
             />
           ) : (
             <div className="flex items-center gap-2">
@@ -298,7 +303,7 @@ export default function Navbar() {
                 {/* Footer actions */}
                 <div className="pt-2 mt-2 border-t border-slate-100 space-y-1">
                   <button
-                    onClick={handleLogout}
+                    onClick={requestLogout}
                     className="w-full flex items-center gap-2.5 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-md transition cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" />Sign out
@@ -327,6 +332,15 @@ export default function Navbar() {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        isOpen={logoutOpen}
+        onClose={() => setLogoutOpen(false)}
+        onConfirm={handleLogout}
+        title="Sign out"
+        message="Are you sure you want to sign out of Work Log?"
+        confirmLabel="Sign out"
+        tone="danger"
+      />
     </header>
   );
 }

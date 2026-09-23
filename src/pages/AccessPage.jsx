@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import Modal from '../components/Modal.jsx';
 import Badge from '../components/Badge.jsx';
 import EmptyState from '../components/EmptyState.jsx';
+import ConfirmDialog from '../components/ConfirmDialog.jsx';
 
 // ─── Capability metadata ───────────────────────────────────────────────────────
 
@@ -222,6 +223,7 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
   const [error, setError] = useState('');
   const [revoking, setRevoking] = useState(null);
   const [grantModal, setGrantModal] = useState(false);
+  const [revokeConfirmation, setRevokeConfirmation] = useState(null);
 
   const fetchGrants = useCallback(async () => {
     setLoading(true);
@@ -257,8 +259,13 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
   const isSelf = targetUser.id === currentUserId;
 
   // POST /api/access/grants/:grantId/revoke → { success, data: {...}, message }
-  const handleRevoke = async (grantId) => {
-    if (!window.confirm('Revoke this capability immediately?')) return;
+  const handleRevoke = (grantId) => {
+    setRevokeConfirmation(grantId);
+  };
+
+  const confirmRevoke = async () => {
+    const grantId = revokeConfirmation;
+    setRevokeConfirmation(null);
     setRevoking(grantId);
     setError('');
     try {
@@ -400,6 +407,15 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
           onCancel={() => setGrantModal(false)}
         />
       </Modal>
+      <ConfirmDialog
+        isOpen={Boolean(revokeConfirmation)}
+        onClose={() => setRevokeConfirmation(null)}
+        onConfirm={confirmRevoke}
+        title="Revoke capability"
+        message="Revoke this capability immediately? The user will lose this access right away."
+        confirmLabel="Revoke"
+        tone="danger"
+      />
     </div>
   );
 }

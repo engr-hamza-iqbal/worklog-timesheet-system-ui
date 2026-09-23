@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import Modal from '../components/Modal.jsx';
 import Badge from '../components/Badge.jsx';
 import EmptyState from '../components/EmptyState.jsx';
+import ConfirmDialog from '../components/ConfirmDialog.jsx';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -187,8 +188,15 @@ function UserAssignments({ user, canAssign, onAssigned }) {
   const [showAssignForm, setShowAssignForm] = useState(false);
   const [removingId, setRemovingId] = useState(null);
   const [error, setError] = useState('');
+  const [removeConfirmation, setRemoveConfirmation] = useState(null);
 
-  const handleRemove = async (projectId) => {
+  const handleRemove = (projectId) => {
+    setRemoveConfirmation(projectId);
+  };
+
+  const confirmRemove = async () => {
+    const projectId = removeConfirmation;
+    setRemoveConfirmation(null);
     setRemovingId(projectId);
     setError('');
     try {
@@ -264,6 +272,15 @@ function UserAssignments({ user, canAssign, onAssigned }) {
           />
         </div>
       )}
+      <ConfirmDialog
+        isOpen={Boolean(removeConfirmation)}
+        onClose={() => setRemoveConfirmation(null)}
+        onConfirm={confirmRemove}
+        title="Remove project assignment"
+        message="Remove this employee from the project? They will no longer be able to log time against it."
+        confirmLabel="Remove assignment"
+        tone="danger"
+      />
     </div>
   );
 }
@@ -283,6 +300,7 @@ export default function UsersPage() {
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState(null);
   const [modal, setModal] = useState(null);
+  const [statusConfirmation, setStatusConfirmation] = useState(null);
 
   // GET /api/users → { success, data: [...users], message }
   const fetchUsers = useCallback(async () => {
@@ -301,11 +319,17 @@ export default function UsersPage() {
   useEffect(() => { fetchUsers(); }, []);
 
   // PATCH /api/users/:id/status → { success, data: { id, name, email, accountType, isActive, updatedAt }, message }
-  const handleToggleStatus = async (user) => {
+  const handleToggleStatus = (user) => {
     if (user.id === currentUser?.id) {
       setError("You can't deactivate your own account.");
       return;
     }
+    setStatusConfirmation(user);
+  };
+
+  const confirmToggleStatus = async () => {
+    const user = statusConfirmation;
+    setStatusConfirmation(null);
     setError('');
     try {
       const res = await api.patch(`/api/users/${user.id}/status`, { isActive: !user.isActive });
@@ -492,6 +516,17 @@ export default function UsersPage() {
           onCancel={() => setModal(null)}
         />
       </Modal>
+      <ConfirmDialog
+        isOpen={Boolean(statusConfirmation)}
+        onClose={() => setStatusConfirmation(null)}
+        onConfirm={confirmToggleStatus}
+        title={statusConfirmation?.isActive ? 'Deactivate user' : 'Activate user'}
+        message={statusConfirmation?.isActive
+          ? `Deactivate ${statusConfirmation?.name}? They will no longer be able to sign in.`
+          : `Activate ${statusConfirmation?.name}? They will regain access to the application.`}
+        confirmLabel={statusConfirmation?.isActive ? 'Deactivate' : 'Activate'}
+        tone={statusConfirmation?.isActive ? 'danger' : 'primary'}
+      />
     </main>
   );
 }
