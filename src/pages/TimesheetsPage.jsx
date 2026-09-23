@@ -363,7 +363,7 @@ export default function TimesheetsPage() {
           this week
         </span>
       </div>
-      <div className="relative grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="relative grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {loading && days.length > 0 && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-50/60 backdrop-blur-[1px]">
             <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-md">

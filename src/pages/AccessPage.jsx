@@ -539,21 +539,33 @@ export default function AccessPage() {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchAccessData = async (initial = false) => {
+    if (initial) setLoading(true);
+    else setRefreshing(true);
+    try {
+      const [usersRes, projectsRes] = await Promise.all([
+        api.get('/api/users'),
+        api.get('/api/projects'),
+      ]);
+      const userList = Array.isArray(usersRes.data) ? usersRes.data : [];
+      const projList = Array.isArray(projectsRes.data) ? projectsRes.data : [];
+      setUsers(userList);
+      setProjects(projList);
+      setSelectedUserId((current) => current && userList.some((user) => user.id === current)
+        ? current
+        : userList[0]?.id || null);
+    } catch (err) {
+      // Keep the current data visible when a refresh fails.
+    } finally {
+      if (initial) setLoading(false);
+      else setRefreshing(false);
+    }
+  };
 
   useEffect(() => {
-    Promise.all([
-      api.get('/api/users'),
-      api.get('/api/projects'),
-    ])
-      .then(([usersRes, projectsRes]) => {
-        const userList = Array.isArray(usersRes.data) ? usersRes.data : [];
-        const projList = Array.isArray(projectsRes.data) ? projectsRes.data : [];
-        setUsers(userList);
-        setProjects(projList);
-        if (userList.length > 0) setSelectedUserId(userList[0].id);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    fetchAccessData(true);
   }, []);
 
   const filteredUsers = users.filter(
@@ -573,14 +585,21 @@ export default function AccessPage() {
   }
 
   return (
-    <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main className="relative flex-1 max-w-auto w-full mx-auto px-4 sm:px-6 lg:px-10 2xl:px-14 py-8">
       {/* Page header */}
-      <div className="pb-6 border-b border-slate-200">
-        <h1 className="text-xl font-semibold text-slate-900 tracking-tight">Access Management</h1>
-        <p className="text-xs text-slate-500 mt-1">
-          Grant, scope, and revoke individual capabilities per employee. Effects are immediate.
-        </p>
+      <div className="pb-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold text-slate-900 tracking-tight">Access Management</h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Grant, scope, and revoke individual capabilities per employee. Effects are immediate.
+          </p>
+        </div>
+        <button type="button" onClick={() => fetchAccessData(false)} disabled={refreshing} title="Refresh access data" className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer disabled:opacity-50">
+          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />Refresh
+        </button>
       </div>
+
+      {refreshing && <div className="absolute inset-x-0 top-20 z-10 flex justify-center pointer-events-none"><div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white/95 px-4 py-3 text-sm font-medium text-slate-700 shadow-md"><RefreshCw className="w-5 h-5 text-slate-500 animate-spin" />Refreshing access data</div></div>}
 
       <div className="mt-6 flex flex-col lg:flex-row gap-6">
         {/* ── Left: User list ── */}

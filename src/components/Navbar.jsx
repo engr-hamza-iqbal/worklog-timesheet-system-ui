@@ -139,7 +139,7 @@ export default function Navbar() {
 
   return (
     <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
-      <div className="max-w-auto mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-6">
+      <div className="max-w-auto mx-auto w-full px-4 sm:px-6 lg:px-10 2xl:px-14 h-14 flex items-center justify-between gap-6">
 
         {/* ── Brand ── */}
         <Link to="/" className="flex items-center gap-2 shrink-0">

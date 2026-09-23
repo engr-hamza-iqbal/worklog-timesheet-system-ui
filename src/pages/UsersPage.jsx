@@ -346,7 +346,7 @@ export default function UsersPage() {
       u.email.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (loading) {
+  if (loading && !users.length) {
     return (
       <main className="flex-1 flex items-center justify-center">
         <RefreshCw className="w-5 h-5 text-slate-400 animate-spin" />
@@ -355,7 +355,7 @@ export default function UsersPage() {
   }
 
   return (
-    <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main className="flex-1 max-w-auto w-full mx-auto px-4 sm:px-6 lg:px-10 2xl:px-14 py-8">
       {/* Page header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-6 border-b border-slate-200">
         <div>
@@ -363,12 +363,17 @@ export default function UsersPage() {
           <p className="text-xs text-slate-500 mt-1">Manage team members and their project assignments.</p>
         </div>
         {canManageUsers && (
-          <button
-            onClick={() => setModal('createUser')}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 rounded transition cursor-pointer self-start sm:self-auto"
-          >
-            <Plus className="w-3.5 h-3.5" />New User
-          </button>
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <button type="button" onClick={fetchUsers} disabled={loading} title="Refresh users" className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer disabled:opacity-50">
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />Refresh
+            </button>
+            <button
+              onClick={() => setModal('createUser')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 rounded transition cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />New User
+            </button>
+          </div>
         )}
       </div>
 
@@ -391,7 +396,8 @@ export default function UsersPage() {
       </div>
 
       {/* Users list */}
-      <div className="mt-4 bg-white rounded-lg border border-slate-200 overflow-hidden">
+      <div className="relative mt-4 bg-white rounded-lg border border-slate-200 overflow-hidden">
+        {loading && users.length > 0 && <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 backdrop-blur-[1px]"><div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-md"><RefreshCw className="w-5 h-5 text-slate-500 animate-spin" />Refreshing users</div></div>}
         {filtered.length === 0 ? (
           <EmptyState
             icon={<Users className="w-8 h-8" />}

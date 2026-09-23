@@ -36,7 +36,7 @@ export default function DashboardPage() {
     : SYSTEM_CAPABILITIES.filter((c) => !!capabilities[c.code]).length;
 
   return (
-    <main className="flex-1 max-w-auto w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main className="flex-1 max-w-auto w-full mx-auto px-4 sm:px-6 lg:px-10 2xl:px-14 py-8">
       {/* Page header */}
       <div className="pb-6 border-b border-slate-200">
         <h1 className="text-xl font-semibold text-slate-900 tracking-tight">
@@ -59,7 +59,7 @@ export default function DashboardPage() {
             <span className="text-xs font-medium text-slate-600 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">
               {grantedCount} / {SYSTEM_CAPABILITIES.length} Granted
             </span>
-            <Tooltip text="Refresh permissions from server" side="left">
+            <Tooltip text="Refresh permissions" side="left">
               <button
                 onClick={handleRefresh}
                 disabled={refreshing}
@@ -67,7 +67,7 @@ export default function DashboardPage() {
                 aria-label="Refresh permissions"
               >
                 <RefreshCw className={`w-3.5 h-3.5 text-slate-500 ${refreshing ? 'animate-spin text-slate-700' : ''}`} />
-                <span>{refreshing ? 'Refreshing...' : 'Refresh Permissions'}</span>
+                <span>{refreshing ? 'Refreshing...' : 'Refresh'}</span>
               </button>
             </Tooltip>
           </div>

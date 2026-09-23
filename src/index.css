@@ -5,6 +5,10 @@
     --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   }
 
+  html {
+    font-size: 110%;
+  }
+
   body {
     font-family: var(--font-sans);
     background-color: #f8fafc;
@@ -12,6 +16,16 @@
     min-height: 100vh;
     margin: 0;
     -webkit-font-smoothing: antialiased;
+  }
+
+  .text-xs {
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
+  }
+
+  .text-sm {
+    font-size: 0.9375rem;
+    line-height: 1.4rem;
   }
 
   button:not(:disabled),

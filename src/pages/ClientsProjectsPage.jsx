@@ -248,6 +248,7 @@ export default function ClientsProjectsPage() {
   const [editingClient, setEditingClient] = useState(null);
   const [rateProjectId, setRateProjectId] = useState(null);
   const [confirmation, setConfirmation] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   // GET /api/clients → { success, data: [ { id, name, isActive, _count: { projects } } ], message }
   const fetchClients = useCallback(async () => {
@@ -290,6 +291,16 @@ export default function ClientsProjectsPage() {
       fetchProjects(selectedClientId);
     }
   }, [selectedClientId]);
+
+  const refreshPage = async () => {
+    setRefreshing(true);
+    try {
+      await fetchClients();
+      if (selectedClientId) await fetchProjects(selectedClientId);
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   // Archive / restore a client
   const handleClientArchive = (client) => {
@@ -351,7 +362,7 @@ export default function ClientsProjectsPage() {
   }
 
   return (
-    <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main className="flex-1 max-w-[1680px] w-full mx-auto px-4 sm:px-6 lg:px-10 2xl:px-14 py-8">
       {/* Page header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-6 border-b border-slate-200">
         <div>
@@ -359,13 +370,17 @@ export default function ClientsProjectsPage() {
           <p className="text-xs text-slate-500 mt-1">Manage clients, projects, and billing rates.</p>
         </div>
         {canManage && (
-          <button
-            onClick={() => setModal('newClient')}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 rounded transition cursor-pointer self-start sm:self-auto"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            New Client
-          </button>
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <button type="button" onClick={refreshPage} disabled={refreshing} title="Refresh clients and projects" className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer disabled:opacity-50">
+              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />Refresh
+            </button>
+            <button
+              onClick={() => setModal('newClient')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 rounded transition cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />New Client
+            </button>
+          </div>
         )}
       </div>
 
@@ -466,8 +481,8 @@ export default function ClientsProjectsPage() {
 
               {/* Projects table */}
               {projectsLoading ? (
-                <div className="flex justify-center py-10">
-                  <RefreshCw className="w-4 h-4 text-slate-400 animate-spin" />
+                <div className="flex min-h-48 items-center justify-center gap-3 text-sm text-slate-500">
+                  <RefreshCw className="w-5 h-5 text-slate-400 animate-spin" />Loading projects...
                 </div>
               ) : projects.length === 0 ? (
                 <EmptyState
