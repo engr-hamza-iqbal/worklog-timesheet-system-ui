@@ -45,12 +45,12 @@ export default function TimeOffPage() {
   const [declineRequest, setDeclineRequest] = useState(null);
   const [declineComment, setDeclineComment] = useState("");
 
-  async function load() {
+  async function load(filterValues = filters) {
     try {
       setError("");
       setLoading(true);
       const query = Object.fromEntries(
-        Object.entries(filters).filter(([, value]) => value),
+        Object.entries(filterValues).filter(([, value]) => value),
       );
       const [typesResponse, requestsResponse] = await Promise.all([
         api.get("/api/time-off/types"),

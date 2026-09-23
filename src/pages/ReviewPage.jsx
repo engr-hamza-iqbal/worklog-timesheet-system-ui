@@ -76,6 +76,12 @@ export default function ReviewPage() {
     load(clearedFilters);
   }
 
+  function clearDates() {
+    const nextFilters = { ...filters, startDate: "", endDate: "" };
+    setFilters(nextFilters);
+    load(nextFilters);
+  }
+
   function applyFilters(event) {
     event.preventDefault();
     if (filters.startDate && filters.endDate && filters.endDate < filters.startDate) {
@@ -235,6 +241,14 @@ export default function ReviewPage() {
         >
           <X size={15} />
           Clear
+        </button>
+        <button
+          type="button"
+          onClick={clearDates}
+          className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-600 inline-flex justify-center items-center gap-2 hover:bg-slate-50"
+        >
+          <X size={15} />
+          Clear dates
         </button>
       </form>
       <div className="flex items-center gap-3 mb-3">
