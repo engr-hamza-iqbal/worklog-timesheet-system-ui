@@ -3,7 +3,7 @@ import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import {
   Menu, X, Shield, Users, FolderKanban,
-  LayoutDashboard, LogOut, Clock3, ClipboardCheck,
+  LayoutDashboard, LogOut, Clock3, ClipboardCheck, CalendarDays, BarChart3,
   ChevronDown, User,
 } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog.jsx';
@@ -122,6 +122,7 @@ export default function Navbar() {
   const hasUserAccess = isAdmin || !!capabilities['MANAGE_USERS'] || !!capabilities['ASSIGN_PROJECTS'];
   const hasAccessManagement = isAdmin;
   const hasReviewAccess = isAdmin || !!capabilities['REVIEW_TIME'];
+  const hasReportsAccess = isAdmin || !!capabilities['VIEW_REPORTS'];
 
   const navLinkClass = ({ isActive }) =>
     `px-3 py-1.5 text-sm font-medium rounded-md transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
@@ -168,11 +169,27 @@ export default function Navbar() {
               </NavLink>
             </Tooltip>
 
+            <Tooltip text="Request and review time away" side="bottom">
+              <NavLink to="/time-off" className={navLinkClass}>
+                <CalendarDays className="w-3.5 h-3.5 text-slate-400" />
+                Time Off
+              </NavLink>
+            </Tooltip>
+
             {hasReviewAccess && (
               <Tooltip text="Review submitted work" side="bottom">
                 <NavLink to="/review" className={navLinkClass}>
                   <ClipboardCheck className="w-3.5 h-3.5 text-slate-400" />
                   Review Queue
+                </NavLink>
+              </Tooltip>
+            )}
+
+            {hasReportsAccess && (
+              <Tooltip text="View approved hours and billing summaries" side="bottom">
+                <NavLink to="/reports" className={navLinkClass}>
+                  <BarChart3 className="w-3.5 h-3.5 text-slate-400" />
+                  Reports
                 </NavLink>
               </Tooltip>
             )}
@@ -276,9 +293,19 @@ export default function Navbar() {
                   <Clock3 className="w-4 h-4 text-slate-400" />Timesheet
                 </NavLink>
 
+                <NavLink to="/time-off" onClick={() => setMobileMenuOpen(false)} className={mobileNavLinkClass}>
+                  <CalendarDays className="w-4 h-4 text-slate-400" />Time Off
+                </NavLink>
+
                 {hasReviewAccess && (
                   <NavLink to="/review" onClick={() => setMobileMenuOpen(false)} className={mobileNavLinkClass}>
                     <ClipboardCheck className="w-4 h-4 text-slate-400" />Review Queue
+                  </NavLink>
+                )}
+
+                {hasReportsAccess && (
+                  <NavLink to="/reports" onClick={() => setMobileMenuOpen(false)} className={mobileNavLinkClass}>
+                    <BarChart3 className="w-4 h-4 text-slate-400" />Reports
                   </NavLink>
                 )}
 

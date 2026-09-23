@@ -410,6 +410,11 @@ export default function TimesheetsPage() {
                     {day.totalMinutes / 60} / 24h
                   </span>
                 </div>
+                {day.timeOff && (
+                  <div className="mb-3 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-700">
+                    Approved time off: {day.timeOff.type?.name}
+                  </div>
+                )}
                 <div className="space-y-3 min-h-20 max-h-[28rem] overflow-y-auto pr-1">
                   {day.entries.length ? (
                     day.entries.map((entry) => (
