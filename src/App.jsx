@@ -13,6 +13,7 @@ import TimesheetsPage from './pages/TimesheetsPage.jsx';
 import ReviewPage from './pages/ReviewPage.jsx';
 import TimeOffPage from './pages/TimeOffPage.jsx';
 import ReportsPage from './pages/ReportsPage.jsx';
+import AnalyticsPage from './pages/AnalyticsPage.jsx';
 import './App.css';
 
 function HomeRedirect() {
@@ -72,6 +73,7 @@ export default function App() {
             <Route path="/review" element={<ProtectedRoute><ReviewPage /></ProtectedRoute>} />
             <Route path="/time-off" element={<ProtectedRoute><TimeOffPage /></ProtectedRoute>} />
             <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
+            <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
 
             {/* Catch-all fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />

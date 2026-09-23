@@ -123,6 +123,7 @@ export default function Navbar() {
   const hasAccessManagement = isAdmin;
   const hasReviewAccess = isAdmin || !!capabilities['REVIEW_TIME'];
   const hasReportsAccess = isAdmin || !!capabilities['VIEW_REPORTS'];
+  const hasAnalyticsAccess = isAdmin || !!capabilities['VIEW_ANALYTICS'];
 
   const navLinkClass = ({ isActive }) =>
     `px-3 py-1.5 text-sm font-medium rounded-md transition flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
@@ -190,6 +191,15 @@ export default function Navbar() {
                 <NavLink to="/reports" className={navLinkClass}>
                   <BarChart3 className="w-3.5 h-3.5 text-slate-400" />
                   Reports
+                </NavLink>
+              </Tooltip>
+            )}
+
+            {hasAnalyticsAccess && (
+              <Tooltip text="View approved-hours trends" side="bottom">
+                <NavLink to="/analytics" className={navLinkClass}>
+                  <BarChart3 className="w-3.5 h-3.5 text-slate-400" />
+                  Analytics
                 </NavLink>
               </Tooltip>
             )}
@@ -306,6 +316,12 @@ export default function Navbar() {
                 {hasReportsAccess && (
                   <NavLink to="/reports" onClick={() => setMobileMenuOpen(false)} className={mobileNavLinkClass}>
                     <BarChart3 className="w-4 h-4 text-slate-400" />Reports
+                  </NavLink>
+                )}
+
+                {hasAnalyticsAccess && (
+                  <NavLink to="/analytics" onClick={() => setMobileMenuOpen(false)} className={mobileNavLinkClass}>
+                    <BarChart3 className="w-4 h-4 text-slate-400" />Analytics
                   </NavLink>
                 )}
 
