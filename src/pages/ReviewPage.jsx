@@ -9,14 +9,10 @@ import {
   Loader2,
 } from "lucide-react";
 import api from "../api/client.js";
-import Badge from "../components/Badge.jsx";
-import { useAuth } from "../context/AuthContext.jsx";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
 
 export default function ReviewPage() {
-  const { isAdmin } = useAuth();
   const [entries, setEntries] = useState([]);
-  const [scope, setScope] = useState(null);
   const [selected, setSelected] = useState([]);
   const [filters, setFilters] = useState({
     userQuery: "",
@@ -152,7 +148,10 @@ export default function ReviewPage() {
     <main className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-8 py-6">
       <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-semibold">Review queue</h1>
+          <h1 className="text-xl font-semibold text-slate-900">Submitted Entries</h1>
+          <p className="text-xs text-slate-500 mt-1">
+            Review and approve employee timesheet entries awaiting verification.
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -179,24 +178,30 @@ export default function ReviewPage() {
       )}
       <form
         onSubmit={applyFilters}
-        className="bg-white border border-slate-200 rounded-lg p-4 grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-[1.5fr_1.2fr_1fr_1fr_auto_auto] mb-5 items-end shadow-xs"
+        className="bg-white border border-slate-200 rounded-lg p-4 mb-5 flex flex-wrap items-end gap-3 shadow-xs"
       >
-        <input
-          placeholder="Employee name or email"
-          value={filters.userQuery}
-          onChange={(e) => setFilters({ ...filters, userQuery: e.target.value })}
-          className="border rounded-md px-3 py-2 text-sm"
-        />
-        <input
-          placeholder="Project name"
-          value={filters.projectQuery}
-          onChange={(e) =>
-            setFilters({ ...filters, projectQuery: e.target.value })
-          }
-          className="border rounded-md px-3 py-2 text-sm"
-        />
-        <label className="text-xs font-medium text-slate-600">
-          Start date
+        <div className="flex-1 min-w-[180px]">
+          <label className="block text-xs font-medium text-slate-600 mb-1">Employee</label>
+          <input
+            placeholder="Name or email..."
+            value={filters.userQuery}
+            onChange={(e) => setFilters({ ...filters, userQuery: e.target.value })}
+            className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
+          />
+        </div>
+        <div className="flex-1 min-w-[160px]">
+          <label className="block text-xs font-medium text-slate-600 mb-1">Project</label>
+          <input
+            placeholder="Project name..."
+            value={filters.projectQuery}
+            onChange={(e) =>
+              setFilters({ ...filters, projectQuery: e.target.value })
+            }
+            className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
+          />
+        </div>
+        <div className="w-full sm:w-auto sm:min-w-[140px]">
+          <label className="block text-xs font-medium text-slate-600 mb-1">Start date</label>
           <input
             aria-label="Start date"
             type="date"
@@ -205,36 +210,38 @@ export default function ReviewPage() {
             onChange={(e) =>
               setFilters({ ...filters, startDate: e.target.value })
             }
-            className="mt-1 w-full border rounded-md px-3 py-2 text-sm"
+            className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
           />
-        </label>
-        <label className="text-xs font-medium text-slate-600">
-          End date
+        </div>
+        <div className="w-full sm:w-auto sm:min-w-[140px]">
+          <label className="block text-xs font-medium text-slate-600 mb-1">End date</label>
           <input
             aria-label="End date"
             type="date"
             min={filters.startDate || undefined}
             value={filters.endDate}
             onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-            className="mt-1 w-full border rounded-md px-3 py-2 text-sm"
+            className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
           />
-        </label>
-        <button
-          className="rounded-md bg-slate-900 text-white px-3 py-2 text-sm inline-flex justify-center items-center gap-2 disabled:opacity-50"
-          disabled={loading}
-        >
-          <Filter size={15} />
-          {loading ? "Loading" : "Filter"}
-        </button>
-        <button
-          type="button"
-          onClick={clearFilters}
-          className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-600 inline-flex justify-center items-center gap-2 hover:bg-slate-50"
-        >
-          <X size={15} />
-          Clear
-        </button>
-
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="submit"
+            disabled={loading}
+            className="rounded-md bg-slate-900 text-white px-3.5 py-2 text-sm font-medium inline-flex items-center gap-2 hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer"
+          >
+            <Filter size={15} />
+            {loading ? "Loading" : "Filter"}
+          </button>
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="rounded-md border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-600 inline-flex items-center gap-1.5 hover:bg-slate-50 transition cursor-pointer"
+          >
+            <X size={15} />
+            Clear
+          </button>
+        </div>
       </form>
       <div className="flex items-center gap-3 mb-3">
         <button
@@ -313,8 +320,8 @@ export default function ReviewPage() {
                   <td className="p-3 whitespace-nowrap">{entry.workDate}</td>
                   <td className="p-3">{entry.project?.name}</td>
                   <td className="p-3">{entry.durationHours}</td>
-                  <td className="p-3 min-w-52">{entry.description}</td>
-                  <td className="p-3">
+                  <td className="p-3 max-w-sm">{entry.description}</td>
+                  <td className="p-3 whitespace-nowrap">
                     <div className="flex gap-2">
                       <button
                         title="Approve"

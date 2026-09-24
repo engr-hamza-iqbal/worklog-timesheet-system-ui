@@ -6,7 +6,6 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   ChevronDown,
-  User,
   LogOut,
   Calendar,
 } from 'lucide-react';
@@ -72,24 +71,13 @@ function HeaderProfileDropdown({ user, isAdmin, onLogout }) {
             </div>
           </div>
 
-          <div className="py-1.5">
-            <Link
-              to="/dashboard"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 transition cursor-pointer"
-            >
-              <User className="w-3.5 h-3.5 text-slate-400" />
-              My Overview
-            </Link>
-          </div>
-
-          <div className="border-t border-slate-100 py-1.5">
+          <div className="p-1.5">
             <button
               onClick={() => {
                 setOpen(false);
                 onLogout();
               }}
-              className="w-full flex items-center gap-2.5 px-4 py-2 text-xs font-medium text-red-600 hover:bg-red-50 transition cursor-pointer"
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
               Sign out
@@ -126,7 +114,7 @@ export default function AppHeader({
 
   return (
     <header className="sticky top-0 z-20 h-14 bg-white/90 backdrop-blur-md border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between gap-4">
-      {/* ── Left section: Toggles, Brand & Breadcrumbs ── */}
+      {/* ── Left section: Toggles & Brand ── */}
       <div className="flex items-center gap-3 min-w-0">
         {showAuthenticatedUI ? (
           <>
@@ -139,7 +127,7 @@ export default function AppHeader({
               <Menu className="w-5 h-5" />
             </button>
 
-            {/* Desktop collapse / expand toggle */}
+            {/* Desktop single collapse / expand toggle */}
             <Tooltip
               text={sidebarOpen ? 'Close sidebar (Ctrl+B)' : 'Expand sidebar (Ctrl+B)'}
               side="bottom"
@@ -157,37 +145,27 @@ export default function AppHeader({
               </button>
             </Tooltip>
 
-            {/* When sidebar is closed, show brand */}
+            {/* When sidebar is closed, show brand and breadcrumbs */}
             {!sidebarOpen && (
-              <Link
-                to="/dashboard"
-                className="hidden md:flex items-center gap-2 mr-1 group cursor-pointer"
-              >
-                <div className="w-7 h-7 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold text-xs shadow-xs group-hover:bg-slate-800 transition">
-                  W
-                </div>
-                <span className="text-sm font-bold text-slate-900 tracking-tight">Work Log</span>
-              </Link>
-            )}
+              <>
+                <Link
+                  to="/dashboard"
+                  className="hidden md:flex items-center gap-2 mr-1 group cursor-pointer"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold text-xs shadow-xs group-hover:bg-slate-800 transition">
+                    W
+                  </div>
+                  <span className="text-sm font-bold text-slate-900 tracking-tight">Work Log</span>
+                </Link>
 
-            {/* Breadcrumb separator & Title */}
-            <div className="hidden sm:flex items-center gap-2 text-xs font-medium text-slate-400">
-              <span>/</span>
-              {currentRouteInfo.category && (
-                <>
-                  <span className="text-slate-500">{currentRouteInfo.category}</span>
+                <div className="hidden sm:flex items-center gap-2 text-xs font-medium text-slate-400">
                   <span>/</span>
-                </>
-              )}
-              <span className="text-slate-900 font-semibold truncate max-w-[200px] lg:max-w-none">
-                {currentRouteInfo.title}
-              </span>
-            </div>
-
-            {/* Mobile-only current title */}
-            <div className="sm:hidden text-sm font-bold text-slate-900 truncate">
-              {currentRouteInfo.title}
-            </div>
+                  <span className="text-slate-900 font-semibold truncate max-w-[200px] lg:max-w-none">
+                    {currentRouteInfo.title}
+                  </span>
+                </div>
+              </>
+            )}
           </>
         ) : (
           /* Guest / Auth Brand */
@@ -210,7 +188,7 @@ export default function AppHeader({
               <span>{todayFormatted}</span>
             </div>
 
-            {/* Profile Dropdown */}
+            {/* Profile Dropdown (Overview link removed to eliminate repetition) */}
             <HeaderProfileDropdown
               user={user}
               isAdmin={isAdmin}
