@@ -219,7 +219,7 @@ export default function TimesheetsPage() {
   const dayMap = Object.fromEntries(days.map((day) => [day.date, day]));
 
   return (
-    <main className="max-w-auto mx-auto w-full px-4 sm:px-6 py-8">
+    <main className="max-w-[1600px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -275,7 +275,7 @@ export default function TimesheetsPage() {
 
       <form
         onSubmit={saveEntry}
-        className="bg-white border border-slate-200 rounded-lg p-4 mb-6 grid gap-3 md:grid-cols-[1fr_1fr_120px_2fr_auto] items-end shadow-sm"
+        className="bg-white border border-slate-200 rounded-lg p-4 mb-6 grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[1.5fr_1fr_110px_2fr_auto] items-end shadow-xs"
       >
         <label className="text-xs font-medium text-slate-600">
           Project
@@ -363,7 +363,7 @@ export default function TimesheetsPage() {
           this week
         </span>
       </div>
-      <div className="relative grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div className="relative grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
         {loading && days.length > 0 && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-50/60 backdrop-blur-[1px]">
             <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-md">

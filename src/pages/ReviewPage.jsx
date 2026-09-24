@@ -149,12 +149,9 @@ export default function ReviewPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-auto px-4 py-8 sm:px-6 lg:px-10 2xl:px-14">
+    <main className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-8 py-6">
       <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Workflow
-          </p>
           <h1 className="text-2xl font-semibold">Review queue</h1>
         </div>
         <div className="flex items-center gap-3">
@@ -182,7 +179,7 @@ export default function ReviewPage() {
       )}
       <form
         onSubmit={applyFilters}
-        className="bg-white border border-slate-200 rounded-lg p-4 grid gap-4 md:grid-cols-2 lg:grid-cols-[minmax(220px,1.4fr)_minmax(180px,1fr)_minmax(150px,.85fr)_minmax(150px,.85fr)_auto_auto] mb-5 items-end"
+        className="bg-white border border-slate-200 rounded-lg p-4 grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-[1.5fr_1.2fr_1fr_1fr_auto_auto] mb-5 items-end shadow-xs"
       >
         <input
           placeholder="Employee name or email"

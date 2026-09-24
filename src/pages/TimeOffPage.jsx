@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import {
   CalendarDays,
   Check,
-  Plus,
   RefreshCw,
   RotateCcw,
   Send,
@@ -161,7 +160,7 @@ export default function TimeOffPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-[1680px] px-4 py-8 sm:px-6 lg:px-10 2xl:px-14">
+    <main className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-8 py-6">
       <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
@@ -194,7 +193,7 @@ export default function TimeOffPage() {
       )}
       <form
         onSubmit={createRequest}
-        className="mb-6 grid gap-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-2 lg:grid-cols-[1.2fr_1fr_1fr_2fr_auto] lg:items-end"
+        className="mb-6 grid gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-xs grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[1.2fr_1fr_1fr_2fr_auto] items-end"
       >
         <label className="text-xs font-medium text-slate-600">
           Type
@@ -322,7 +321,7 @@ export default function TimeOffPage() {
             No time-off requests match these filters.
           </div>
         ) : (
-          <table className="w-full min-w-[760px] text-left text-sm">
+          <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase text-slate-500">
               <tr>
                 <th className="p-4">Employee</th>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BarChart3, RefreshCw, X, Send, AlertCircle, CheckCircle2, UserX } from 'lucide-react';
+import { BarChart3, RefreshCw, X, Send, AlertCircle, CheckCircle2 } from 'lucide-react';
 import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 
@@ -179,7 +179,7 @@ export default function ReportsPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-[1680px] px-4 py-8 sm:px-6 lg:px-10 2xl:px-14">
+    <main className="mx-auto w-full max-w-[1600px] px-4 sm:px-6 lg:px-8 py-6">
       {/* Page Header */}
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>

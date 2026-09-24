@@ -362,7 +362,7 @@ export default function ClientsProjectsPage() {
   }
 
   return (
-    <main className="flex-1 max-w-[1680px] w-full mx-auto px-4 sm:px-6 lg:px-10 2xl:px-14 py-8">
+    <main className="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Page header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-6 border-b border-slate-200">
         <div>
@@ -390,7 +390,7 @@ export default function ClientsProjectsPage() {
         </div>
       )}
 
-      <div className="mt-6 flex flex-col md:flex-row gap-6">
+      <div className="mt-6 flex flex-col lg:flex-row gap-6">
         {/* ── Left: Client list ── */}
         <div className="w-full md:w-60 lg:w-64 shrink-0">
           <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">

@@ -36,7 +36,7 @@ export default function DashboardPage() {
     : SYSTEM_CAPABILITIES.filter((c) => !!capabilities[c.code]).length;
 
   return (
-    <main className="flex-1 max-w-auto w-full mx-auto px-4 sm:px-6 lg:px-10 2xl:px-14 py-8">
+    <main className="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
       {/* Page header */}
       <div className="pb-6 border-b border-slate-200">
         <h1 className="text-xl font-semibold text-slate-900 tracking-tight">
