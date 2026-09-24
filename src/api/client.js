@@ -53,6 +53,15 @@ api.interceptors.response.use(
         localStorage.removeItem('token');
         // Dispatch custom auth-expired event so AuthContext can update state
         window.dispatchEvent(new Event('auth:unauthorized'));
+        window.dispatchEvent(
+          new CustomEvent('app:notify', {
+            detail: {
+              type: 'warn',
+              title: 'Session Expired',
+              message: 'Your session has expired. Please sign in again.',
+            },
+          })
+        );
       }
     }
 

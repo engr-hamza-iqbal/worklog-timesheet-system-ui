@@ -12,6 +12,7 @@ import Badge from "../components/Badge.jsx";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import Modal from "../components/Modal.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
+import { useNotification } from "../context/NotificationContext.jsx";
 
 const statusVariant = {
   PENDING: "pending",
@@ -22,6 +23,7 @@ const statusVariant = {
 
 export default function TimeOffPage() {
   const { user, isAdmin, capabilities } = useAuth();
+  const { notify } = useNotification();
   const canDecide = isAdmin || !!capabilities.DECIDE_TIME_OFF;
   const [types, setTypes] = useState([]);
   const [requests, setRequests] = useState([]);
@@ -94,12 +96,15 @@ export default function TimeOffPage() {
     event.preventDefault();
     if (form.endDate < form.startDate) {
       setError("End date cannot be earlier than start date.");
+      notify.warn("End date cannot be earlier than start date.");
       return;
     }
     setSaving(true);
     try {
       await api.post("/api/time-off/requests", form);
-      setNotice("Time-off request submitted.");
+      const msg = "Time-off request submitted.";
+      setNotice(msg);
+      notify.success(msg);
       setForm((current) => ({
         ...current,
         startDate: "",
@@ -109,6 +114,7 @@ export default function TimeOffPage() {
       await load();
     } catch (err) {
       setError(err.message);
+      notify.error(err.message);
     } finally {
       setSaving(false);
     }
@@ -118,10 +124,13 @@ export default function TimeOffPage() {
     setConfirmation(null);
     try {
       await api.post(`/api/time-off/requests/${id}/cancel`);
-      setNotice("Time-off request cancelled.");
+      const msg = "Time-off request cancelled.";
+      setNotice(msg);
+      notify.success(msg);
       await load();
     } catch (err) {
       setError(err.message);
+      notify.error(err.message);
     }
   }
 
@@ -150,10 +159,13 @@ export default function TimeOffPage() {
             decision,
             comment,
           });
-          setNotice(`Time-off request ${decision.toLowerCase()}.`);
+          const msg = `Time-off request ${decision.toLowerCase()}.`;
+          setNotice(msg);
+          notify.success(msg);
           await load();
         } catch (err) {
           setError(err.message);
+          notify.error(err.message);
         }
       },
     });

@@ -13,6 +13,7 @@ import {
 import api from "../api/client.js";
 import Badge from "../components/Badge.jsx";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
+import { useNotification } from "../context/NotificationContext.jsx";
 
 function dateOnly(date) {
   return new Date(
@@ -45,6 +46,7 @@ const statusVariant = {
 };
 
 export default function TimesheetsPage() {
+  const { notify } = useNotification();
   const [weekStart, setWeekStart] = useState(() => mondayOf(new Date()));
   const [days, setDays] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -165,7 +167,9 @@ export default function TimesheetsPage() {
       setNotice("");
       if (entryId) await api.put(`/api/timesheets/${entryId}`, payload);
       else await api.post("/api/timesheets", payload);
-      setNotice(entryId ? "Entry updated." : "Entry saved as draft.");
+      const msg = entryId ? "Entry updated." : "Entry saved as draft.";
+      setNotice(msg);
+      notify.success(msg);
       resetForm(form.workDate);
       sessionStorage.removeItem(
         `timesheet:${dateRange.startDate}:${dateRange.endDate}`,
@@ -173,6 +177,7 @@ export default function TimesheetsPage() {
       await load();
     } catch (err) {
       setError(err.message);
+      notify.error(err.message);
     }
   }
 
@@ -190,9 +195,11 @@ export default function TimesheetsPage() {
     setConfirmation(null);
     try {
       await api.delete(`/api/timesheets/${id}`);
+      notify.success("Draft entry deleted.");
       await load();
     } catch (err) {
       setError(err.message);
+      notify.error(err.message);
     }
   }
 
@@ -209,10 +216,13 @@ export default function TimesheetsPage() {
     setConfirmation(null);
     try {
       await api.post("/api/timesheets/submit", { entryIds });
-      setNotice("Entries submitted for review.");
+      const msg = `${entryIds.length} entr${entryIds.length === 1 ? "y" : "ies"} submitted for review.`;
+      setNotice(msg);
+      notify.success(msg);
       await load();
     } catch (err) {
       setError(err.message);
+      notify.error(err.message);
     }
   }
 

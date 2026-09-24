@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
+import { NotificationProvider } from './context/NotificationContext.jsx';
 import AppLayout from './components/AppLayout.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import LoginPage from './pages/LoginPage.jsx';
@@ -27,7 +28,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppLayout>
+        <NotificationProvider>
+          <AppLayout>
           <Routes>
             <Route path="/" element={<HomeRedirect />} />
             <Route path="/login" element={<LoginPage />} />
@@ -80,7 +82,8 @@ export default function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AppLayout>
-      </AuthProvider>
+      </NotificationProvider>
+    </AuthProvider>
     </BrowserRouter>
   );
 }
