@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import {
   Menu, X, Shield, Users, FolderKanban,
   LayoutDashboard, LogOut, Clock3, ClipboardCheck, CalendarDays, BarChart3,
-  ChevronDown, User,
+  ChevronDown, User, Mail,
 } from 'lucide-react';
 import ConfirmDialog from './ConfirmDialog.jsx';
 
@@ -230,6 +230,15 @@ export default function Navbar() {
                 </NavLink>
               </Tooltip>
             )}
+
+            {isAdmin && (
+              <Tooltip text="View notification audit log" side="bottom">
+                <NavLink to="/emails" className={navLinkClass}>
+                  <Mail className="w-3.5 h-3.5 text-slate-400" />
+                  Email Log
+                </NavLink>
+              </Tooltip>
+            )}
           </nav>
         )}
 
@@ -340,6 +349,12 @@ export default function Navbar() {
                 {hasAccessManagement && (
                   <NavLink to="/access" onClick={() => setMobileMenuOpen(false)} className={mobileNavLinkClass}>
                     <Shield className="w-4 h-4 text-slate-400" />Access Management
+                  </NavLink>
+                )}
+
+                {isAdmin && (
+                  <NavLink to="/emails" onClick={() => setMobileMenuOpen(false)} className={mobileNavLinkClass}>
+                    <Mail className="w-4 h-4 text-slate-400" />Email Log
                   </NavLink>
                 )}
 
