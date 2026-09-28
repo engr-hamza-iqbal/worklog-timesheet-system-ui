@@ -184,7 +184,7 @@ export default function Sidebar({
                     {({ isActive }) => (
                       <>
                         <Users className={iconClass(isActive)} />
-                        <span className="truncate">Users &amp; Team</span>
+                        <span className="truncate">Users &amp; Assignments</span>
                       </>
                     )}
                   </NavLink>
@@ -195,7 +195,7 @@ export default function Sidebar({
                     {({ isActive }) => (
                       <>
                         <Shield className={iconClass(isActive)} />
-                        <span className="truncate">Access Control</span>
+                        <span className="truncate">Access Management</span>
                       </>
                     )}
                   </NavLink>

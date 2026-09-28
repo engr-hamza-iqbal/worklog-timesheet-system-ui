@@ -21,8 +21,9 @@ const ROUTE_TITLES = {
   '/analytics': { title: 'Analytics Dashboard', category: 'Insights' },
   '/clients': { title: 'Clients & Projects', category: 'Administration' },
   '/users': { title: 'Users & Assignments', category: 'Administration' },
-  '/access': { title: 'Access Control', category: 'Administration' },
+  '/access': { title: 'Access Management', category: 'Administration' },
   '/emails': { title: 'Email Audit Log', category: 'Administration' },
+  '/unauthorized': { title: 'Not Authorised', category: 'Security' },
 };
 
 function HeaderProfileDropdown({ user, isAdmin, onLogout }) {

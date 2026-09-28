@@ -7,15 +7,27 @@ import {
   X,
   Loader2,
   Search,
+  CalendarDays,
+  Clock,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
 } from "lucide-react";
 import api from "../api/client.js";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
+import Modal from "../components/Modal.jsx";
+import Badge from "../components/Badge.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 import { useNotification } from "../context/NotificationContext.jsx";
 
 export default function ReviewPage() {
   const { notify } = useNotification();
+  const { isAdmin, capabilities } = useAuth();
+  const canDecideTimeOff = isAdmin || !!capabilities['DECIDE_TIME_OFF'];
 
+  const [activeTab, setActiveTab] = useState('timesheets');
   const [allEntries, setAllEntries] = useState([]);
+  const [timeOffRequests, setTimeOffRequests] = useState([]);
   const [scope, setScope] = useState(null);
   const [selected, setSelected] = useState([]);
   const [filters, setFilters] = useState({
@@ -26,11 +38,13 @@ export default function ReviewPage() {
   });
   const [comment, setComment] = useState("");
   const [returningId, setReturningId] = useState(null);
+  const [declineTarget, setDeclineTarget] = useState(null);
+  const [declineReason, setDeclineReason] = useState("");
   const [loading, setLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [confirmation, setConfirmation] = useState(null);
 
-  // Load latest entries from DB
+  // Load latest entries and pending time off requests from DB
   async function load(isManualRefresh = false) {
     const cacheKey = "review-queue:all";
     if (!isManualRefresh) {
@@ -48,15 +62,28 @@ export default function ReviewPage() {
 
     try {
       setLoading(true);
-      const response = await api.get("/api/reviews");
-      const fetchedEntries = response.data?.entries || [];
-      setAllEntries(fetchedEntries);
-      setScope(response.data?.scope || null);
-      setSelected([]);
-      sessionStorage.setItem(cacheKey, JSON.stringify(response.data));
+      const [entriesRes, timeOffRes] = await Promise.allSettled([
+        api.get("/api/reviews"),
+        canDecideTimeOff
+          ? api.get("/api/time-off/requests", { params: { status: "PENDING" } })
+          : Promise.resolve({ data: [] }),
+      ]);
+
+      if (entriesRes.status === "fulfilled") {
+        const fetchedEntries = entriesRes.value.data?.entries || [];
+        setAllEntries(fetchedEntries);
+        setScope(entriesRes.value.data?.scope || null);
+        setSelected([]);
+        sessionStorage.setItem(cacheKey, JSON.stringify(entriesRes.value.data));
+      }
+
+      if (timeOffRes.status === "fulfilled") {
+        const toData = Array.isArray(timeOffRes.value.data) ? timeOffRes.value.data : [];
+        setTimeOffRequests(toData);
+      }
 
       if (isManualRefresh) {
-        notify.info("Review queue refreshed with latest entries.");
+        notify.info("Review queue refreshed with latest submissions.");
       }
     } catch (err) {
       if (err.status !== 401 && err.code !== 'ACCOUNT_DEACTIVATED') {
@@ -200,14 +227,63 @@ export default function ReviewPage() {
     }
   }
 
+  // ─── Time Off Review Actions ────────────────────────────────────────────────
+  function handleApproveTimeOff(item) {
+    setConfirmation({
+      title: "Approve time off request",
+      message: `Approve time off for ${item.user?.name || "employee"} from ${item.startDate} to ${item.endDate}?`,
+      confirmLabel: "Approve request",
+      onConfirm: () => confirmApproveTimeOff(item.id),
+    });
+  }
+
+  async function confirmApproveTimeOff(id) {
+    try {
+      setIsProcessing("Approving time off request...");
+      await api.post(`/api/time-off/requests/${id}/decide`, { decision: "APPROVED" });
+      notify.success("Time off request approved.");
+      setConfirmation(null);
+      await load();
+    } catch (err) {
+      notify.error(err.message || "Failed to approve time off request.");
+      setConfirmation(null);
+    } finally {
+      setIsProcessing(false);
+    }
+  }
+
+  function handleOpenDeclineTimeOff(item) {
+    setDeclineTarget(item);
+    setDeclineReason("");
+  }
+
+  async function confirmDeclineTimeOff() {
+    if (!declineTarget || declineReason.trim().length < 3) return;
+    try {
+      setIsProcessing("Declining time off request...");
+      await api.post(`/api/time-off/requests/${declineTarget.id}/decide`, {
+        decision: "DECLINED",
+        comment: declineReason.trim(),
+      });
+      notify.success("Time off request declined.");
+      setDeclineTarget(null);
+      setDeclineReason("");
+      await load();
+    } catch (err) {
+      notify.error(err.message || "Failed to decline time off request.");
+    } finally {
+      setIsProcessing(false);
+    }
+  }
+
   return (
     <main className="mx-auto w-full max-w-auto px-4 py-6">
       {/* Page Header */}
-      <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
+      <div className="flex flex-wrap items-end justify-between gap-4 mb-5">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Submitted Entries</h1>
+          <h1 className="text-xl font-semibold text-slate-900">Review Queue</h1>
           <p className="text-xs text-slate-500 mt-1">
-            Review and approve employee timesheet entries awaiting verification.
+            Review submitted timesheets and decide time off requests within your authorized scope.
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -216,7 +292,7 @@ export default function ReviewPage() {
             onClick={() => load(true)}
             disabled={loading}
             className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50 transition cursor-pointer shadow-xs"
-            title="Refresh latest submitted entries from database"
+            title="Refresh review queue"
           >
             <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
             Refresh
@@ -224,8 +300,48 @@ export default function ReviewPage() {
         </div>
       </div>
 
-      {/* Auto-filtering Toolbar (No Filter submit button; auto-filters in-memory without DB roundtrips) */}
-      <div className="bg-white border border-slate-200 rounded-lg p-4 mb-5 shadow-xs">
+      {/* Queue Tabs */}
+      <div className="flex border-b border-slate-200 mb-5 gap-2">
+        <button
+          onClick={() => setActiveTab('timesheets')}
+          className={`pb-3 px-3 text-sm font-medium border-b-2 transition cursor-pointer flex items-center gap-2 ${
+            activeTab === 'timesheets'
+              ? 'border-slate-900 text-slate-900 font-semibold'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <Clock size={16} />
+          <span>Timesheet Submissions</span>
+          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+            {allEntries.length}
+          </span>
+        </button>
+
+        {canDecideTimeOff && (
+          <button
+            onClick={() => setActiveTab('timeoff')}
+            className={`pb-3 px-3 text-sm font-medium border-b-2 transition cursor-pointer flex items-center gap-2 ${
+              activeTab === 'timeoff'
+                ? 'border-slate-900 text-slate-900 font-semibold'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <CalendarDays size={16} />
+            <span>Time Off Requests</span>
+            <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+              timeOffRequests.length > 0 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-700'
+            }`}>
+              {timeOffRequests.length}
+            </span>
+          </button>
+        )}
+      </div>
+
+      {/* Active Tab Content */}
+      {activeTab === 'timesheets' ? (
+        <>
+          {/* Auto-filtering Toolbar (No Filter submit button; auto-filters in-memory without DB roundtrips) */}
+          <div className="bg-white border border-slate-200 rounded-lg p-4 mb-5 shadow-xs">
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex-1 min-w-[200px]">
             <label className="block text-xs font-medium text-slate-600 mb-1">
@@ -440,6 +556,78 @@ export default function ReviewPage() {
           </div>
         )}
       </div>
+      </>
+      ) : (
+        /* Time Off Requests Queue */
+        <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-xs">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
+                <th className="py-3 px-4">Employee</th>
+                <th className="py-3 px-4">Leave Type</th>
+                <th className="py-3 px-4">Dates</th>
+                <th className="py-3 px-4">Days</th>
+                <th className="py-3 px-4">Reason</th>
+                <th className="py-3 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {timeOffRequests.length ? (
+                timeOffRequests.map((reqItem) => (
+                  <tr key={reqItem.id} className="hover:bg-slate-50/80 transition">
+                    <td className="py-3 px-4">
+                      <div className="font-semibold text-slate-900">{reqItem.user?.name}</div>
+                      <div className="text-[11px] text-slate-500">{reqItem.user?.email}</div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <span className="inline-block px-2 py-0.5 rounded font-medium text-[11px] bg-indigo-50 text-indigo-700 border border-indigo-100">
+                        {reqItem.type?.name || 'Leave'}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-slate-700 font-medium">
+                      {reqItem.startDate} &rarr; {reqItem.endDate}
+                    </td>
+                    <td className="py-3 px-4 text-slate-600">
+                      {reqItem.days?.length || 1} day{(reqItem.days?.length || 1) > 1 ? 's' : ''}
+                    </td>
+                    <td className="py-3 px-4 text-slate-600 max-w-xs truncate" title={reqItem.reason}>
+                      {reqItem.reason || '—'}
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleApproveTimeOff(reqItem)}
+                          disabled={Boolean(isProcessing)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition cursor-pointer disabled:opacity-50"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                          <span>Approve</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDeclineTimeOff(reqItem)}
+                          disabled={Boolean(isProcessing)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-semibold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition cursor-pointer disabled:opacity-50"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                          <span>Decline</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="6" className="p-10 text-center text-sm text-slate-500">
+                    No pending time off requests awaiting decision.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Return Entry Comment Modal */}
       {returningId && (
@@ -479,6 +667,65 @@ export default function ReviewPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Decline Time Off Request Modal */}
+      {declineTarget && (
+        <Modal
+          isOpen={Boolean(declineTarget)}
+          onClose={() => {
+            if (!isProcessing) {
+              setDeclineTarget(null);
+              setDeclineReason("");
+            }
+          }}
+          title={`Decline Time Off — ${declineTarget.user?.name || "Employee"}`}
+        >
+          <div className="space-y-4">
+            <p className="text-xs text-slate-600">
+              When declining a time off request, an explanatory reason is mandatory.
+            </p>
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded text-xs text-slate-700">
+              <span className="font-semibold">Request:</span> {declineTarget.type?.name || 'Leave'} ({declineTarget.startDate} to {declineTarget.endDate})
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                Reason for declining (mandatory)
+              </label>
+              <textarea
+                autoFocus
+                required
+                rows={3}
+                value={declineReason}
+                onChange={(e) => setDeclineReason(e.target.value)}
+                placeholder="Explain why this request cannot be approved..."
+                className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:border-slate-900 focus:outline-none"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setDeclineTarget(null);
+                  setDeclineReason("");
+                }}
+                disabled={Boolean(isProcessing)}
+                className="px-3 py-2 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded hover:bg-slate-50 transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeclineTimeOff}
+                disabled={declineReason.trim().length < 3 || Boolean(isProcessing)}
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-white bg-rose-700 hover:bg-rose-800 disabled:opacity-50 rounded transition cursor-pointer"
+              >
+                {isProcessing && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                {isProcessing ? "Declining..." : "Decline Request"}
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
 
       {/* Confirm Dialog */}

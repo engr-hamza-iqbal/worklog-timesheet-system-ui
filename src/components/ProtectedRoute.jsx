@@ -2,9 +2,15 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Loader2 } from 'lucide-react';
+import NotAuthorisedPage from '../pages/NotAuthorisedPage.jsx';
 
-export default function ProtectedRoute({ children }) {
-  const { isAuthenticated, loading } = useAuth();
+export default function ProtectedRoute({
+  children,
+  adminOnly = false,
+  capability = null,
+  anyCapabilities = null,
+}) {
+  const { isAuthenticated, loading, isAdmin, capabilities } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -20,5 +26,39 @@ export default function ProtectedRoute({ children }) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  // Admin access bypasses all capability restrictions
+  if (isAdmin) {
+    return children;
+  }
+
+  if (adminOnly) {
+    return (
+      <NotAuthorisedPage
+        message="This screen is restricted to system administrators."
+      />
+    );
+  }
+
+  if (capability && !capabilities[capability]) {
+    return (
+      <NotAuthorisedPage
+        requiredCapability={capability}
+        message={`This screen requires the "${capability}" capability.`}
+      />
+    );
+  }
+
+  if (anyCapabilities && Array.isArray(anyCapabilities)) {
+    const hasAny = anyCapabilities.some((cap) => Boolean(capabilities[cap]));
+    if (!hasAny) {
+      return (
+        <NotAuthorisedPage
+          message={`This screen requires one of the following capabilities: ${anyCapabilities.join(', ')}.`}
+        />
+      );
+    }
+  }
+
   return children;
 }
+

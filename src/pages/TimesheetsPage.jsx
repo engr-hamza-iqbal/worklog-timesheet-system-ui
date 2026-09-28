@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import {
   CalendarDays,
+  Clock,
+  FileText,
   ChevronLeft,
   ChevronRight,
   Plus,
@@ -9,6 +12,10 @@ import {
   Pencil,
   RefreshCw,
   Loader2,
+  Search,
+  AlertCircle,
+  CheckCircle2,
+  X,
 } from "lucide-react";
 import api from "../api/client.js";
 import Badge from "../components/Badge.jsx";
@@ -45,8 +52,14 @@ const statusVariant = {
   RETURNED: "revoked",
 };
 
+const QUICK_HOURS = ["0.25", "0.5", "0.75", "1.0", "1.5", "2.0", "4.0", "8.0"];
+
 export default function TimesheetsPage() {
   const { notify } = useNotification();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") || "record"; // 'record' | 'week' | 'entries'
+  const setActiveTab = (tab) => setSearchParams({ tab });
+
   const [weekStart, setWeekStart] = useState(() => mondayOf(new Date()));
   const [days, setDays] = useState([]);
   const [projects, setProjects] = useState([]);
@@ -61,6 +74,13 @@ export default function TimesheetsPage() {
   const [isSavingEntry, setIsSavingEntry] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [confirmation, setConfirmation] = useState(null);
+
+  // Entries history tab state
+  const [historySearch, setHistorySearch] = useState("");
+  const [historyProject, setHistoryProject] = useState("");
+  const [historyStatus, setHistoryStatus] = useState("ALL");
+  const [historyPage, setHistoryPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const weekEnd = useMemo(() => addDays(weekStart, 6), [weekStart]);
   const dateRange = { startDate: iso(weekStart), endDate: iso(weekEnd) };
@@ -104,14 +124,15 @@ export default function TimesheetsPage() {
       }
 
       if (entriesResult.status === "rejected" || projectsResult.status === "rejected") {
-        const failedRequest = entriesResult.status === "rejected"
-          ? entriesResult.reason
-          : projectsResult.reason;
+        const failedRequest =
+          entriesResult.status === "rejected"
+            ? entriesResult.reason
+            : projectsResult.reason;
         throw failedRequest;
       }
     } catch (err) {
-      if (err.status !== 401 && err.code !== 'ACCOUNT_DEACTIVATED') {
-        notify.error(err.message);
+      if (err.status !== 401 && err.code !== "ACCOUNT_DEACTIVATED") {
+        notify.error(err.message || "Failed to load timesheet data.");
       }
     } finally {
       setLoading(false);
@@ -122,7 +143,7 @@ export default function TimesheetsPage() {
     load();
   }, [weekStart.toISOString()]);
 
-  function resetForm(date = iso(weekStart)) {
+  function resetForm(date = form.workDate) {
     setEditingId(null);
     setForm({
       projectId: projects[0]?.id || "",
@@ -140,6 +161,9 @@ export default function TimesheetsPage() {
       durationHours: String(entry.durationHours),
       description: entry.description,
     });
+    if (activeTab !== "record") {
+      setActiveTab("record");
+    }
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -209,21 +233,24 @@ export default function TimesheetsPage() {
     }
   }
 
-  async function submitEntries(entryIds) {
+  async function submitEntries(entryIds, label = "entries") {
+    if (!entryIds.length) {
+      notify.warn("No draft entries to submit.");
+      return;
+    }
     setConfirmation({
       title: "Submit entries for review",
-      message: `Submit ${entryIds.length} entr${entryIds.length === 1 ? "y" : "ies"} for review? You will not be able to edit them until they are returned or reopened.`,
-      confirmLabel: "Submit entries",
+      message: `Submit ${entryIds.length} ${label} for review? You will not be able to edit them until returned.`,
+      confirmLabel: "Submit for review",
       onConfirm: () => submitEntriesConfirmed(entryIds),
     });
   }
 
   async function submitEntriesConfirmed(entryIds) {
     try {
-      setIsProcessing(`Submitting ${entryIds.length} entr${entryIds.length === 1 ? "y" : "ies"}...`);
+      setIsProcessing(`Submitting ${entryIds.length} entries...`);
       await api.post("/api/timesheets/submit", { entryIds });
-      const msg = `${entryIds.length} entr${entryIds.length === 1 ? "y" : "ies"} submitted for review.`;
-      notify.success(msg);
+      notify.success(`${entryIds.length} entries submitted for review.`);
       setConfirmation(null);
       await load();
     } catch (err) {
@@ -234,275 +261,710 @@ export default function TimesheetsPage() {
     }
   }
 
-  const dayMap = Object.fromEntries(days.map((day) => [day.date, day]));
+  const dayMap = useMemo(() => Object.fromEntries(days.map((day) => [day.date, day])), [days]);
+
+  // Selected day's entries for "Record Time" screen
+  const selectedDayData = dayMap[form.workDate] || {
+    date: form.workDate,
+    totalMinutes: 0,
+    entries: [],
+  };
+  const selectedDayEditable = selectedDayData.entries.filter(
+    (e) => e.status === "DRAFT" || e.status === "RETURNED",
+  );
+  const selectedDayTotalHours = selectedDayData.totalMinutes / 60;
+
+  // Whole week editable entries for "My Week" submit action
+  const allWeekEditableEntries = useMemo(() => {
+    return days.flatMap((d) =>
+      d.entries.filter((e) => e.status === "DRAFT" || e.status === "RETURNED"),
+    );
+  }, [days]);
+
+  const totalWeekMinutes = days.reduce((sum, d) => sum + d.totalMinutes, 0);
+
+  // All entries flattened for "My Entries" history tab
+  const allEntriesFlat = useMemo(() => {
+    return days.flatMap((d) => d.entries);
+  }, [days]);
+
+  const filteredHistory = useMemo(() => {
+    return allEntriesFlat.filter((entry) => {
+      if (historyStatus !== "ALL" && entry.status !== historyStatus) return false;
+      if (historyProject && entry.projectId !== historyProject) return false;
+      if (historySearch.trim()) {
+        const q = historySearch.trim().toLowerCase();
+        const desc = (entry.description || "").toLowerCase();
+        const proj = (entry.project?.name || "").toLowerCase();
+        if (!desc.includes(q) && !proj.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [allEntriesFlat, historyStatus, historyProject, historySearch]);
+
+  const paginatedHistory = useMemo(() => {
+    const start = (historyPage - 1) * ITEMS_PER_PAGE;
+    return filteredHistory.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredHistory, historyPage]);
+
+  const totalHistoryPages = Math.ceil(filteredHistory.length / ITEMS_PER_PAGE) || 1;
+
+  // Day navigation helper for Record Time screen
+  const stepDate = (amount) => {
+    const current = new Date(form.workDate);
+    current.setUTCDate(current.getUTCDate() + amount);
+    const nextIso = iso(current);
+    setForm((prev) => ({ ...prev, workDate: nextIso }));
+  };
 
   return (
     <main className="max-w-auto mx-auto w-full px-4 py-6">
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+      {/* ── Page Header ── */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Work logging
+          <h1 className="text-xl font-semibold text-slate-900 tracking-tight">Timesheets</h1>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Log daily work in 15-minute increments, review weekly progress, and track submission states.
           </p>
-          <h1 className="text-2xl font-semibold text-slate-900">
-            My timesheet
-          </h1>
         </div>
+
         <div className="flex items-center gap-2">
-          <button
-            className="p-2 border rounded-md hover:bg-slate-50"
-            title="Previous week"
-            onClick={() => setWeekStart(addDays(weekStart, -7))}
-          >
-            <ChevronLeft size={16} />
-          </button>
-          <button
-            className="px-3 py-2 border rounded-md text-sm hover:bg-slate-50"
-            onClick={() => setWeekStart(mondayOf(new Date()))}
-          >
-            Today
-          </button>
-          <button
-            className="p-2 border rounded-md hover:bg-slate-50"
-            title="Next week"
-            onClick={() => setWeekStart(addDays(weekStart, 7))}
-          >
-            <ChevronRight size={16} />
-          </button>
           <button
             type="button"
             onClick={load}
             disabled={loading}
-            className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-700 disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 transition cursor-pointer shadow-2xs"
             title="Refresh timesheet"
           >
-            <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
-            Refresh
+            <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
+            <span>Refresh</span>
           </button>
         </div>
       </div>
 
-      <form
-        onSubmit={saveEntry}
-        className="bg-white border border-slate-200 rounded-lg p-4 mb-6 grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[1.5fr_1fr_110px_2fr_auto] items-end shadow-xs"
-      >
-        <label className="text-xs font-medium text-slate-600">
-          Project
-          <select
-            required
-            value={form.projectId}
-            onChange={(e) => setForm({ ...form, projectId: e.target.value })}
-            className="mt-1 w-full border rounded-md px-3 py-2 text-sm"
-          >
-            <option value="">
-              {loading ? "Loading projects..." : projects.length ? "Select project" : "No assigned projects"}
-            </option>
-            {projects.map((project) => (
-              <option key={project.id} value={project.id}>
-                {project.clientName || project.client?.name || "Unassigned client"} / {project.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="text-xs font-medium text-slate-600">
-          Date
-          <input
-            required
-            type="date"
-            value={form.workDate}
-            onChange={(e) => setForm({ ...form, workDate: e.target.value })}
-            className="mt-1 w-full border rounded-md px-3 py-2 text-sm"
-          />
-        </label>
-        <label className="text-xs font-medium text-slate-600">
-          Hours
-          <input
-            required
-            min="0.25"
-            max="16"
-            step="0.25"
-            type="number"
-            value={form.durationHours}
-            onChange={(e) =>
-              setForm({ ...form, durationHours: e.target.value })
-            }
-            className="mt-1 w-full border rounded-md px-3 py-2 text-sm"
-          />
-        </label>
-        <label className="text-xs font-medium text-slate-600">
-          Description
-          <input
-            required
-            minLength="5"
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-            placeholder="What did you work on?"
-            className="mt-1 w-full border rounded-md px-3 py-2 text-sm"
-          />
-        </label>
-        <div className="flex gap-2">
-          <button
-            type="submit"
-            disabled={isSavingEntry || loading}
-            className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer disabled:cursor-not-allowed"
-          >
-            {isSavingEntry ? (
-              <Loader2 size={15} className="animate-spin" />
-            ) : (
-              <Plus size={15} />
-            )}
-            {isSavingEntry
-              ? editingId ? "Updating..." : "Adding..."
-              : editingId ? "Update" : "Add"}
-          </button>
-          {editingId && (
-            <button
-              type="button"
-              className="px-3 py-2 text-sm border rounded-md hover:bg-slate-50"
-              onClick={() => resetForm()}
-            >
-              Cancel
-            </button>
-          )}
-        </div>
-      </form>
+      {/* ── Screen Tabs: Record Time | My Week | My Entries ── */}
+      <div className="flex border-b border-slate-200 mb-6 gap-2">
+        <button
+          onClick={() => setActiveTab("record")}
+          className={`pb-3 px-3 text-sm font-medium border-b-2 transition cursor-pointer flex items-center gap-2 ${
+            activeTab === "record"
+              ? "border-slate-900 text-slate-900 font-semibold"
+              : "border-transparent text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          <Clock size={16} />
+          <span>Record Time</span>
+        </button>
 
-      <div className="flex items-center gap-2 text-sm text-slate-600 mb-3">
-        <CalendarDays size={16} />
-        {iso(weekStart)} to {iso(weekEnd)}
-        <span className="ml-auto">
-          {days.reduce((total, day) => total + day.totalMinutes, 0) / 60} hours
-          this week
-        </span>
+        <button
+          onClick={() => setActiveTab("week")}
+          className={`pb-3 px-3 text-sm font-medium border-b-2 transition cursor-pointer flex items-center gap-2 ${
+            activeTab === "week"
+              ? "border-slate-900 text-slate-900 font-semibold"
+              : "border-transparent text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          <CalendarDays size={16} />
+          <span>My Week</span>
+          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+            {totalWeekMinutes / 60}h
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("entries")}
+          className={`pb-3 px-3 text-sm font-medium border-b-2 transition cursor-pointer flex items-center gap-2 ${
+            activeTab === "entries"
+              ? "border-slate-900 text-slate-900 font-semibold"
+              : "border-transparent text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          <FileText size={16} />
+          <span>My Entries</span>
+          <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
+            {allEntriesFlat.length}
+          </span>
+        </button>
       </div>
-      <div className="relative grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-        {loading && days.length > 0 && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-50/60 backdrop-blur-[1px]">
-            <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-md">
-              <Loader2 size={18} className="animate-spin text-slate-500" />
-              Refreshing week
-            </div>
-          </div>
-        )}
-        {loading && !days.length ? (
-          <div className="md:col-span-2 xl:col-span-4 min-h-64 rounded-lg border border-slate-200 bg-white flex items-center justify-center">
-            <div className="text-center">
-              <Loader2
-                className="mx-auto mb-2 animate-spin text-slate-400"
-                size={26}
-              />
-              <p className="text-sm text-slate-500">Loading your week...</p>
-            </div>
-          </div>
-        ) : (
-          Array.from({ length: 7 }, (_, index) => {
-            const date = iso(addDays(weekStart, index));
-            const day = dayMap[date] || { date, totalMinutes: 0, entries: [] };
-            const editable = day.entries.filter(
-              (entry) =>
-                entry.status === "DRAFT" || entry.status === "RETURNED",
-            );
-            return (
-              <section
-                key={date}
-                className="bg-white border border-slate-200 rounded-lg p-4 shadow-sm min-w-0"
+
+      {/* ══════════════════════════════════════════════════════════════════════ */}
+      {/* ── TAB 1: RECORD TIME (Day Focused Screen) ── */}
+      {/* ══════════════════════════════════════════════════════════════════════ */}
+      {activeTab === "record" && (
+        <div className="space-y-6">
+          {/* Day Navigation & Daily Summary Card */}
+          <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => stepDate(-1)}
+                className="p-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 transition cursor-pointer"
+                title="Previous Day"
               >
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h2 className="font-semibold text-slate-900">
-                      {addDays(weekStart, index).toLocaleDateString(undefined, {
-                        weekday: "short",
-                      })}
-                    </h2>
-                    <p className="text-xs text-slate-500">{date}</p>
-                  </div>
-                  <span
-                    className={`text-sm font-semibold ${day.totalMinutes >= 1440 ? "text-red-600" : "text-slate-700"}`}
-                  >
-                    {day.totalMinutes / 60} / 24h
-                  </span>
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm((p) => ({ ...p, workDate: iso(new Date()) }))}
+                className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+              >
+                Today
+              </button>
+              <button
+                type="button"
+                onClick={() => stepDate(1)}
+                className="p-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 transition cursor-pointer"
+                title="Next Day"
+              >
+                <ChevronRight size={16} />
+              </button>
+              <div className="ml-2 font-semibold text-slate-900 text-sm sm:text-base">
+                {new Date(form.workDate).toLocaleDateString(undefined, {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </div>
+            </div>
+
+            {/* Daily Running Gauge */}
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <div className="text-xs text-slate-500 font-medium">Logged Today</div>
+                <div className="text-lg font-bold text-slate-900">
+                  <span className={selectedDayTotalHours > 24 ? "text-rose-600" : ""}>
+                    {selectedDayTotalHours}h
+                  </span>{" "}
+                  <span className="text-xs font-normal text-slate-400">/ 24h limit</span>
                 </div>
-                {day.timeOff && (
-                  <div className="mb-3 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-700">
-                    Approved time off: {day.timeOff.type?.name}
-                  </div>
+              </div>
+
+              {selectedDayEditable.length > 0 && (
+                <button
+                  type="button"
+                  disabled={Boolean(isProcessing)}
+                  onClick={() => submitEntries(selectedDayEditable.map((e) => e.id), "day entries")}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer shadow-xs"
+                >
+                  {isProcessing ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+                  <span>Submit Day</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Time Entry Form */}
+          <form
+            onSubmit={saveEntry}
+            className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-4"
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <h2 className="text-sm font-semibold text-slate-900">
+                {editingId ? "Edit Work Entry" : "Record Work Entry"}
+              </h2>
+              {editingId && (
+                <button
+                  type="button"
+                  onClick={() => resetForm()}
+                  className="text-xs font-medium text-slate-500 hover:text-slate-800"
+                >
+                  Cancel Edit
+                </button>
+              )}
+            </div>
+
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4 items-start">
+              {/* Project selector */}
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                  Project <span className="text-red-500">*</span>
+                </label>
+                <select
+                  required
+                  value={form.projectId}
+                  onChange={(e) => setForm({ ...form, projectId: e.target.value })}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:border-slate-900 focus:outline-none transition"
+                >
+                  <option value="">
+                    {loading ? "Loading assigned projects..." : projects.length ? "Select project" : "No assigned projects"}
+                  </option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.clientName || project.client?.name || "Client"} / {project.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Date */}
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                  Date <span className="text-red-500">*</span>
+                </label>
+                <input
+                  required
+                  type="date"
+                  value={form.workDate}
+                  onChange={(e) => setForm({ ...form, workDate: e.target.value })}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:border-slate-900 focus:outline-none transition"
+                />
+              </div>
+
+              {/* Hours with quick pick buttons */}
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                  Hours (15m step) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  required
+                  min="0.25"
+                  max="16"
+                  step="0.25"
+                  type="number"
+                  value={form.durationHours}
+                  onChange={(e) => setForm({ ...form, durationHours: e.target.value })}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:border-slate-900 focus:outline-none transition"
+                />
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {QUICK_HOURS.map((h) => (
+                    <button
+                      key={h}
+                      type="button"
+                      onClick={() => setForm((p) => ({ ...p, durationHours: h }))}
+                      className={`px-1.5 py-0.5 rounded text-[10px] font-medium border transition cursor-pointer ${
+                        form.durationHours === h
+                          ? "bg-slate-900 text-white border-slate-900"
+                          : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
+                      }`}
+                    >
+                      {h}h
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                  Description <span className="text-red-500">*</span>
+                </label>
+                <input
+                  required
+                  minLength={5}
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  placeholder="Meaningful description of work completed..."
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:border-slate-900 focus:outline-none transition"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="submit"
+                disabled={isSavingEntry || loading}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer shadow-xs"
+              >
+                {isSavingEntry ? (
+                  <Loader2 size={13} className="animate-spin" />
+                ) : (
+                  <Plus size={13} />
                 )}
-                <div className="space-y-3 min-h-20 max-h-[28rem] overflow-y-auto pr-1">
-                  {day.entries.length ? (
-                    day.entries.map((entry) => (
-                      <article
-                        key={entry.id}
-                        className="border-t border-slate-100 pt-3"
+                <span>{editingId ? "Update Entry" : "Save Entry"}</span>
+              </button>
+            </div>
+          </form>
+
+          {/* Today's Logged Entries List */}
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+            <div className="px-5 py-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700">
+                Entries for {form.workDate} ({selectedDayData.entries.length})
+              </h3>
+              <span className="text-xs font-semibold text-slate-700">
+                Total: {selectedDayTotalHours}h
+              </span>
+            </div>
+
+            {selectedDayData.timeOff && (
+              <div className="p-3 mx-4 mt-4 bg-sky-50 border border-sky-200 rounded-lg text-xs text-sky-800 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-sky-600" />
+                <span>Approved Absence on this day: <strong>{selectedDayData.timeOff.type?.name}</strong></span>
+              </div>
+            )}
+
+            <div className="divide-y divide-slate-100">
+              {selectedDayData.entries.length ? (
+                selectedDayData.entries.map((entry) => (
+                  <div key={entry.id} className="p-4 sm:px-5 hover:bg-slate-50/50 transition">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-slate-900">
+                            {entry.project?.name}
+                          </span>
+                          <span className="text-xs text-slate-400">·</span>
+                          <span className="text-xs font-bold text-slate-700">
+                            {entry.durationHours}h
+                          </span>
+                          <Badge variant={statusVariant[entry.status]} label={entry.status} />
+                        </div>
+                        <p className="mt-1 text-xs text-slate-600 break-words leading-relaxed">
+                          {entry.description}
+                        </p>
+
+                        {/* Returned feedback callout */}
+                        {entry.returnComment && (
+                          <div className="mt-2.5 p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-800">
+                            <span className="font-semibold">Reviewer comment:</span> {entry.returnComment}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Action buttons */}
+                      {(entry.status === "DRAFT" || entry.status === "RETURNED") && (
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => editEntry(entry)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium text-slate-700 hover:bg-slate-100 border border-slate-200 transition cursor-pointer"
+                          >
+                            <Pencil size={12} />
+                            <span>Edit</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => removeEntry(entry.id)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium text-rose-600 hover:bg-rose-50 border border-rose-200 transition cursor-pointer"
+                          >
+                            <Trash2 size={12} />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-8 text-center text-xs text-slate-400">
+                  No work entries recorded for this date. Use the form above to add an entry.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════════════ */}
+      {/* ── TAB 2: MY WEEK (7-Day Overview & Whole Week Submit) ── */}
+      {/* ══════════════════════════════════════════════════════════════════════ */}
+      {activeTab === "week" && (
+        <div className="space-y-6">
+          {/* Week Controls Bar */}
+          <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setWeekStart(addDays(weekStart, -7))}
+                className="p-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 transition cursor-pointer"
+                title="Previous week"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setWeekStart(mondayOf(new Date()))}
+                className="px-3 py-1.5 border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+              >
+                Today
+              </button>
+              <button
+                type="button"
+                onClick={() => setWeekStart(addDays(weekStart, 7))}
+                className="p-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 transition cursor-pointer"
+                title="Next week"
+              >
+                <ChevronRight size={16} />
+              </button>
+              <span className="ml-2 text-sm font-semibold text-slate-900">
+                {iso(weekStart)} &rarr; {iso(weekEnd)}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-semibold text-slate-600">
+                Week Total: <span className="text-slate-900 font-bold">{totalWeekMinutes / 60}h</span>
+              </span>
+
+              {allWeekEditableEntries.length > 0 && (
+                <button
+                  type="button"
+                  disabled={Boolean(isProcessing)}
+                  onClick={() =>
+                    submitEntries(
+                      allWeekEditableEntries.map((e) => e.id),
+                      "whole week entries",
+                    )
+                  }
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer shadow-xs"
+                >
+                  {isProcessing ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+                  <span>Submit Whole Week ({allWeekEditableEntries.length})</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* 7-Day Grid */}
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+            {Array.from({ length: 7 }, (_, index) => {
+              const date = iso(addDays(weekStart, index));
+              const day = dayMap[date] || { date, totalMinutes: 0, entries: [] };
+              const editable = day.entries.filter(
+                (entry) => entry.status === "DRAFT" || entry.status === "RETURNED",
+              );
+              return (
+                <section
+                  key={date}
+                  className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs min-w-0 flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex justify-between items-start mb-3 border-b border-slate-100 pb-2.5">
+                      <div>
+                        <h3 className="font-semibold text-slate-900 text-sm">
+                          {addDays(weekStart, index).toLocaleDateString(undefined, {
+                            weekday: "short",
+                          })}
+                        </h3>
+                        <p className="text-[11px] text-slate-400">{date}</p>
+                      </div>
+                      <span
+                        className={`text-xs font-bold ${
+                          day.totalMinutes >= 1440 ? "text-rose-600" : "text-slate-700"
+                        }`}
                       >
-                        <div className="flex justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium truncate">
-                              {entry.project?.name}
-                            </p>
-                            <p className="text-xs text-slate-500 break-words">
+                        {day.totalMinutes / 60} / 24h
+                      </span>
+                    </div>
+
+                    {day.timeOff && (
+                      <div className="mb-3 rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1.5 text-[11px] text-sky-800">
+                        Absence: {day.timeOff.type?.name}
+                      </div>
+                    )}
+
+                    <div className="space-y-2.5 min-h-16 max-h-64 overflow-y-auto pr-1">
+                      {day.entries.length ? (
+                        day.entries.map((entry) => (
+                          <div key={entry.id} className="border-t border-slate-100 pt-2 text-xs">
+                            <div className="flex justify-between items-start gap-1">
+                              <span className="font-medium text-slate-900 truncate">
+                                {entry.project?.name}
+                              </span>
+                              <Badge variant={statusVariant[entry.status]} label={entry.status} />
+                            </div>
+                            <p className="text-[11px] text-slate-500 mt-0.5">
                               {entry.durationHours}h · {entry.description}
                             </p>
+                            {entry.returnComment && (
+                              <p className="mt-1 text-[11px] text-rose-600 bg-rose-50 rounded p-1.5">
+                                {entry.returnComment}
+                              </p>
+                            )}
                           </div>
-                          <Badge
-                            variant={statusVariant[entry.status]}
-                            label={entry.status}
-                          />
-                        </div>
-                        {entry.returnComment && (
-                          <p className="mt-2 text-xs text-red-600 bg-red-50 rounded p-2">
-                            {entry.returnComment}
-                          </p>
-                        )}
-                        {editable.length > 0 &&
-                          (entry.status === "DRAFT" ||
-                            entry.status === "RETURNED") && (
-                            <div className="mt-2 flex gap-2">
-                              <button
-                                title="Edit entry"
-                                onClick={() => editEntry(entry)}
-                                className="text-xs text-slate-600 inline-flex items-center gap-1 hover:text-slate-900"
-                              >
-                                <Pencil size={12} />
-                                Edit
-                              </button>
-                              <button
-                                title="Delete entry"
-                                onClick={() => removeEntry(entry.id)}
-                                className="text-xs text-red-600 inline-flex items-center gap-1 hover:text-red-800"
-                              >
-                                <Trash2 size={12} />
-                                Delete
-                              </button>
-                            </div>
-                          )}
-                      </article>
-                    ))
-                  ) : (
-                    <p className="text-xs text-slate-400 py-4">
-                      No entries logged
-                    </p>
+                        ))
+                      ) : (
+                        <p className="text-[11px] text-slate-400 py-3 text-center">No entries logged</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {editable.length > 0 && (
+                    <button
+                      type="button"
+                      disabled={Boolean(isProcessing)}
+                      onClick={() => submitEntries(editable.map((e) => e.id), "day entries")}
+                      className="mt-3 w-full border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-medium inline-flex justify-center items-center gap-1.5 hover:bg-slate-50 transition cursor-pointer"
+                    >
+                      <Send size={12} />
+                      <span>Submit Day</span>
+                    </button>
                   )}
-                </div>
-                {editable.length > 0 && (
+                </section>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════════════════════════════════ */}
+      {/* ── TAB 3: MY ENTRIES (Filterable History & Search) ── */}
+      {/* ══════════════════════════════════════════════════════════════════════ */}
+      {activeTab === "entries" && (
+        <div className="space-y-4">
+          {/* History Filters Toolbar */}
+          <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
+              {/* Search */}
+              <div className="relative min-w-[200px]">
+                <input
+                  type="text"
+                  placeholder="Search description or project..."
+                  value={historySearch}
+                  onChange={(e) => {
+                    setHistorySearch(e.target.value);
+                    setHistoryPage(1);
+                  }}
+                  className="w-full border border-slate-300 rounded-lg pl-8 pr-3 py-1.5 text-xs focus:border-slate-900 focus:outline-none transition"
+                />
+                <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              </div>
+
+              {/* Project filter */}
+              <select
+                value={historyProject}
+                onChange={(e) => {
+                  setHistoryProject(e.target.value);
+                  setHistoryPage(1);
+                }}
+                className="border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs focus:border-slate-900 focus:outline-none transition"
+              >
+                <option value="">All Projects</option>
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+
+              {/* Status filter buttons */}
+              <div className="flex rounded-lg border border-slate-200 overflow-hidden text-xs">
+                {["ALL", "DRAFT", "SUBMITTED", "APPROVED", "RETURNED"].map((st) => (
                   <button
-                    disabled={Boolean(isProcessing)}
-                    onClick={() =>
-                      submitEntries(editable.map((entry) => entry.id))
-                    }
-                    className="mt-4 w-full border rounded-md px-3 py-2 text-xs font-medium inline-flex justify-center items-center gap-1.5 hover:bg-slate-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                    key={st}
+                    type="button"
+                    onClick={() => {
+                      setHistoryStatus(st);
+                      setHistoryPage(1);
+                    }}
+                    className={`px-2.5 py-1 transition cursor-pointer font-medium ${
+                      historyStatus === st
+                        ? "bg-slate-900 text-white"
+                        : "bg-white text-slate-600 hover:bg-slate-50"
+                    }`}
                   >
-                    {isProcessing ? (
-                      <Loader2 size={13} className="animate-spin shrink-0" />
-                    ) : (
-                      <Send size={13} />
-                    )}
-                    Submit day
+                    {st === "ALL" ? "All" : st.charAt(0) + st.slice(1).toLowerCase()}
                   </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="text-xs font-semibold text-slate-600">
+              Showing {filteredHistory.length} entries
+            </div>
+          </div>
+
+          {/* Historical Table */}
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
+                  <th className="py-3 px-4">Date</th>
+                  <th className="py-3 px-4">Project</th>
+                  <th className="py-3 px-4">Hours</th>
+                  <th className="py-3 px-4">Description</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {paginatedHistory.length ? (
+                  paginatedHistory.map((entry) => (
+                    <tr key={entry.id} className="hover:bg-slate-50/70 transition">
+                      <td className="py-3 px-4 font-semibold text-slate-900 whitespace-nowrap">
+                        {entry.workDate}
+                      </td>
+                      <td className="py-3 px-4 font-medium text-slate-800">
+                        {entry.project?.name}
+                      </td>
+                      <td className="py-3 px-4 font-bold text-slate-900">
+                        {entry.durationHours}h
+                      </td>
+                      <td className="py-3 px-4 text-slate-600 max-w-md">
+                        <div>{entry.description}</div>
+                        {entry.returnComment && (
+                          <div className="mt-1 text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded p-1.5">
+                            <strong>Reason returned:</strong> {entry.returnComment}
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <Badge variant={statusVariant[entry.status]} label={entry.status} />
+                      </td>
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        {(entry.status === "DRAFT" || entry.status === "RETURNED") && (
+                          <div className="inline-flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => editEntry(entry)}
+                              className="px-2 py-1 rounded border border-slate-200 text-slate-700 hover:bg-slate-100 text-[11px] font-medium transition cursor-pointer"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeEntry(entry.id)}
+                              className="px-2 py-1 rounded border border-rose-200 text-rose-600 hover:bg-rose-50 text-[11px] font-medium transition cursor-pointer"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="p-8 text-center text-xs text-slate-400">
+                      No time entries match the selected filters.
+                    </td>
+                  </tr>
                 )}
-              </section>
-            );
-          })
-        )}
-      </div>
+              </tbody>
+            </table>
+
+            {/* Pagination Controls */}
+            {totalHistoryPages > 1 && (
+              <div className="p-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs">
+                <span className="text-slate-500">
+                  Page {historyPage} of {totalHistoryPages}
+                </span>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    disabled={historyPage <= 1}
+                    onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
+                    className="px-2.5 py-1 rounded border border-slate-200 bg-white text-slate-700 disabled:opacity-40 transition cursor-pointer"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    disabled={historyPage >= totalHistoryPages}
+                    onClick={() => setHistoryPage((p) => Math.min(totalHistoryPages, p + 1))}
+                    className="px-2.5 py-1 rounded border border-slate-200 bg-white text-slate-700 disabled:opacity-40 transition cursor-pointer"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Global Confirm Dialog ── */}
       <ConfirmDialog
         isOpen={Boolean(confirmation)}
         onClose={() => (isProcessing ? null : setConfirmation(null))}

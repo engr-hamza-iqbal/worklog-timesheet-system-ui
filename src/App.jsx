@@ -18,6 +18,7 @@ import ReportsPage from './pages/ReportsPage.jsx';
 import AnalyticsPage from './pages/AnalyticsPage.jsx';
 import EmailLogPage from './pages/EmailLogPage.jsx';
 import LandingPage from './pages/LandingPage.jsx';
+import NotAuthorisedPage from './pages/NotAuthorisedPage.jsx';
 import './App.css';
 
 export default function App() {
@@ -57,7 +58,7 @@ export default function App() {
             <Route
               path="/clients"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute capability="MANAGE_CLIENTS_PROJECTS">
                   <ClientsProjectsPage />
                 </ProtectedRoute>
               }
@@ -66,7 +67,7 @@ export default function App() {
             <Route
               path="/users"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute anyCapabilities={['MANAGE_USERS', 'ASSIGN_PROJECTS']}>
                   <UsersPage />
                 </ProtectedRoute>
               }
@@ -75,18 +76,74 @@ export default function App() {
             <Route
               path="/access"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute adminOnly>
                   <AccessPage />
                 </ProtectedRoute>
               }
             />
 
-            <Route path="/timesheet" element={<ProtectedRoute><TimesheetsPage /></ProtectedRoute>} />
-            <Route path="/review" element={<ProtectedRoute><ReviewPage /></ProtectedRoute>} />
-            <Route path="/time-off" element={<ProtectedRoute><TimeOffPage /></ProtectedRoute>} />
-            <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
-            <Route path="/analytics" element={<ProtectedRoute><AnalyticsPage /></ProtectedRoute>} />
-            <Route path="/emails" element={<ProtectedRoute><EmailLogPage /></ProtectedRoute>} />
+            <Route
+              path="/timesheet"
+              element={
+                <ProtectedRoute>
+                  <TimesheetsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/review"
+              element={
+                <ProtectedRoute anyCapabilities={['REVIEW_TIME', 'DECIDE_TIME_OFF']}>
+                  <ReviewPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/time-off"
+              element={
+                <ProtectedRoute>
+                  <TimeOffPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/reports"
+              element={
+                <ProtectedRoute capability="VIEW_REPORTS">
+                  <ReportsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/analytics"
+              element={
+                <ProtectedRoute capability="VIEW_ANALYTICS">
+                  <AnalyticsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/emails"
+              element={
+                <ProtectedRoute adminOnly>
+                  <EmailLogPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/unauthorized"
+              element={
+                <ProtectedRoute>
+                  <NotAuthorisedPage />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Catch-all fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
