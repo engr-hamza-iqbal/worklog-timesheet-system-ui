@@ -57,9 +57,9 @@ export default function TimesheetsPage() {
     description: "",
   });
   const [editingId, setEditingId] = useState(null);
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isSavingEntry, setIsSavingEntry] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [confirmation, setConfirmation] = useState(null);
 
   const weekEnd = useMemo(() => addDays(weekStart, 6), [weekStart]);
@@ -111,7 +111,7 @@ export default function TimesheetsPage() {
         throw failedRequest;
       }
     } catch (err) {
-      setError(err.message);
+      notify.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -161,23 +161,25 @@ export default function TimesheetsPage() {
   }
 
   async function saveEntryConfirmed(payload, entryId) {
-    setConfirmation(null);
     try {
-      setError("");
-      setNotice("");
+      setIsProcessing(entryId ? "Updating entry..." : "Adding entry...");
+      setIsSavingEntry(true);
       if (entryId) await api.put(`/api/timesheets/${entryId}`, payload);
       else await api.post("/api/timesheets", payload);
       const msg = entryId ? "Entry updated." : "Entry saved as draft.";
-      setNotice(msg);
       notify.success(msg);
       resetForm(form.workDate);
       sessionStorage.removeItem(
         `timesheet:${dateRange.startDate}:${dateRange.endDate}`,
       );
+      setConfirmation(null);
       await load();
     } catch (err) {
-      setError(err.message);
       notify.error(err.message);
+      setConfirmation(null);
+    } finally {
+      setIsProcessing(false);
+      setIsSavingEntry(false);
     }
   }
 
@@ -192,14 +194,17 @@ export default function TimesheetsPage() {
   }
 
   async function removeEntryConfirmed(id) {
-    setConfirmation(null);
     try {
+      setIsProcessing("Deleting entry...");
       await api.delete(`/api/timesheets/${id}`);
       notify.success("Draft entry deleted.");
+      setConfirmation(null);
       await load();
     } catch (err) {
-      setError(err.message);
       notify.error(err.message);
+      setConfirmation(null);
+    } finally {
+      setIsProcessing(false);
     }
   }
 
@@ -213,16 +218,18 @@ export default function TimesheetsPage() {
   }
 
   async function submitEntriesConfirmed(entryIds) {
-    setConfirmation(null);
     try {
+      setIsProcessing(`Submitting ${entryIds.length} entr${entryIds.length === 1 ? "y" : "ies"}...`);
       await api.post("/api/timesheets/submit", { entryIds });
       const msg = `${entryIds.length} entr${entryIds.length === 1 ? "y" : "ies"} submitted for review.`;
-      setNotice(msg);
       notify.success(msg);
+      setConfirmation(null);
       await load();
     } catch (err) {
-      setError(err.message);
       notify.error(err.message);
+      setConfirmation(null);
+    } finally {
+      setIsProcessing(false);
     }
   }
 
@@ -272,16 +279,6 @@ export default function TimesheetsPage() {
           </button>
         </div>
       </div>
-      {error && (
-        <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      )}
-      {notice && (
-        <div className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          {notice}
-        </div>
-      )}
 
       <form
         onSubmit={saveEntry}
@@ -343,15 +340,18 @@ export default function TimesheetsPage() {
         </label>
         <div className="flex gap-2">
           <button
-            disabled={loading}
-            className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-slate-900 px-3 py-2 text-sm text-white disabled:opacity-50"
+            type="submit"
+            disabled={isSavingEntry || loading}
+            className="inline-flex w-full items-center justify-center gap-1.5 rounded-md bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer disabled:cursor-not-allowed"
           >
-            {loading ? (
+            {isSavingEntry ? (
               <Loader2 size={15} className="animate-spin" />
             ) : (
               <Plus size={15} />
             )}
-            {editingId ? "Update" : "Add"}
+            {isSavingEntry
+              ? editingId ? "Updating..." : "Adding..."
+              : editingId ? "Update" : "Add"}
           </button>
           {editingId && (
             <button
@@ -483,12 +483,17 @@ export default function TimesheetsPage() {
                 </div>
                 {editable.length > 0 && (
                   <button
+                    disabled={Boolean(isProcessing)}
                     onClick={() =>
                       submitEntries(editable.map((entry) => entry.id))
                     }
-                    className="mt-4 w-full border rounded-md px-3 py-2 text-xs font-medium inline-flex justify-center items-center gap-1.5 hover:bg-slate-50"
+                    className="mt-4 w-full border rounded-md px-3 py-2 text-xs font-medium inline-flex justify-center items-center gap-1.5 hover:bg-slate-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
                   >
-                    <Send size={13} />
+                    {isProcessing ? (
+                      <Loader2 size={13} className="animate-spin shrink-0" />
+                    ) : (
+                      <Send size={13} />
+                    )}
                     Submit day
                   </button>
                 )}
@@ -499,12 +504,13 @@ export default function TimesheetsPage() {
       </div>
       <ConfirmDialog
         isOpen={Boolean(confirmation)}
-        onClose={() => setConfirmation(null)}
+        onClose={() => (isProcessing ? null : setConfirmation(null))}
         onConfirm={confirmation?.onConfirm}
         title={confirmation?.title}
         message={confirmation?.message}
         confirmLabel={confirmation?.confirmLabel}
         tone={confirmation?.tone}
+        loading={isProcessing}
       />
     </main>
   );

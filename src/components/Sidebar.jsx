@@ -65,14 +65,10 @@ export default function Sidebar({
             <div className="flex flex-col">
               <span className="text-sm font-bold text-slate-900 tracking-tight leading-tight flex items-center gap-1.5">
                 Work Log
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
-                  App
-                </span>
               </span>
               <span className="text-[11px] text-slate-500 font-medium">Timesheet System</span>
             </div>
           </Link>
-
           {/* Close button ONLY on mobile drawer */}
           {isMobile && (
             <button

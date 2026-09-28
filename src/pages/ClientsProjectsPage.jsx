@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Building2, FolderOpen, Plus, Pencil, CheckCircle, XCircle,
-  ChevronRight, DollarSign, RefreshCw, AlertCircle, Users,
+  ChevronRight, DollarSign, RefreshCw, AlertCircle, Users, Loader2,
 } from 'lucide-react';
 import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -89,7 +89,8 @@ function ClientForm({ client, onSuccess, onCancel }) {
         <button type="button" onClick={onCancel} className="flex-1 py-2 px-3 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded transition cursor-pointer">
           Cancel
         </button>
-        <button type="submit" disabled={loading} className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-xs font-medium rounded transition cursor-pointer disabled:cursor-not-allowed">
+        <button type="submit" disabled={loading} className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-xs font-medium rounded transition cursor-pointer disabled:cursor-not-allowed inline-flex items-center justify-center gap-1.5">
+          {loading && <Loader2 className="animate-spin" size={13} />}
           {loading ? 'Saving...' : client ? 'Save changes' : 'Create client'}
         </button>
       </div>
@@ -166,7 +167,8 @@ function ProjectForm({ clients, onSuccess, onCancel }) {
         <button type="button" onClick={onCancel} className="flex-1 py-2 px-3 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded transition cursor-pointer">
           Cancel
         </button>
-        <button type="submit" disabled={loading} className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-xs font-medium rounded transition cursor-pointer disabled:cursor-not-allowed">
+        <button type="submit" disabled={loading} className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-xs font-medium rounded transition cursor-pointer disabled:cursor-not-allowed inline-flex items-center justify-center gap-1.5">
+          {loading && <Loader2 className="animate-spin" size={13} />}
           {loading ? 'Creating...' : 'Create project'}
         </button>
       </div>
@@ -222,7 +224,8 @@ function AddRateForm({ projectId, onSuccess, onCancel }) {
       </FormField>
       <div className="flex gap-2 pt-1">
         <button type="button" onClick={onCancel} className="flex-1 py-2 px-3 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded transition cursor-pointer">Cancel</button>
-        <button type="submit" disabled={loading} className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-xs font-medium rounded transition cursor-pointer disabled:cursor-not-allowed">
+        <button type="submit" disabled={loading} className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-xs font-medium rounded transition cursor-pointer disabled:cursor-not-allowed inline-flex items-center justify-center gap-1.5">
+          {loading && <Loader2 className="animate-spin" size={13} />}
           {loading ? 'Saving...' : 'Add rate'}
         </button>
       </div>

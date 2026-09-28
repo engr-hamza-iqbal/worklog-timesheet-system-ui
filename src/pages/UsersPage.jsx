@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Users, Plus, UserCheck, UserX, AlertCircle, RefreshCw,
-  Search, FolderOpen, ChevronDown, ChevronUp,
+  Search, FolderOpen, ChevronDown, ChevronUp, Loader2,
 } from 'lucide-react';
 import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -85,7 +85,8 @@ function CreateUserForm({ onSuccess, onCancel }) {
           Cancel
         </button>
         <button type="submit" disabled={loading}
-          className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-xs font-medium rounded transition cursor-pointer disabled:cursor-not-allowed">
+          className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-xs font-medium rounded transition cursor-pointer disabled:cursor-not-allowed inline-flex items-center justify-center gap-1.5">
+          {loading && <Loader2 className="animate-spin" size={13} />}
           {loading ? 'Creating...' : 'Create user'}
         </button>
       </div>
@@ -170,7 +171,8 @@ function AssignProjectForm({ user, assignedProjectIds, onSuccess, onCancel }) {
           Cancel
         </button>
         <button type="submit" disabled={loading || projects.length === 0}
-          className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-xs font-medium rounded transition cursor-pointer disabled:cursor-not-allowed">
+          className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-xs font-medium rounded transition cursor-pointer disabled:cursor-not-allowed inline-flex items-center justify-center gap-1.5">
+          {loading && <Loader2 className="animate-spin" size={13} />}
           {loading ? 'Assigning...' : 'Assign'}
         </button>
       </div>

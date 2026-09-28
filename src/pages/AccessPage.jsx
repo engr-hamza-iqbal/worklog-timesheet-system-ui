@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Shield, XCircle, Plus, RefreshCw, AlertCircle,
-  ChevronDown, ChevronUp, Clock, CheckCircle,
+  ChevronDown, ChevronUp, Clock, CheckCircle, Loader2,
 } from 'lucide-react';
 import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -201,7 +201,8 @@ function GrantForm({ targetUser, grantedCodes, users, projects, onSuccess, onCan
           Cancel
         </button>
         <button type="submit" disabled={loading}
-          className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-xs font-medium rounded transition cursor-pointer disabled:cursor-not-allowed">
+          className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-xs font-medium rounded transition cursor-pointer disabled:cursor-not-allowed inline-flex items-center justify-center gap-1.5">
+          {loading && <Loader2 className="animate-spin" size={13} />}
           {loading ? 'Granting...' : 'Grant capability'}
         </button>
       </div>
@@ -265,7 +266,6 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
 
   const confirmRevoke = async () => {
     const grantId = revokeConfirmation;
-    setRevokeConfirmation(null);
     setRevoking(grantId);
     setError('');
     try {
@@ -274,8 +274,10 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
       setGrants((prev) =>
         prev.map((g) => g.id === grantId ? { ...g, revokedAt: new Date().toISOString() } : g)
       );
+      setRevokeConfirmation(null);
     } catch (err) {
       setError(err.message || 'Failed to revoke grant.');
+      setRevokeConfirmation(null);
     } finally {
       setRevoking(null);
     }
@@ -409,12 +411,13 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
       </Modal>
       <ConfirmDialog
         isOpen={Boolean(revokeConfirmation)}
-        onClose={() => setRevokeConfirmation(null)}
+        onClose={() => (revoking ? null : setRevokeConfirmation(null))}
         onConfirm={confirmRevoke}
         title="Revoke capability"
         message="Revoke this capability immediately? The user will lose this access right away."
         confirmLabel="Revoke"
         tone="danger"
+        loading={Boolean(revoking)}
       />
     </div>
   );

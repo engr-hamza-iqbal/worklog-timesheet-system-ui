@@ -27,6 +27,7 @@ export default function ReviewPage() {
   const [comment, setComment] = useState("");
   const [returningId, setReturningId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [confirmation, setConfirmation] = useState(null);
 
   // Load latest entries from DB
@@ -137,15 +138,19 @@ export default function ReviewPage() {
   }
 
   async function approveConfirmed(entryIds) {
-    setConfirmation(null);
     try {
+      setIsProcessing(`Approving ${entryIds.length} entr${entryIds.length === 1 ? "y" : "ies"}...`);
       await api.post("/api/reviews/approve", { entryIds });
       notify.success(
         `${entryIds.length} entr${entryIds.length === 1 ? "y" : "ies"} approved successfully.`
       );
+      setConfirmation(null);
       await load();
     } catch (err) {
       notify.error(err.message || "Failed to approve entries.");
+      setConfirmation(null);
+    } finally {
+      setIsProcessing(false);
     }
   }
 
@@ -177,15 +182,19 @@ export default function ReviewPage() {
   }
 
   async function returnConfirmed(entryId, returnComment) {
-    setConfirmation(null);
     try {
+      setIsProcessing("Returning entry for correction...");
       await api.post("/api/reviews/return", { entryId, comment: returnComment });
       setReturningId(null);
       setComment("");
       notify.success("Entry returned for correction.");
+      setConfirmation(null);
       await load();
     } catch (err) {
       notify.error(err.message || "Failed to return entry.");
+      setConfirmation(null);
+    } finally {
+      setIsProcessing(false);
     }
   }
 
@@ -307,12 +316,12 @@ export default function ReviewPage() {
       {/* Batch Actions Bar */}
       <div className="flex items-center gap-3 mb-3">
         <button
-          disabled={!selected.length || loading}
+          disabled={!selected.length || loading || Boolean(isProcessing)}
           onClick={approve}
-          className="rounded-md bg-emerald-700 hover:bg-emerald-800 disabled:opacity-40 text-white px-3 py-2 text-sm inline-flex items-center gap-2 transition cursor-pointer"
+          className="rounded-md bg-emerald-700 hover:bg-emerald-800 disabled:opacity-40 text-white px-3 py-2 text-sm inline-flex items-center gap-2 transition cursor-pointer disabled:cursor-not-allowed"
         >
-          <Check size={15} />
-          Approve selected {selected.length > 0 && `(${selected.length})`}
+          {isProcessing ? <Loader2 size={15} className="animate-spin shrink-0" /> : <Check size={15} />}
+          {isProcessing ? "Processing..." : `Approve selected ${selected.length > 0 ? `(${selected.length})` : ""}`}
         </button>
         <span className="text-sm text-slate-500">
           {filteredEntries.length} submitted entr{filteredEntries.length === 1 ? "y" : "ies"}
@@ -458,12 +467,12 @@ export default function ReviewPage() {
               </button>
               <button
                 type="button"
-                disabled={comment.trim().length < 5}
-                className="px-3.5 py-2 text-sm font-medium rounded-md bg-rose-700 hover:bg-rose-800 text-white disabled:opacity-40 inline-flex items-center gap-2 transition cursor-pointer"
+                disabled={comment.trim().length < 5 || Boolean(isProcessing)}
+                className="px-3.5 py-2 text-sm font-medium rounded-md bg-rose-700 hover:bg-rose-800 text-white disabled:opacity-40 inline-flex items-center gap-2 transition cursor-pointer disabled:cursor-not-allowed"
                 onClick={returnEntry}
               >
-                <Send size={14} />
-                Return entry
+                {isProcessing ? <Loader2 size={14} className="animate-spin shrink-0" /> : <Send size={14} />}
+                {isProcessing ? "Returning..." : "Return entry"}
               </button>
             </div>
           </div>
@@ -473,12 +482,13 @@ export default function ReviewPage() {
       {/* Confirm Dialog */}
       <ConfirmDialog
         isOpen={Boolean(confirmation)}
-        onClose={() => setConfirmation(null)}
+        onClose={() => (isProcessing ? null : setConfirmation(null))}
         onConfirm={confirmation?.onConfirm}
         title={confirmation?.title}
         message={confirmation?.message}
         confirmLabel={confirmation?.confirmLabel}
         tone={confirmation?.tone}
+        loading={isProcessing}
       />
     </main>
   );

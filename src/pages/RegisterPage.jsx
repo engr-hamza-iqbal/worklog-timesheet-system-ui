@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 
 export default function RegisterPage() {
@@ -116,8 +117,9 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2 px-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-xs font-medium rounded transition cursor-pointer disabled:cursor-not-allowed mt-2"
+              className="w-full py-2 px-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-xs font-medium rounded transition cursor-pointer disabled:cursor-not-allowed mt-2 inline-flex items-center justify-center gap-1.5"
             >
+              {loading && <Loader2 className="animate-spin" size={13} />}
               {loading ? 'Creating account...' : 'Create account'}
             </button>
           </form>

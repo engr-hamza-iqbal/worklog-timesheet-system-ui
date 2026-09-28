@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Mail, RefreshCw, AlertCircle, CheckCircle2, XCircle, Clock, Search } from 'lucide-react';
+import { Mail, RefreshCw, AlertCircle, CheckCircle2, XCircle, Clock, Search, Send, Plus, Loader2, Eye } from 'lucide-react';
 import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useNotification } from '../context/NotificationContext.jsx';
+import Modal from '../components/Modal.jsx';
 
 function StatusBadge({ status }) {
   if (status === 'SENT') {
@@ -44,7 +46,8 @@ function formatEmailType(type) {
 }
 
 export default function EmailLogPage() {
-  const { isAdmin, loading: authLoading } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
+  const { notify } = useNotification();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -55,6 +58,17 @@ export default function EmailLogPage() {
     emailType: '',
     search: '',
   });
+
+  // Test Email Modal State
+  const [showTestModal, setShowTestModal] = useState(false);
+  const [testForm, setTestForm] = useState({
+    emailType: 'MISSING_TIMESHEET',
+    recipientEmail: 'engr.hamzaiqbal.pk@gmail.com',
+  });
+  const [sendingTest, setSendingTest] = useState(false);
+
+  // Selected Log Details Modal State
+  const [selectedLog, setSelectedLog] = useState(null);
 
   async function load(pageNumber = page, currentFilters = filters) {
     try {
@@ -83,6 +97,24 @@ export default function EmailLogPage() {
       load(1, filters);
     }
   }, [authLoading, isAdmin]);
+
+  async function handleSendTest(e) {
+    e.preventDefault();
+    if (!testForm.recipientEmail) return;
+    try {
+      setSendingTest(true);
+      const res = await api.post('/api/emails/test', testForm);
+      const msg = res.message || 'Test email dispatched successfully.';
+      notify.success(msg);
+      setShowTestModal(false);
+      await load(1, filters);
+    } catch (err) {
+      const errTxt = err.message || 'Failed to dispatch test email.';
+      notify.error(errTxt);
+    } finally {
+      setSendingTest(false);
+    }
+  }
 
   function handleFilterSubmit(e) {
     e.preventDefault();
@@ -131,15 +163,28 @@ export default function EmailLogPage() {
             Audit log of all notification attempts, delivery status, and failure messages.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => load(page, filters)}
-          disabled={loading}
-          className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50"
-        >
-          <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setTestFeedback(null);
+              setShowTestModal(true);
+            }}
+            className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3.5 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-800 transition cursor-pointer"
+          >
+            <Send size={14} />
+            Send Test Email
+          </button>
+          <button
+            type="button"
+            onClick={() => load(page, filters)}
+            disabled={loading}
+            className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50 transition cursor-pointer disabled:cursor-not-allowed"
+          >
+            <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -236,6 +281,7 @@ export default function EmailLogPage() {
                 <th className="px-5 py-3">Subject</th>
                 <th className="px-5 py-3">Status</th>
                 <th className="px-5 py-3">Attempted At</th>
+                <th className="px-5 py-3 text-right">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -255,7 +301,7 @@ export default function EmailLogPage() {
                       {log.subject}
                     </div>
                     {log.errorMessage && (
-                      <div className="mt-1 text-xs text-red-600 truncate" title={log.errorMessage}>
+                      <div className="mt-1 text-xs text-slate-500 truncate" title={log.errorMessage}>
                         {log.errorMessage}
                       </div>
                     )}
@@ -265,6 +311,16 @@ export default function EmailLogPage() {
                   </td>
                   <td className="px-5 py-3 text-xs text-slate-500 whitespace-nowrap">
                     {new Date(log.attemptedAt).toLocaleString()}
+                  </td>
+                  <td className="px-5 py-3 text-right whitespace-nowrap">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedLog(log)}
+                      className="inline-flex items-center gap-1 rounded border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-700 hover:bg-slate-50 transition cursor-pointer"
+                    >
+                      <Eye size={12} />
+                      Details
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -312,6 +368,138 @@ export default function EmailLogPage() {
           </div>
         )}
       </div>
+
+      {/* Send Test Email Modal */}
+      <Modal
+        isOpen={showTestModal}
+        onClose={() => (sendingTest ? null : setShowTestModal(false))}
+        title="Send Test Notification Email"
+        size="md"
+      >
+        <form onSubmit={handleSendTest} className="space-y-4">
+          <p className="text-xs text-slate-500">
+            Trigger a real notification to test email templates, delivery status, and tracking.
+          </p>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-700 mb-1">
+              Email Template
+            </label>
+            <select
+              value={testForm.emailType}
+              onChange={(e) => setTestForm({ ...testForm, emailType: e.target.value })}
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm bg-white focus:border-slate-900 focus:outline-none"
+            >
+              <option value="MISSING_TIMESHEET">Missing Timesheet Reminder (Timesheet chase)</option>
+              <option value="ENTRY_RETURNED">Time Entry Returned (Review feedback)</option>
+              <option value="TIME_OFF_DECIDED">Time Off Decided (Approved/Declined notification)</option>
+              <option value="TIME_OFF_REVIEW_REQUIRED">Time Off Review Required (Decision pending)</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-700 mb-1">
+              Recipient Email
+            </label>
+            <input
+              type="email"
+              required
+              value={testForm.recipientEmail}
+              onChange={(e) => setTestForm({ ...testForm, recipientEmail: e.target.value })}
+              placeholder="e.g. engr.hamzaiqbal.pk@gmail.com"
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
+            />
+            <p className="mt-1 text-[11px] text-slate-400">
+              In development, emails route to your verified sandbox address (<code>engr.hamzaiqbal.pk@gmail.com</code>).
+            </p>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              disabled={sendingTest}
+              onClick={() => setShowTestModal(false)}
+              className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={sendingTest}
+              className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer disabled:cursor-not-allowed"
+            >
+              {sendingTest && <Loader2 size={14} className="animate-spin" />}
+              {sendingTest ? 'Sending test email...' : 'Send Test Email'}
+            </button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Email Details Modal */}
+      <Modal
+        isOpen={Boolean(selectedLog)}
+        onClose={() => setSelectedLog(null)}
+        title="Email Audit Details"
+        size="md"
+      >
+        {selectedLog && (
+          <div className="space-y-3 text-sm">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <span className="text-xs font-semibold text-slate-400 uppercase">Status</span>
+                <div className="mt-1">
+                  <StatusBadge status={selectedLog.status} />
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="text-xs font-semibold text-slate-400 uppercase">Type</span>
+                <div className="mt-1 font-medium text-slate-900">
+                  {formatEmailType(selectedLog.emailType)}
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <span className="text-xs font-semibold text-slate-400 uppercase">Subject</span>
+              <div className="mt-0.5 text-slate-900 font-medium">{selectedLog.subject}</div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 border-t border-slate-100 pt-3">
+              <div>
+                <span className="text-xs font-semibold text-slate-400 uppercase">Recipient</span>
+                <div className="mt-0.5 text-slate-900">{selectedLog.recipientUser?.name || 'External'}</div>
+                <div className="text-xs text-slate-500">{selectedLog.recipientEmail}</div>
+              </div>
+              <div>
+                <span className="text-xs font-semibold text-slate-400 uppercase">Attempted At</span>
+                <div className="mt-0.5 text-slate-900">{new Date(selectedLog.attemptedAt).toLocaleString()}</div>
+                {selectedLog.sentAt && (
+                  <div className="text-xs text-emerald-600">Sent: {new Date(selectedLog.sentAt).toLocaleTimeString()}</div>
+                )}
+              </div>
+            </div>
+
+            {selectedLog.errorMessage && (
+              <div className="border-t border-slate-100 pt-3">
+                <span className="text-xs font-semibold text-slate-400 uppercase">Delivery Info / Error</span>
+                <div className="mt-1 rounded bg-slate-50 p-2.5 font-mono text-xs text-slate-700 break-words border border-slate-200">
+                  {selectedLog.errorMessage}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setSelectedLog(null)}
+                className="rounded-md border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </main>
   );
 }

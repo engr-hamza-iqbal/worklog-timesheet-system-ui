@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { BarChart3, RefreshCw, X, Send, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { BarChart3, RefreshCw, X, Send, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useNotification } from '../context/NotificationContext.jsx';
 
 function MetricTable({ title, rows = [], columns = [] }) {
   return (
@@ -46,12 +47,12 @@ function MetricTable({ title, rows = [], columns = [] }) {
 export default function ReportsPage() {
   const { isAdmin, capabilities, loading: authLoading } = useAuth();
   const canView = isAdmin || !!capabilities?.VIEW_REPORTS;
+  const { notify } = useNotification();
 
   const [activeTab, setActiveTab] = useState('summary'); // 'summary' | 'missing'
   const [filters, setFilters] = useState({ startDate: '', endDate: '' });
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
 
   // Missing timesheets state
   const [missingDate, setMissingDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -59,12 +60,10 @@ export default function ReportsPage() {
   const [loadingMissing, setLoadingMissing] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [chasing, setChasing] = useState(false);
-  const [chaseFeedback, setChaseFeedback] = useState(null);
 
   async function loadSummary(filterValues = filters) {
     try {
       setLoading(true);
-      setError('');
       if (filterValues.startDate && filterValues.endDate && filterValues.endDate < filterValues.startDate) {
         throw new Error('End date cannot be earlier than start date.');
       }
@@ -74,7 +73,7 @@ export default function ReportsPage() {
       const response = await api.get('/api/reports', { params });
       setReport(response.data || response);
     } catch (err) {
-      setError(err.message || 'Failed to load reports.');
+      notify.error(err.message || 'Failed to load reports.');
     } finally {
       setLoading(false);
     }
@@ -83,7 +82,6 @@ export default function ReportsPage() {
   async function loadMissing(dateVal = missingDate) {
     try {
       setLoadingMissing(true);
-      setChaseFeedback(null);
       const response = await api.get('/api/reports/missing-timesheets', {
         params: { date: dateVal },
       });
@@ -91,7 +89,7 @@ export default function ReportsPage() {
       setMissingData(data);
       setSelectedUsers([]);
     } catch (err) {
-      setError(err.message || 'Failed to load missing timesheets.');
+      notify.error(err.message || 'Failed to load missing timesheets.');
     } finally {
       setLoadingMissing(false);
     }
@@ -120,22 +118,17 @@ export default function ReportsPage() {
     if (!selectedUsers.length) return;
     try {
       setChasing(true);
-      setChaseFeedback(null);
       const res = await api.post('/api/reports/missing-timesheets/chase', {
         date: missingDate,
         userIds: selectedUsers,
       });
       const data = res.data || res;
-      setChaseFeedback({
-        type: 'success',
-        message: `Sent ${data.sentCount} reminder(s). ${data.skippedCount ? `${data.skippedCount} skipped (already reminded today).` : ''}`,
-      });
+      notify.success(
+        `Sent ${data.sentCount} reminder(s). ${data.skippedCount ? `${data.skippedCount} skipped (already reminded today).` : ''}`
+      );
       await loadMissing(missingDate);
     } catch (err) {
-      setChaseFeedback({
-        type: 'error',
-        message: err.message || 'Failed to dispatch reminders.',
-      });
+      notify.error(err.message || 'Failed to dispatch reminders.');
     } finally {
       setChasing(false);
     }
@@ -229,22 +222,6 @@ export default function ReportsPage() {
           Missing Timesheets & Reminders
         </button>
       </div>
-
-      {error && (
-        <div className="mb-6 flex items-center justify-between rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          <div className="flex items-center gap-2">
-            <AlertCircle size={16} />
-            <span>{error}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => (activeTab === 'summary' ? loadSummary() : loadMissing())}
-            className="font-medium underline hover:text-red-900"
-          >
-            Retry
-          </button>
-        </div>
-      )}
 
       {/* Summary Tab */}
       {activeTab === 'summary' && (
@@ -384,8 +361,9 @@ export default function ReportsPage() {
                 type="button"
                 onClick={() => loadMissing(missingDate)}
                 disabled={loadingMissing}
-                className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50"
+                className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
+                {loadingMissing && <Loader2 size={13} className="animate-spin shrink-0" />}
                 Check date
               </button>
             </div>
@@ -395,30 +373,13 @@ export default function ReportsPage() {
                 type="button"
                 onClick={handleChaseSubmit}
                 disabled={chasing || !selectedUsers.length}
-                className="inline-flex items-center gap-2 rounded-md bg-red-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-800 disabled:opacity-40"
+                className="inline-flex items-center gap-2 rounded-md bg-red-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-800 disabled:opacity-40 transition cursor-pointer disabled:cursor-not-allowed"
               >
-                <Send size={15} />
+                {chasing ? <Loader2 size={15} className="animate-spin shrink-0" /> : <Send size={15} />}
                 {chasing ? 'Sending reminders...' : `Chase Selected (${selectedUsers.length})`}
               </button>
             )}
           </div>
-
-          {chaseFeedback && (
-            <div
-              className={`flex items-center gap-2 rounded-md p-4 text-sm ${
-                chaseFeedback.type === 'success'
-                  ? 'border border-emerald-200 bg-emerald-50 text-emerald-800'
-                  : 'border border-red-200 bg-red-50 text-red-800'
-              }`}
-            >
-              {chaseFeedback.type === 'success' ? (
-                <CheckCircle2 size={16} />
-              ) : (
-                <AlertCircle size={16} />
-              )}
-              <span>{chaseFeedback.message}</span>
-            </div>
-          )}
 
           <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
             <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-4">
