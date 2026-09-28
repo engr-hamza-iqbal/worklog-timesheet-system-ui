@@ -235,7 +235,7 @@ export default function TimesheetsPage() {
   const dayMap = Object.fromEntries(days.map((day) => [day.date, day]));
 
   return (
-    <main className="max-w-[1600px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
+    <main className="max-w-auto mx-auto w-full px-4 py-6">
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">

@@ -4,15 +4,27 @@ import Sidebar from './Sidebar.jsx';
 import AppLayout from './AppLayout.jsx';
 
 // ─── Tooltip wrapper (re-exported for DashboardPage and other components) ───
-export function Tooltip({ text, children, side = 'bottom' }) {
-  const posClass =
-    side === 'top'
-      ? 'bottom-full mb-1.5 left-1/2 -translate-x-1/2'
-      : side === 'left'
-      ? 'right-full mr-1.5 top-1/2 -translate-y-1/2'
-      : side === 'right'
-      ? 'left-full ml-1.5 top-1/2 -translate-y-1/2'
-      : 'top-full mt-1.5 left-1/2 -translate-x-1/2';
+export function Tooltip({ text, children, side = 'bottom', align = 'center' }) {
+  let posClass = '';
+  if (side === 'top') {
+    posClass =
+      align === 'left' || align === 'start'
+        ? 'bottom-full mb-1.5 left-0'
+        : align === 'right' || align === 'end'
+        ? 'bottom-full mb-1.5 right-0'
+        : 'bottom-full mb-1.5 left-1/2 -translate-x-1/2';
+  } else if (side === 'bottom') {
+    posClass =
+      align === 'left' || align === 'start'
+        ? 'top-full mt-1.5 left-0'
+        : align === 'right' || align === 'end'
+        ? 'top-full mt-1.5 right-0'
+        : 'top-full mt-1.5 left-1/2 -translate-x-1/2';
+  } else if (side === 'left') {
+    posClass = 'right-full mr-1.5 top-1/2 -translate-y-1/2';
+  } else if (side === 'right') {
+    posClass = 'left-full ml-1.5 top-1/2 -translate-y-1/2';
+  }
 
   return (
     <div className="relative group inline-flex">

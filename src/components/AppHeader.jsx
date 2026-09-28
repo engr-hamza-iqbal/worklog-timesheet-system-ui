@@ -131,6 +131,7 @@ export default function AppHeader({
             <Tooltip
               text={sidebarOpen ? 'Close sidebar (Ctrl+B)' : 'Expand sidebar (Ctrl+B)'}
               side="bottom"
+              align="left"
             >
               <button
                 onClick={onToggleSidebar}
