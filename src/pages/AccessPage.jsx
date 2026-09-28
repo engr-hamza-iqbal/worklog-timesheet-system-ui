@@ -315,7 +315,7 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left">
+            <table className="w-full text-xs text-left min-w-[460px]">
               <thead className="bg-slate-50 text-[10px] font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200">
                 <tr>
                   <th className="py-2.5 px-4">Capability</th>
@@ -476,7 +476,7 @@ function AuditLog() {
       ) : (
         <div>
           <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left">
+            <table className="w-full text-xs text-left min-w-[440px]">
               <thead className="bg-slate-50 text-[10px] font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200">
                 <tr>
                   <th className="py-2 px-5">Action</th>

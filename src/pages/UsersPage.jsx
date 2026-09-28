@@ -449,7 +449,7 @@ export default function UsersPage() {
                   className="grid grid-cols-12 gap-2 sm:gap-4 px-5 py-3.5 items-center hover:bg-slate-50/60 transition cursor-pointer"
                 >
                   {/* Name + email */}
-                  <div className="col-span-7 sm:col-span-4 min-w-0">
+                  <div className="col-span-8 sm:col-span-4 min-w-0">
                     <div className="flex items-center gap-2 min-w-0">
                       <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-xs font-semibold text-slate-600 shrink-0">
                         {user.name.charAt(0).toUpperCase()}
@@ -457,6 +457,14 @@ export default function UsersPage() {
                       <div className="min-w-0">
                         <div className="text-xs font-medium text-slate-900 truncate">{user.name}</div>
                         <div className="text-[11px] text-slate-400 truncate">{user.email}</div>
+                        {/* Compact mobile badges */}
+                        <div className="flex sm:hidden items-center gap-1.5 mt-1 flex-wrap">
+                          <Badge
+                            variant={user.accountType === 'ADMIN' ? 'admin' : 'employee'}
+                            label={user.accountType === 'ADMIN' ? 'Admin' : 'Employee'}
+                          />
+                          <Badge variant={user.isActive ? 'active' : 'inactive'} label={user.isActive ? 'Active' : 'Inactive'} dot />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -482,7 +490,7 @@ export default function UsersPage() {
                   </div>
 
                   {/* Actions */}
-                  <div className="col-span-5 sm:col-span-2 flex items-center justify-end gap-1.5">
+                  <div className="col-span-4 sm:col-span-2 flex items-center justify-end gap-1.5">
                     {canManageUsers && (
                       <button
                         onClick={(e) => { e.stopPropagation(); handleToggleStatus(user); }}

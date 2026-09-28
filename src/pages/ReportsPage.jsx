@@ -11,7 +11,7 @@ function MetricTable({ title, rows = [], columns = [] }) {
         <h2 className="text-base font-semibold text-slate-900">{title}</h2>
       </div>
       {rows && rows.length ? (
-        <table className="w-full text-left text-sm">
+        <table className="w-full text-left text-sm min-w-[340px]">
           <thead className="text-xs uppercase text-slate-500">
             <tr>
               {columns.map((column) => (
@@ -202,11 +202,11 @@ export default function ReportsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="mb-6 flex border-b border-slate-200">
+      <div className="mb-6 flex border-b border-slate-200 overflow-x-auto no-scrollbar whitespace-nowrap">
         <button
           type="button"
           onClick={() => setActiveTab('summary')}
-          className={`border-b-2 px-4 py-2.5 text-sm font-medium transition ${
+          className={`border-b-2 px-4 py-2.5 text-sm font-medium transition shrink-0 ${
             activeTab === 'summary'
               ? 'border-slate-900 text-slate-900 font-semibold'
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -217,7 +217,7 @@ export default function ReportsPage() {
         <button
           type="button"
           onClick={() => setActiveTab('missing')}
-          className={`border-b-2 px-4 py-2.5 text-sm font-medium transition ${
+          className={`border-b-2 px-4 py-2.5 text-sm font-medium transition shrink-0 ${
             activeTab === 'missing'
               ? 'border-slate-900 text-slate-900 font-semibold'
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -232,32 +232,32 @@ export default function ReportsPage() {
         <>
           <form
             onSubmit={handleFilterSubmit}
-            className="mb-6 flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+            className="mb-6 flex flex-col sm:flex-row flex-wrap sm:items-end gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
           >
-            <label className="text-xs font-medium text-slate-600">
+            <label className="text-xs font-medium text-slate-600 w-full sm:w-auto">
               Start date
               <input
                 type="date"
                 max={filters.endDate || undefined}
                 value={filters.startDate}
                 onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
-                className="mt-1 block rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
+                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
               />
             </label>
-            <label className="text-xs font-medium text-slate-600">
+            <label className="text-xs font-medium text-slate-600 w-full sm:w-auto">
               End date
               <input
                 type="date"
                 min={filters.startDate || undefined}
                 value={filters.endDate}
                 onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-                className="mt-1 block rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
+                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
               />
             </label>
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-800 disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-800 disabled:opacity-50 w-full sm:w-auto"
             >
               <BarChart3 size={15} className={loading ? 'animate-pulse' : ''} />
               {loading ? 'Updating report...' : 'Run report'}
@@ -266,7 +266,7 @@ export default function ReportsPage() {
               type="button"
               onClick={clearFilters}
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 w-full sm:w-auto"
             >
               <X size={15} />
               Clear
@@ -347,9 +347,9 @@ export default function ReportsPage() {
       {/* Missing Timesheets Tab */}
       {activeTab === 'missing' && (
         <section className="space-y-6">
-          <div className="flex flex-wrap items-end justify-between gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex items-end gap-3">
-              <label className="text-xs font-medium text-slate-600">
+          <div className="flex flex-col sm:flex-row flex-wrap sm:items-end justify-between gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-3 w-full sm:w-auto">
+              <label className="text-xs font-medium text-slate-600 w-full sm:w-auto">
                 Working Day
                 <input
                   type="date"
@@ -358,14 +358,14 @@ export default function ReportsPage() {
                     setMissingDate(e.target.value);
                     loadMissing(e.target.value);
                   }}
-                  className="mt-1 block rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
+                  className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
                 />
               </label>
               <button
                 type="button"
                 onClick={() => loadMissing(missingDate)}
                 disabled={loadingMissing}
-                className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center gap-1.5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
               >
                 {loadingMissing && <Loader2 size={13} className="animate-spin shrink-0" />}
                 Check date
@@ -377,7 +377,7 @@ export default function ReportsPage() {
                 type="button"
                 onClick={handleChaseSubmit}
                 disabled={chasing || !selectedUsers.length}
-                className="inline-flex items-center gap-2 rounded-md bg-red-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-800 disabled:opacity-40 transition cursor-pointer disabled:cursor-not-allowed"
+                className="inline-flex items-center justify-center gap-2 rounded-md bg-red-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-800 disabled:opacity-40 transition cursor-pointer disabled:cursor-not-allowed w-full sm:w-auto"
               >
                 {chasing ? <Loader2 size={15} className="animate-spin shrink-0" /> : <Send size={15} />}
                 {chasing ? 'Sending reminders...' : `Chase Selected (${selectedUsers.length})`}
@@ -399,7 +399,7 @@ export default function ReportsPage() {
                 <button
                   type="button"
                   onClick={toggleSelectAll}
-                  className="text-xs font-semibold text-slate-700 underline hover:text-slate-900"
+                  className="text-xs font-semibold text-slate-700 underline hover:text-slate-900 shrink-0 ml-2"
                 >
                   {selectedUsers.length > 0 ? 'Deselect all' : 'Select all eligible'}
                 </button>
@@ -412,7 +412,7 @@ export default function ReportsPage() {
                 Checking timesheets and approved leave...
               </div>
             ) : missingData?.employees?.length ? (
-              <table className="w-full text-left text-sm">
+              <table className="w-full text-left text-sm min-w-[500px]">
                 <thead className="bg-slate-50 text-xs uppercase text-slate-500">
                   <tr>
                     {isAdmin && <th className="w-12 px-5 py-3">Select</th>}

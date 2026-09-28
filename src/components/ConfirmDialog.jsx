@@ -26,12 +26,12 @@ export default function ConfirmDialog({
         </div>
         <p className="text-sm leading-6 text-slate-600">{message}</p>
       </div>
-      <div className="mt-6 flex justify-end gap-2">
+      <div className="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
         <button
           type="button"
           onClick={onClose}
           disabled={Boolean(loading)}
-          className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+          className="inline-flex items-center justify-center rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed w-full sm:w-auto"
         >
           Cancel
         </button>
@@ -39,7 +39,7 @@ export default function ConfirmDialog({
           type="button"
           onClick={onConfirm}
           disabled={Boolean(loading)}
-          className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm text-white ${confirmClass} disabled:opacity-50 transition cursor-pointer disabled:cursor-not-allowed`}
+          className={`inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm text-white ${confirmClass} disabled:opacity-50 transition cursor-pointer disabled:cursor-not-allowed w-full sm:w-auto`}
         >
           {loading && <Loader2 className="animate-spin shrink-0" size={14} />}
           {loading ? loadingText : confirmLabel}

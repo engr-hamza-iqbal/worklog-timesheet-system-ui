@@ -138,6 +138,11 @@ export default function AppHeader({
               <Menu className="w-5 h-5" />
             </button>
 
+            {/* Mobile current page title */}
+            <span className="md:hidden text-sm font-bold text-slate-900 tracking-tight truncate max-w-[160px]">
+              {currentRouteInfo.title}
+            </span>
+
             {/* Desktop single collapse / expand toggle */}
             <Tooltip
               text={sidebarOpen ? 'Close sidebar (Ctrl+B)' : 'Expand sidebar (Ctrl+B)'}

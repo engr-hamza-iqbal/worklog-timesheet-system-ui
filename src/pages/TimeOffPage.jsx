@@ -261,7 +261,7 @@ export default function TimeOffPage() {
         <button
           type="submit"
           disabled={saving || !types.length}
-          className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer disabled:cursor-not-allowed"
+          className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer disabled:cursor-not-allowed w-full xl:w-auto"
         >
           {saving ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
           {saving ? "Submitting request..." : "Request leave"}
@@ -269,14 +269,14 @@ export default function TimeOffPage() {
       </form>
       <form
         onSubmit={applyFilters}
-        className="mb-4 grid gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-[minmax(150px,1fr)_minmax(150px,1fr)_minmax(150px,1fr)_auto_auto] lg:items-end"
+        className="mb-4 grid gap-3 rounded-lg border border-slate-200 bg-white p-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-[minmax(150px,1fr)_minmax(150px,1fr)_minmax(150px,1fr)_auto_auto] lg:items-end"
       >
         <label className="text-xs font-medium text-slate-600">
           Status
           <select
             value={filters.status}
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-            className="mt-1 rounded-md border px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
           >
             <option value="">All statuses</option>
             {["PENDING", "APPROVED", "DECLINED", "CANCELLED"].map((status) => (
@@ -292,7 +292,7 @@ export default function TimeOffPage() {
             onChange={(e) =>
               setFilters({ ...filters, startDate: e.target.value })
             }
-            className="mt-1 rounded-md border px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
           />
         </label>
         <label className="text-xs font-medium text-slate-600">
@@ -304,10 +304,10 @@ export default function TimeOffPage() {
             onChange={(e) =>
               setFilters({ ...filters, endDate: e.target.value })
             }
-            className="mt-1 rounded-md border px-3 py-2 text-sm"
+            className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
           />
         </label>
-        <button className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-3 py-2 text-sm text-white">
+        <button className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-3 py-2 text-sm text-white w-full sm:w-auto">
           <CalendarDays size={15} />
           Filter
         </button>
@@ -318,7 +318,7 @@ export default function TimeOffPage() {
             setFilters(cleared);
             load(cleared);
           }}
-          className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm text-slate-600"
+          className="inline-flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 w-full sm:w-auto"
         >
           <X size={15} />
           Clear
@@ -335,7 +335,7 @@ export default function TimeOffPage() {
             No time-off requests match these filters.
           </div>
         ) : (
-          <table className="w-full text-left text-sm">
+          <table className="w-full text-left text-sm min-w-[580px]">
             <thead className="bg-slate-50 text-xs uppercase text-slate-500">
               <tr>
                 <th className="p-4">Employee</th>

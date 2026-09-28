@@ -190,9 +190,9 @@ export default function EmailLogPage() {
       {/* Filters */}
       <form
         onSubmit={handleFilterSubmit}
-        className="mb-6 flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+        className="mb-6 flex flex-col sm:flex-row flex-wrap sm:items-end gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
       >
-        <div className="min-w-[200px] flex-1">
+        <div className="w-full sm:min-w-[200px] sm:flex-1">
           <label className="text-xs font-medium text-slate-600">
             Search
             <div className="relative mt-1">
@@ -208,13 +208,13 @@ export default function EmailLogPage() {
           </label>
         </div>
 
-        <div>
+        <div className="w-full sm:w-auto">
           <label className="text-xs font-medium text-slate-600">
             Status
             <select
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              className="mt-1 block rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
+              className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
             >
               <option value="">All Statuses</option>
               <option value="SENT">Sent</option>
@@ -224,13 +224,13 @@ export default function EmailLogPage() {
           </label>
         </div>
 
-        <div>
+        <div className="w-full sm:w-auto">
           <label className="text-xs font-medium text-slate-600">
             Type
             <select
               value={filters.emailType}
               onChange={(e) => setFilters({ ...filters, emailType: e.target.value })}
-              className="mt-1 block rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
+              className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
             >
               <option value="">All Types</option>
               <option value="MISSING_TIMESHEET">Missing Timesheet</option>
@@ -244,7 +244,7 @@ export default function EmailLogPage() {
         <button
           type="submit"
           disabled={loading}
-          className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-800 disabled:opacity-50"
+          className="inline-flex items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-800 disabled:opacity-50 w-full sm:w-auto"
         >
           Filter
         </button>
@@ -252,7 +252,7 @@ export default function EmailLogPage() {
           type="button"
           onClick={handleClear}
           disabled={loading}
-          className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+          className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 w-full sm:w-auto"
         >
           Clear
         </button>
@@ -273,7 +273,7 @@ export default function EmailLogPage() {
             Loading email logs...
           </div>
         ) : logs.length ? (
-          <table className="w-full text-left text-sm">
+          <table className="w-full text-left text-sm min-w-[620px]">
             <thead className="bg-slate-50 text-xs uppercase text-slate-500">
               <tr>
                 <th className="px-5 py-3">Recipient</th>

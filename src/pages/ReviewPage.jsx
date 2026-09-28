@@ -301,10 +301,10 @@ export default function ReviewPage() {
       </div>
 
       {/* Queue Tabs */}
-      <div className="flex border-b border-slate-200 mb-5 gap-2">
+      <div className="flex border-b border-slate-200 mb-5 gap-2 overflow-x-auto no-scrollbar whitespace-nowrap">
         <button
           onClick={() => setActiveTab('timesheets')}
-          className={`pb-3 px-3 text-sm font-medium border-b-2 transition cursor-pointer flex items-center gap-2 ${
+          className={`pb-3 px-3 text-sm font-medium border-b-2 transition cursor-pointer flex items-center gap-2 shrink-0 ${
             activeTab === 'timesheets'
               ? 'border-slate-900 text-slate-900 font-semibold'
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -320,7 +320,7 @@ export default function ReviewPage() {
         {canDecideTimeOff && (
           <button
             onClick={() => setActiveTab('timeoff')}
-            className={`pb-3 px-3 text-sm font-medium border-b-2 transition cursor-pointer flex items-center gap-2 ${
+            className={`pb-3 px-3 text-sm font-medium border-b-2 transition cursor-pointer flex items-center gap-2 shrink-0 ${
               activeTab === 'timeoff'
                 ? 'border-slate-900 text-slate-900 font-semibold'
                 : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -342,8 +342,8 @@ export default function ReviewPage() {
         <>
           {/* Auto-filtering Toolbar (No Filter submit button; auto-filters in-memory without DB roundtrips) */}
           <div className="bg-white border border-slate-200 rounded-lg p-4 mb-5 shadow-xs">
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="flex-1 min-w-[200px]">
+        <div className="flex flex-col sm:flex-row flex-wrap sm:items-end gap-3">
+          <div className="w-full sm:flex-1 sm:min-w-[200px]">
             <label className="block text-xs font-medium text-slate-600 mb-1">
               Employee
             </label>
@@ -361,7 +361,7 @@ export default function ReviewPage() {
             </div>
           </div>
 
-          <div className="flex-1 min-w-[180px]">
+          <div className="w-full sm:flex-1 sm:min-w-[180px]">
             <label className="block text-xs font-medium text-slate-600 mb-1">
               Project
             </label>
@@ -402,11 +402,11 @@ export default function ReviewPage() {
           </div>
 
           {hasActiveFilters && (
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
               <button
                 type="button"
                 onClick={clearFilters}
-                className="rounded-md border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-600 inline-flex items-center gap-1.5 hover:bg-slate-50 transition cursor-pointer"
+                className="w-full sm:w-auto rounded-md border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-600 inline-flex items-center justify-center gap-1.5 hover:bg-slate-50 transition cursor-pointer"
                 title="Clear all active filters"
               >
                 <X size={15} />
@@ -432,23 +432,23 @@ export default function ReviewPage() {
       </div>
 
       {/* Batch Actions Bar */}
-      <div className="flex items-center gap-3 mb-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
         <button
           disabled={!selected.length || loading || Boolean(isProcessing)}
           onClick={approve}
-          className="rounded-md bg-emerald-700 hover:bg-emerald-800 disabled:opacity-40 text-white px-3 py-2 text-sm inline-flex items-center gap-2 transition cursor-pointer disabled:cursor-not-allowed"
+          className="w-full sm:w-auto rounded-md bg-emerald-700 hover:bg-emerald-800 disabled:opacity-40 text-white px-3 py-2 text-sm inline-flex items-center justify-center gap-2 transition cursor-pointer disabled:cursor-not-allowed"
         >
           {isProcessing ? <Loader2 size={15} className="animate-spin shrink-0" /> : <Check size={15} />}
           {isProcessing ? "Processing..." : `Approve selected ${selected.length > 0 ? `(${selected.length})` : ""}`}
         </button>
-        <span className="text-sm text-slate-500">
+        <span className="text-xs sm:text-sm text-slate-500">
           {filteredEntries.length} submitted entr{filteredEntries.length === 1 ? "y" : "ies"}
         </span>
       </div>
 
       {/* Entries Table */}
       <div className="relative overflow-x-auto bg-white border border-slate-200 rounded-lg shadow-xs">
-        <table className="w-full text-left text-sm">
+        <table className="w-full text-left text-sm min-w-[680px]">
           <thead className="bg-slate-50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-200">
             <tr>
               <th className="p-3 w-10">
@@ -559,8 +559,8 @@ export default function ReviewPage() {
       </>
       ) : (
         /* Time Off Requests Queue */
-        <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-xs">
-          <table className="w-full text-left border-collapse text-xs">
+        <div className="bg-white rounded-lg border border-slate-200 overflow-x-auto shadow-xs">
+          <table className="w-full text-left border-collapse text-xs min-w-[640px]">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
                 <th className="py-3 px-4">Employee</th>

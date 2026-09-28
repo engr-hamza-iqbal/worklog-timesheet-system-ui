@@ -343,10 +343,10 @@ export default function TimesheetsPage() {
       </div>
 
       {/* ── Screen Tabs: Record Time | My Week | My Entries ── */}
-      <div className="flex border-b border-slate-200 mb-6 gap-2">
+      <div className="flex border-b border-slate-200 mb-6 gap-2 overflow-x-auto no-scrollbar whitespace-nowrap">
         <button
           onClick={() => setActiveTab("record")}
-          className={`pb-3 px-3 text-sm font-medium border-b-2 transition cursor-pointer flex items-center gap-2 ${
+          className={`pb-3 px-3 text-sm font-medium border-b-2 transition cursor-pointer flex items-center gap-2 shrink-0 ${
             activeTab === "record"
               ? "border-slate-900 text-slate-900 font-semibold"
               : "border-transparent text-slate-500 hover:text-slate-700"
@@ -358,7 +358,7 @@ export default function TimesheetsPage() {
 
         <button
           onClick={() => setActiveTab("week")}
-          className={`pb-3 px-3 text-sm font-medium border-b-2 transition cursor-pointer flex items-center gap-2 ${
+          className={`pb-3 px-3 text-sm font-medium border-b-2 transition cursor-pointer flex items-center gap-2 shrink-0 ${
             activeTab === "week"
               ? "border-slate-900 text-slate-900 font-semibold"
               : "border-transparent text-slate-500 hover:text-slate-700"
@@ -373,7 +373,7 @@ export default function TimesheetsPage() {
 
         <button
           onClick={() => setActiveTab("entries")}
-          className={`pb-3 px-3 text-sm font-medium border-b-2 transition cursor-pointer flex items-center gap-2 ${
+          className={`pb-3 px-3 text-sm font-medium border-b-2 transition cursor-pointer flex items-center gap-2 shrink-0 ${
             activeTab === "entries"
               ? "border-slate-900 text-slate-900 font-semibold"
               : "border-transparent text-slate-500 hover:text-slate-700"
@@ -394,7 +394,7 @@ export default function TimesheetsPage() {
         <div className="space-y-6">
           {/* Day Navigation & Daily Summary Card */}
           <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => stepDate(-1)}
@@ -418,7 +418,7 @@ export default function TimesheetsPage() {
               >
                 <ChevronRight size={16} />
               </button>
-              <div className="ml-2 font-semibold text-slate-900 text-sm sm:text-base">
+              <div className="ml-1 sm:ml-2 font-semibold text-slate-900 text-sm sm:text-base">
                 {new Date(form.workDate).toLocaleDateString(undefined, {
                   weekday: "long",
                   year: "numeric",
@@ -429,8 +429,8 @@ export default function TimesheetsPage() {
             </div>
 
             {/* Daily Running Gauge */}
-            <div className="flex items-center gap-4">
-              <div className="text-right">
+            <div className="flex items-center justify-between sm:justify-start gap-4 w-full md:w-auto">
+              <div className="text-left sm:text-right">
                 <div className="text-xs text-slate-500 font-medium">Logged Today</div>
                 <div className="text-lg font-bold text-slate-900">
                   <span className={selectedDayTotalHours > 24 ? "text-rose-600" : ""}>
@@ -663,7 +663,7 @@ export default function TimesheetsPage() {
         <div className="space-y-6">
           {/* Week Controls Bar */}
           <div className="bg-white border border-slate-200 rounded-xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => setWeekStart(addDays(weekStart, -7))}
@@ -687,12 +687,12 @@ export default function TimesheetsPage() {
               >
                 <ChevronRight size={16} />
               </button>
-              <span className="ml-2 text-sm font-semibold text-slate-900">
+              <span className="ml-1 sm:ml-2 text-xs sm:text-sm font-semibold text-slate-900">
                 {iso(weekStart)} &rarr; {iso(weekEnd)}
               </span>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between sm:justify-start gap-3 w-full md:w-auto">
               <span className="text-xs font-semibold text-slate-600">
                 Week Total: <span className="text-slate-900 font-bold">{totalWeekMinutes / 60}h</span>
               </span>
@@ -707,7 +707,7 @@ export default function TimesheetsPage() {
                       "whole week entries",
                     )
                   }
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer shadow-xs"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer shadow-xs"
                 >
                   {isProcessing ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
                   <span>Submit Whole Week ({allWeekEditableEntries.length})</span>
@@ -804,10 +804,10 @@ export default function TimesheetsPage() {
       {activeTab === "entries" && (
         <div className="space-y-4">
           {/* History Filters Toolbar */}
-          <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
+          <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="flex flex-col sm:flex-row flex-wrap sm:items-center gap-3 w-full md:flex-1">
               {/* Search */}
-              <div className="relative min-w-[200px]">
+              <div className="relative w-full sm:w-auto sm:min-w-[200px]">
                 <input
                   type="text"
                   placeholder="Search description or project..."
@@ -828,7 +828,7 @@ export default function TimesheetsPage() {
                   setHistoryProject(e.target.value);
                   setHistoryPage(1);
                 }}
-                className="border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs focus:border-slate-900 focus:outline-none transition"
+                className="w-full sm:w-auto border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs focus:border-slate-900 focus:outline-none transition"
               >
                 <option value="">All Projects</option>
                 {projects.map((p) => (
@@ -839,7 +839,7 @@ export default function TimesheetsPage() {
               </select>
 
               {/* Status filter buttons */}
-              <div className="flex rounded-lg border border-slate-200 overflow-hidden text-xs">
+              <div className="flex overflow-x-auto no-scrollbar rounded-lg border border-slate-200 text-xs w-full sm:w-auto shrink-0 whitespace-nowrap">
                 {["ALL", "DRAFT", "SUBMITTED", "APPROVED", "RETURNED"].map((st) => (
                   <button
                     key={st}
@@ -866,8 +866,8 @@ export default function TimesheetsPage() {
           </div>
 
           {/* Historical Table */}
-          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-            <table className="w-full text-left border-collapse text-xs">
+          <div className="bg-white border border-slate-200 rounded-xl overflow-x-auto shadow-xs">
+            <table className="w-full text-left border-collapse text-xs min-w-[620px]">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
                   <th className="py-3 px-4">Date</th>

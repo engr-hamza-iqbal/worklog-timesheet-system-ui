@@ -458,7 +458,7 @@ export default function ClientsProjectsPage() {
                   </p>
                 </div>
                 {canManage && (
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 shrink-0">
                     <button
                       onClick={() => { setEditingClient(selectedClient); setModal('editClient'); }}
                       className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer"
@@ -505,7 +505,7 @@ export default function ClientsProjectsPage() {
                 />
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
+                  <table className="w-full text-left text-xs min-w-[500px]">
                     <thead className="bg-slate-50 text-[10px] font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200">
                       <tr>
                         <th className="py-2.5 px-5">Project</th>

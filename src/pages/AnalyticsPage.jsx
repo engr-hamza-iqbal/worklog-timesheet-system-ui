@@ -122,32 +122,32 @@ export default function AnalyticsPage() {
 
       <form
         onSubmit={handleFilterSubmit}
-        className="mb-6 flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+        className="mb-6 flex flex-col sm:flex-row flex-wrap sm:items-end gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
       >
-        <label className="text-xs font-medium text-slate-600">
+        <label className="text-xs font-medium text-slate-600 w-full sm:w-auto">
           Start date
           <input
             type="date"
             max={filters.endDate || undefined}
             value={filters.startDate}
             onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
-            className="mt-1 block rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
+            className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
           />
         </label>
-        <label className="text-xs font-medium text-slate-600">
+        <label className="text-xs font-medium text-slate-600 w-full sm:w-auto">
           End date
           <input
             type="date"
             min={filters.startDate || undefined}
             value={filters.endDate}
             onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-            className="mt-1 block rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
+            className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
           />
         </label>
         <button
           type="submit"
           disabled={loading}
-          className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-800 disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-800 disabled:opacity-50 w-full sm:w-auto"
         >
           <Activity size={15} className={loading ? 'animate-pulse' : ''} />
           {loading ? 'Updating analytics...' : 'Update analytics'}
@@ -156,7 +156,7 @@ export default function AnalyticsPage() {
           type="button"
           onClick={clearFilters}
           disabled={loading}
-          className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 w-full sm:w-auto"
         >
           <X size={15} />
           Clear
