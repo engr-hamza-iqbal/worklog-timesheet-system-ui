@@ -9,8 +9,6 @@ import {
   LogOut,
   Calendar,
   LayoutDashboard,
-  LogIn,
-  UserPlus,
 } from 'lucide-react';
 import { Tooltip } from './Navbar.jsx';
 
@@ -82,22 +80,6 @@ function HeaderProfileDropdown({ user, isAdmin, onLogout }) {
             >
               <LayoutDashboard className="w-3.5 h-3.5 text-slate-500" />
               <span>Dashboard</span>
-            </Link>
-            <Link
-              to="/login"
-              onClick={() => setOpen(false)}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
-            >
-              <LogIn className="w-3.5 h-3.5 text-slate-500" />
-              <span>Sign in / Switch</span>
-            </Link>
-            <Link
-              to="/register"
-              onClick={() => setOpen(false)}
-              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
-            >
-              <UserPlus className="w-3.5 h-3.5 text-slate-500" />
-              <span>Register new account</span>
             </Link>
             <div className="my-1 border-t border-slate-100" />
             <button
@@ -217,8 +199,8 @@ export default function AppHeader({
               <span>{todayFormatted}</span>
             </div>
 
-            {/* If on /login, /register, or /, show quick link to Dashboard */}
-            {(isAuthPage || location.pathname === '/') && (
+            {/* If on / (landing page), show quick link to Dashboard */}
+            {location.pathname === '/' && (
               <Link
                 to="/dashboard"
                 className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg border border-slate-200 transition"

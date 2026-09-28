@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import { NotificationProvider } from './context/NotificationContext.jsx';
 import AppLayout from './components/AppLayout.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
+import GuestRoute from './components/GuestRoute.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
@@ -27,8 +28,22 @@ export default function App() {
           <AppLayout>
           <Routes>
             <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
+            <Route
+              path="/login"
+              element={
+                <GuestRoute>
+                  <LoginPage />
+                </GuestRoute>
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                <GuestRoute>
+                  <RegisterPage />
+                </GuestRoute>
+              }
+            />
 
             <Route
               path="/dashboard"
