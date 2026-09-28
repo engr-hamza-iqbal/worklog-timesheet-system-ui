@@ -77,7 +77,6 @@ export default function TimesheetsPage() {
       }
     }
     try {
-      setError("");
       setLoading(true);
       const [entriesResult, projectsResult] = await Promise.allSettled([
         api.get("/api/timesheets", { params: dateRange }),
