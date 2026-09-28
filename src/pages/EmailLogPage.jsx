@@ -164,17 +164,16 @@ export default function EmailLogPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setTestFeedback(null);
-              setShowTestModal(true);
-            }}
-            className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3.5 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-800 transition cursor-pointer"
-          >
-            <Send size={14} />
-            Send Test Email
-          </button>
+          {import.meta.env.DEV && (
+            <button
+              type="button"
+              onClick={() => setShowTestModal(true)}
+              className="inline-flex items-center gap-1.5 rounded-md bg-slate-900 px-3.5 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-800 transition cursor-pointer"
+            >
+              <Send size={14} />
+              Send Test Email (Dev)
+            </button>
+          )}
           <button
             type="button"
             onClick={() => load(page, filters)}
@@ -369,71 +368,73 @@ export default function EmailLogPage() {
         )}
       </div>
 
-      {/* Send Test Email Modal */}
-      <Modal
-        isOpen={showTestModal}
-        onClose={() => (sendingTest ? null : setShowTestModal(false))}
-        title="Send Test Notification Email"
-        size="md"
-      >
-        <form onSubmit={handleSendTest} className="space-y-4">
-          <p className="text-xs text-slate-500">
-            Trigger a real notification to test email templates, delivery status, and tracking.
-          </p>
-
-          <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">
-              Email Template
-            </label>
-            <select
-              value={testForm.emailType}
-              onChange={(e) => setTestForm({ ...testForm, emailType: e.target.value })}
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm bg-white focus:border-slate-900 focus:outline-none"
-            >
-              <option value="MISSING_TIMESHEET">Missing Timesheet Reminder (Timesheet chase)</option>
-              <option value="ENTRY_RETURNED">Time Entry Returned (Review feedback)</option>
-              <option value="TIME_OFF_DECIDED">Time Off Decided (Approved/Declined notification)</option>
-              <option value="TIME_OFF_REVIEW_REQUIRED">Time Off Review Required (Decision pending)</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">
-              Recipient Email
-            </label>
-            <input
-              type="email"
-              required
-              value={testForm.recipientEmail}
-              onChange={(e) => setTestForm({ ...testForm, recipientEmail: e.target.value })}
-              placeholder="e.g. engr.hamzaiqbal.pk@gmail.com"
-              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
-            />
-            <p className="mt-1 text-[11px] text-slate-400">
-              In development, emails route to your verified sandbox address (<code>engr.hamzaiqbal.pk@gmail.com</code>).
+      {/* Send Test Email Modal (Dev Only) */}
+      {import.meta.env.DEV && (
+        <Modal
+          isOpen={showTestModal}
+          onClose={() => (sendingTest ? null : setShowTestModal(false))}
+          title="Send Test Notification Email (Dev Only)"
+          size="md"
+        >
+          <form onSubmit={handleSendTest} className="space-y-4">
+            <p className="text-xs text-slate-500">
+              Trigger a real notification to test email templates, delivery status, and tracking.
             </p>
-          </div>
 
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              disabled={sendingTest}
-              onClick={() => setShowTestModal(false)}
-              className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={sendingTest}
-              className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer disabled:cursor-not-allowed"
-            >
-              {sendingTest && <Loader2 size={14} className="animate-spin" />}
-              {sendingTest ? 'Sending test email...' : 'Send Test Email'}
-            </button>
-          </div>
-        </form>
-      </Modal>
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                Email Template
+              </label>
+              <select
+                value={testForm.emailType}
+                onChange={(e) => setTestForm({ ...testForm, emailType: e.target.value })}
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm bg-white focus:border-slate-900 focus:outline-none"
+              >
+                <option value="MISSING_TIMESHEET">Missing Timesheet Reminder (Timesheet chase)</option>
+                <option value="ENTRY_RETURNED">Time Entry Returned (Review feedback)</option>
+                <option value="TIME_OFF_DECIDED">Time Off Decided (Approved/Declined notification)</option>
+                <option value="TIME_OFF_REVIEW_REQUIRED">Time Off Review Required (Decision pending)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                Recipient Email
+              </label>
+              <input
+                type="email"
+                required
+                value={testForm.recipientEmail}
+                onChange={(e) => setTestForm({ ...testForm, recipientEmail: e.target.value })}
+                placeholder="e.g. engr.hamzaiqbal.pk@gmail.com"
+                className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
+              />
+              <p className="mt-1 text-[11px] text-slate-400">
+                In development, emails route to your verified sandbox address (<code>engr.hamzaiqbal.pk@gmail.com</code>).
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                disabled={sendingTest}
+                onClick={() => setShowTestModal(false)}
+                className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={sendingTest}
+                className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer disabled:cursor-not-allowed"
+              >
+                {sendingTest && <Loader2 size={14} className="animate-spin" />}
+                {sendingTest ? 'Sending test email...' : 'Send Test Email'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
 
       {/* Email Details Modal */}
       <Modal
