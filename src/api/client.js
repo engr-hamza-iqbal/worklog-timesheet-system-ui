@@ -11,6 +11,7 @@ const api = axios.create({
 });
 
 const GET_RETRY_LIMIT = 2;
+let lastAuthNotifyTime = 0;
 
 function wait(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -46,22 +47,35 @@ api.interceptors.response.use(
       return api(request);
     }
 
-    if (error.response?.status === 401) {
-      // If token expired or invalid, clear stored token
+    const isUnauthorized = error.response?.status === 401;
+    const isDeactivated =
+      error.response?.status === 403 &&
+      (error.response?.data?.error?.code === 'ACCOUNT_DEACTIVATED' ||
+        error.response?.data?.message?.toLowerCase().includes('deactivated') ||
+        error.response?.data?.error?.message?.toLowerCase().includes('deactivated'));
+
+    if (isUnauthorized || isDeactivated) {
       const currentPath = window.location.pathname;
-      if (currentPath !== '/login' && currentPath !== '/register') {
+      if (currentPath !== '/login' && currentPath !== '/register' && currentPath !== '/') {
         localStorage.removeItem('token');
-        // Dispatch custom auth-expired event so AuthContext can update state
         window.dispatchEvent(new Event('auth:unauthorized'));
-        window.dispatchEvent(
-          new CustomEvent('app:notify', {
-            detail: {
-              type: 'warn',
-              title: 'Session Expired',
-              message: 'Your session has expired. Please sign in again.',
-            },
-          })
-        );
+
+        // Debounce: ensure only ONE notification is dispatched every 5 seconds
+        const now = Date.now();
+        if (now - lastAuthNotifyTime > 5000) {
+          lastAuthNotifyTime = now;
+          window.dispatchEvent(
+            new CustomEvent('app:notify', {
+              detail: {
+                type: 'error',
+                title: isDeactivated ? 'Account Deactivated' : 'Session Expired',
+                message: isDeactivated
+                  ? 'Your account has been deactivated. Please contact an administrator.'
+                  : 'Your session has expired. Please sign in again.',
+              },
+            })
+          );
+        }
       }
     }
 

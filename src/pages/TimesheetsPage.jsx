@@ -110,7 +110,9 @@ export default function TimesheetsPage() {
         throw failedRequest;
       }
     } catch (err) {
-      notify.error(err.message);
+      if (err.status !== 401 && err.code !== 'ACCOUNT_DEACTIVATED') {
+        notify.error(err.message);
+      }
     } finally {
       setLoading(false);
     }

@@ -73,7 +73,9 @@ export default function ReportsPage() {
       const response = await api.get('/api/reports', { params });
       setReport(response.data || response);
     } catch (err) {
-      notify.error(err.message || 'Failed to load reports.');
+      if (err.status !== 401 && err.code !== 'ACCOUNT_DEACTIVATED') {
+        notify.error(err.message || 'Failed to load reports.');
+      }
     } finally {
       setLoading(false);
     }
@@ -89,7 +91,9 @@ export default function ReportsPage() {
       setMissingData(data);
       setSelectedUsers([]);
     } catch (err) {
-      notify.error(err.message || 'Failed to load missing timesheets.');
+      if (err.status !== 401 && err.code !== 'ACCOUNT_DEACTIVATED') {
+        notify.error(err.message || 'Failed to load missing timesheets.');
+      }
     } finally {
       setLoadingMissing(false);
     }

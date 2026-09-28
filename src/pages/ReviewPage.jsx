@@ -59,7 +59,9 @@ export default function ReviewPage() {
         notify.info("Review queue refreshed with latest entries.");
       }
     } catch (err) {
-      notify.error(err.message || "Failed to load review queue.");
+      if (err.status !== 401 && err.code !== 'ACCOUNT_DEACTIVATED') {
+        notify.error(err.message || "Failed to load review queue.");
+      }
     } finally {
       setLoading(false);
     }

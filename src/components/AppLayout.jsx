@@ -10,8 +10,9 @@ export default function AppLayout({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Explicitly check for authentication pages (Login and Register)
+  // Explicitly check for authentication pages (Login and Register) or Landing page
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+  const isLandingPage = location.pathname === '/';
 
   // Default navbar/sidebar is EXPANDED (true), persisted to localStorage
   const [sidebarOpen, setSidebarOpen] = useState(() => {
@@ -54,17 +55,27 @@ export default function AppLayout({ children }) {
     navigate('/login');
   };
 
-  // If on login/register pages OR not authenticated, NEVER show sidebar. Render clean top header and centered content.
-  if (isAuthPage || !isAuthenticated) {
+  // If on landing, login/register pages OR not authenticated, NEVER show sidebar. Render clean top header and content.
+  if (isLandingPage || isAuthPage || !isAuthenticated) {
     return (
       <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
         <AppHeader
           sidebarOpen={false}
           onToggleSidebar={() => {}}
           onOpenMobile={() => {}}
-          onRequestLogout={() => {}}
+          onRequestLogout={() => setLogoutOpen(true)}
         />
-        <div className="flex-1 flex flex-col justify-center">{children}</div>
+        <div className="flex-1 flex flex-col">{children}</div>
+
+        <ConfirmDialog
+          isOpen={logoutOpen}
+          onClose={() => setLogoutOpen(false)}
+          onConfirm={handleLogout}
+          title="Sign out"
+          message="Are you sure you want to sign out of Work Log?"
+          confirmLabel="Sign out"
+          tone="danger"
+        />
       </div>
     );
   }

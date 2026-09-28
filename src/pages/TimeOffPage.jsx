@@ -69,7 +69,9 @@ export default function TimeOffPage() {
         timeOffTypeId: current.timeOffTypeId || nextTypes[0]?.id || "",
       }));
     } catch (err) {
-      notify.error(err.message);
+      if (err.status !== 401 && err.code !== 'ACCOUNT_DEACTIVATED') {
+        notify.error(err.message);
+      }
     } finally {
       setLoading(false);
     }

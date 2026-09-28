@@ -16,13 +16,8 @@ import TimeOffPage from './pages/TimeOffPage.jsx';
 import ReportsPage from './pages/ReportsPage.jsx';
 import AnalyticsPage from './pages/AnalyticsPage.jsx';
 import EmailLogPage from './pages/EmailLogPage.jsx';
+import LandingPage from './pages/LandingPage.jsx';
 import './App.css';
-
-function HomeRedirect() {
-  const { isAuthenticated, loading } = useAuth();
-  if (loading) return null;
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <Navigate to="/login" replace />;
-}
 
 export default function App() {
   return (
@@ -31,7 +26,7 @@ export default function App() {
         <NotificationProvider>
           <AppLayout>
           <Routes>
-            <Route path="/" element={<HomeRedirect />} />
+            <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
 

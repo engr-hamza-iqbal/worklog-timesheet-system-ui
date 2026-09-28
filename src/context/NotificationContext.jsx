@@ -18,19 +18,29 @@ export function NotificationProvider({ children }) {
     message,
     duration = 4500,
   }) => {
-    const id = nextId++;
-    const newNotification = {
-      id,
-      type: type === 'warning' ? 'warn' : type,
-      title,
-      message,
-      duration,
-      createdAt: Date.now(),
-    };
+    if (!message) return null;
+    let createdId = null;
 
-    setNotifications((prev) => [...prev, newNotification]);
+    setNotifications((prev) => {
+      // Prevent duplicate messages in quick succession (e.g. concurrent 401s / deactivated calls)
+      const isDuplicate = prev.some(
+        (n) => n.message === message && Date.now() - n.createdAt < 3500
+      );
+      if (isDuplicate) return prev;
 
-    return id;
+      createdId = nextId++;
+      const newNotification = {
+        id: createdId,
+        type: type === 'warning' ? 'warn' : type,
+        title,
+        message,
+        duration,
+        createdAt: Date.now(),
+      };
+      return [...prev, newNotification];
+    });
+
+    return createdId;
   }, []);
 
   // Listen for global custom events so non-React files or interceptors can also emit notifications

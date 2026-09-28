@@ -4,7 +4,7 @@ import { Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
@@ -46,6 +46,21 @@ export default function LoginPage() {
 
         {/* Card */}
         <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-md hover:shadow-lg">
+          {isAuthenticated && user && (
+            <div className="mb-4 p-3 rounded-lg bg-indigo-50 border border-indigo-200 text-xs text-indigo-900 flex items-center justify-between gap-3">
+              <div>
+                <span className="font-semibold">Currently signed in as {user.name}</span>
+                <p className="text-[11px] text-indigo-700 mt-0.5">{user.email}</p>
+              </div>
+              <Link
+                to="/dashboard"
+                className="shrink-0 px-2.5 py-1 rounded bg-slate-900 hover:bg-slate-800 text-white font-medium text-[11px] transition shadow-2xs"
+              >
+                Go to Dashboard &rarr;
+              </Link>
+            </div>
+          )}
+
           {errorMessage && (
             <div className="mb-4 p-3 rounded bg-red-50 border border-red-200 text-xs text-red-700">
               {errorMessage}
@@ -93,26 +108,28 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Quick Demo Credentials */}
-          <div className="mt-6 pt-4 border-t border-slate-100">
-            <div className="text-[11px] font-medium text-slate-400 mb-2">Quick Demo Accounts</div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => handleQuickFill('admin@worklog.local')}
-                className="flex-1 py-1 px-2 text-[11px] text-slate-700 bg-slate-100 hover:bg-slate-200 rounded border border-slate-200 transition cursor-pointer"
-              >
-                Admin (Alice)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFill('bob@worklog.local')}
-                className="flex-1 py-1 px-2 text-[11px] text-slate-700 bg-slate-100 hover:bg-slate-200 rounded border border-slate-200 transition cursor-pointer"
-              >
-                Employee (Bob)
-              </button>
+          {/* Quick Demo Credentials (only in non-prod) */}
+          {!import.meta.env.PROD && (
+            <div className="mt-6 pt-4 border-t border-slate-100">
+              <div className="text-[11px] font-medium text-slate-400 mb-2">Quick Demo Accounts (Dev Only)</div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleQuickFill('admin@worklog.local')}
+                  className="flex-1 py-1 px-2 text-[11px] text-slate-700 bg-slate-100 hover:bg-slate-200 rounded border border-slate-200 transition cursor-pointer"
+                >
+                  Admin (Alice)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleQuickFill('bob@worklog.local')}
+                  className="flex-1 py-1 px-2 text-[11px] text-slate-700 bg-slate-100 hover:bg-slate-200 rounded border border-slate-200 transition cursor-pointer"
+                >
+                  Employee (Bob)
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Footer */}

@@ -9,6 +9,7 @@ import Modal from '../components/Modal.jsx';
 import Badge from '../components/Badge.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
+import { useNotification } from '../context/NotificationContext.jsx';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -302,7 +303,10 @@ export default function UsersPage() {
   const [search, setSearch] = useState('');
   const [expandedId, setExpandedId] = useState(null);
   const [modal, setModal] = useState(null);
+  const { notify } = useNotification();
   const [statusConfirmation, setStatusConfirmation] = useState(null);
+  const [togglingUserId, setTogglingUserId] = useState(null);
+  const [isTogglingStatus, setIsTogglingStatus] = useState(false);
 
   // GET /api/users → { success, data: [...users], message }
   const fetchUsers = useCallback(async () => {
@@ -324,6 +328,7 @@ export default function UsersPage() {
   const handleToggleStatus = (user) => {
     if (user.id === currentUser?.id) {
       setError("You can't deactivate your own account.");
+      notify.warn("You can't deactivate your own account.");
       return;
     }
     setStatusConfirmation(user);
@@ -331,14 +336,23 @@ export default function UsersPage() {
 
   const confirmToggleStatus = async () => {
     const user = statusConfirmation;
-    setStatusConfirmation(null);
+    if (!user) return;
+    setIsTogglingStatus(true);
+    setTogglingUserId(user.id);
     setError('');
     try {
       const res = await api.patch(`/api/users/${user.id}/status`, { isActive: !user.isActive });
       const updated = res.data;
       setUsers((prev) => prev.map((u) => u.id === updated.id ? { ...u, isActive: updated.isActive } : u));
+      notify.success(`User ${updated.isActive ? 'activated' : 'deactivated'} successfully.`);
+      setStatusConfirmation(null);
     } catch (err) {
       setError(err.message || 'Failed to update user status.');
+      notify.error(err.message || 'Failed to update user status.');
+      setStatusConfirmation(null);
+    } finally {
+      setIsTogglingStatus(false);
+      setTogglingUserId(null);
     }
   };
 
@@ -472,13 +486,26 @@ export default function UsersPage() {
                     {canManageUsers && (
                       <button
                         onClick={(e) => { e.stopPropagation(); handleToggleStatus(user); }}
-                        disabled={user.id === currentUser?.id}
+                        disabled={user.id === currentUser?.id || togglingUserId === user.id}
                         title={user.id === currentUser?.id ? "Can't deactivate yourself" : ''}
-                        className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                        className="inline-flex items-center gap-1.5 px-2 py-1 text-[11px] font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                       >
-                        {user.isActive
-                          ? <><UserX className="w-3 h-3" /><span className="hidden sm:inline">Deactivate</span></>
-                          : <><UserCheck className="w-3 h-3" /><span className="hidden sm:inline">Activate</span></>}
+                        {togglingUserId === user.id ? (
+                          <>
+                            <Loader2 className="w-3 h-3 animate-spin text-slate-700" />
+                            <span className="hidden sm:inline">Processing...</span>
+                          </>
+                        ) : user.isActive ? (
+                          <>
+                            <UserX className="w-3 h-3 text-red-500" />
+                            <span className="hidden sm:inline">Deactivate</span>
+                          </>
+                        ) : (
+                          <>
+                            <UserCheck className="w-3 h-3 text-emerald-600" />
+                            <span className="hidden sm:inline">Activate</span>
+                          </>
+                        )}
                       </button>
                     )}
                     <button
@@ -526,8 +553,10 @@ export default function UsersPage() {
       </Modal>
       <ConfirmDialog
         isOpen={Boolean(statusConfirmation)}
-        onClose={() => setStatusConfirmation(null)}
+        onClose={() => !isTogglingStatus && setStatusConfirmation(null)}
         onConfirm={confirmToggleStatus}
+        loading={isTogglingStatus}
+        loadingText={statusConfirmation?.isActive ? 'Deactivating...' : 'Activating...'}
         title={statusConfirmation?.isActive ? 'Deactivate user' : 'Activate user'}
         message={statusConfirmation?.isActive
           ? `Deactivate ${statusConfirmation?.name}? They will no longer be able to sign in.`
