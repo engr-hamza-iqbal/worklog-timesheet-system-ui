@@ -2,10 +2,11 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Shield, XCircle, Plus, RefreshCw, AlertCircle,
   ChevronDown, ChevronUp, Clock, CheckCircle, Loader2,
-  ArrowUpDown, ArrowUp, ArrowDown,
+  ArrowUpDown, ArrowUp, ArrowDown, Users, Search, Check,
 } from 'lucide-react';
 import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useNotification } from '../context/NotificationContext.jsx';
 import Modal from '../components/Modal.jsx';
 import Badge from '../components/Badge.jsx';
 import EmptyState from '../components/EmptyState.jsx';
@@ -46,54 +47,109 @@ function ErrorAlert({ message, onDismiss }) {
 
 // ─── Grant Capability Form ────────────────────────────────────────────────────
 
+// ─── Grant Capabilities Form (Multiple Capabilities to User) ──────────────────
+
 function GrantForm({ targetUser, grantedCodes, users, projects, onSuccess, onCancel }) {
   const availableCodes = ALL_CAP_CODES.filter((c) => !grantedCodes.has(c));
 
-  const [form, setForm] = useState({
-    capabilityCode: availableCodes[0] || '',
-    scopeType: 'GLOBAL',
-    expiresAt: '',
-    targetUserIds: [],
-    targetProjectIds: [],
-  });
+  const [selectedCodes, setSelectedCodes] = useState(new Set());
+  const [capSearch, setCapSearch] = useState('');
+  const [scopeType, setScopeType] = useState('GLOBAL');
+  const [expiresAt, setExpiresAt] = useState('');
+  const [targetUserIds, setTargetUserIds] = useState([]);
+  const [targetProjectIds, setTargetProjectIds] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const set = (field) => (e) => setForm((prev) => ({ ...prev, [field]: e.target.value }));
+  const filteredAvailableCodes = useMemo(() => {
+    const q = capSearch.toLowerCase().trim();
+    if (!q) return availableCodes;
+    return availableCodes.filter((code) => {
+      const meta = CAP_META[code] || {};
+      return (
+        code.toLowerCase().includes(q) ||
+        (meta.label && meta.label.toLowerCase().includes(q)) ||
+        (meta.desc && meta.desc.toLowerCase().includes(q))
+      );
+    });
+  }, [availableCodes, capSearch]);
 
-  const toggleId = (field, id) => {
-    setForm((prev) => ({
-      ...prev,
-      [field]: prev[field].includes(id) ? prev[field].filter((x) => x !== id) : [...prev[field], id],
-    }));
+  const toggleCode = (code) => {
+    setSelectedCodes((prev) => {
+      const next = new Set(prev);
+      if (next.has(code)) next.delete(code);
+      else next.add(code);
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    setSelectedCodes(new Set(filteredAvailableCodes));
+  };
+
+  const clearSelection = () => {
+    setSelectedCodes(new Set());
+  };
+
+  const toggleTargetId = (field, id) => {
+    if (field === 'targetUserIds') {
+      setTargetUserIds((prev) =>
+        prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      );
+    } else {
+      setTargetProjectIds((prev) =>
+        prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      );
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.capabilityCode) { setError('Select a capability.'); return; }
-    if (form.scopeType === 'USER' && form.targetUserIds.length === 0) {
-      setError('Select at least one target user for a user-scoped grant.'); return;
+    if (selectedCodes.size === 0) {
+      setError('Please select at least one capability to grant.');
+      return;
     }
-    if (form.scopeType === 'PROJECT' && form.targetProjectIds.length === 0) {
-      setError('Select at least one project for a project-scoped grant.'); return;
+    if (scopeType === 'USER' && targetUserIds.length === 0) {
+      setError('Select at least one target user for a user-scoped grant.');
+      return;
+    }
+    if (scopeType === 'PROJECT' && targetProjectIds.length === 0) {
+      setError('Select at least one project for a project-scoped grant.');
+      return;
     }
     setLoading(true);
     setError('');
+    const codes = Array.from(selectedCodes);
     try {
-      // POST /api/access/grants
-      // Body: { userId, capabilityCode, expiresAt?, scopeType?, targetUserIds?, targetProjectIds? }
-      // Response: { success, data: { id, userId, capabilityId, grantedById, expiresAt, ... }, message }
+      // POST /api/access/grants with capabilityCodes
       await api.post('/api/access/grants', {
         userId: targetUser.id,
-        capabilityCode: form.capabilityCode,
-        expiresAt: form.expiresAt || undefined,
-        scopeType: form.scopeType === 'GLOBAL' ? undefined : form.scopeType,
-        targetUserIds: form.scopeType === 'USER' ? form.targetUserIds : undefined,
-        targetProjectIds: form.scopeType === 'PROJECT' ? form.targetProjectIds : undefined,
+        capabilityCodes: codes,
+        expiresAt: expiresAt || undefined,
+        scopeType: scopeType === 'GLOBAL' ? undefined : scopeType,
+        targetUserIds: scopeType === 'USER' ? targetUserIds : undefined,
+        targetProjectIds: scopeType === 'PROJECT' ? targetProjectIds : undefined,
       });
       onSuccess();
     } catch (err) {
-      setError(err.message || 'Failed to grant capability.');
+      // Fallback: individually grant if needed
+      try {
+        await Promise.all(
+          codes.map((code) =>
+            api.post('/api/access/grants', {
+              userId: targetUser.id,
+              capabilityCode: code,
+              expiresAt: expiresAt || undefined,
+              scopeType: scopeType === 'GLOBAL' ? undefined : scopeType,
+              targetUserIds: scopeType === 'USER' ? targetUserIds : undefined,
+              targetProjectIds: scopeType === 'PROJECT' ? targetProjectIds : undefined,
+            })
+          )
+        );
+        onSuccess();
+      } catch (fallbackErr) {
+        setError(fallbackErr.message || err.message || 'Failed to grant capabilities.');
+      }
     } finally {
       setLoading(false);
     }
@@ -101,42 +157,116 @@ function GrantForm({ targetUser, grantedCodes, users, projects, onSuccess, onCan
 
   if (availableCodes.length === 0) {
     return (
-      <div className="py-4 text-center text-xs text-slate-500">
-        All capabilities are already granted to this user.
+      <div className="py-6 text-center text-xs text-slate-500 bg-slate-50 rounded-lg border border-slate-200">
+        All system capabilities are already granted to this user.
       </div>
     );
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <p className="text-xs text-slate-500">
-        Granting capability to <span className="font-medium text-slate-900">{targetUser.name}</span>.
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-slate-500">
+          Granting capabilities to <span className="font-semibold text-slate-900">{targetUser.name}</span>
+        </p>
+        <span className="text-[11px] font-medium text-slate-500">
+          {availableCodes.length} available
+        </span>
+      </div>
+
       <ErrorAlert message={error} onDismiss={() => setError('')} />
 
-      {/* Capability */}
-      <div>
-        <label className="block text-xs font-medium text-slate-700 mb-1.5">Capability</label>
-        <select value={form.capabilityCode} onChange={set('capabilityCode')}
-          className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 bg-white transition" required>
-          {availableCodes.map((code) => (
-            <option key={code} value={code}>{CAP_META[code]?.label || code}</option>
-          ))}
-        </select>
-        {form.capabilityCode && CAP_META[form.capabilityCode] && (
-          <p className="mt-1 text-[11px] text-slate-400">{CAP_META[form.capabilityCode].desc}</p>
-        )}
+      {/* Capability Multi-select */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <label className="block text-xs font-semibold text-slate-700">
+            Select Capabilities
+          </label>
+          <div className="flex items-center gap-2 text-xs">
+            <button
+              type="button"
+              onClick={selectAll}
+              className="text-[11px] font-medium text-indigo-600 hover:text-indigo-800 transition cursor-pointer"
+            >
+              Select all
+            </button>
+            <span className="text-slate-300">|</span>
+            <button
+              type="button"
+              onClick={clearSelection}
+              className="text-[11px] font-medium text-slate-500 hover:text-slate-800 transition cursor-pointer"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+
+        <div className="relative">
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={capSearch}
+            onChange={(e) => setCapSearch(e.target.value)}
+            placeholder="Search capabilities by name or description..."
+            className="w-full pl-8 pr-2.5 py-1.5 text-xs border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 bg-white"
+          />
+        </div>
+
+        <div className="max-h-52 overflow-y-auto space-y-1.5 border border-slate-200 rounded-lg p-2 bg-slate-50/50">
+          {filteredAvailableCodes.map((code) => {
+            const isSelected = selectedCodes.has(code);
+            const meta = CAP_META[code] || {};
+            return (
+              <div
+                key={code}
+                onClick={() => toggleCode(code)}
+                className={`p-2.5 rounded-lg border text-xs transition cursor-pointer select-none ${
+                  isSelected
+                    ? 'bg-indigo-50/90 border-indigo-200 text-indigo-950 font-medium'
+                    : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'
+                }`}
+              >
+                <div className="flex items-start gap-2.5">
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => {}}
+                    className="mt-0.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 pointer-events-none"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold text-slate-900">{meta.label || code}</span>
+                      <span className="text-[10px] font-mono text-slate-400 shrink-0">{code}</span>
+                    </div>
+                    {meta.desc && (
+                      <p className="mt-0.5 text-[11px] text-slate-500 font-normal leading-normal">{meta.desc}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+          {filteredAvailableCodes.length === 0 && (
+            <p className="text-xs text-slate-400 italic text-center py-4">No matching capabilities.</p>
+          )}
+        </div>
       </div>
 
       {/* Scope */}
       <div>
-        <label className="block text-xs font-medium text-slate-700 mb-1.5">Scope</label>
+        <label className="block text-xs font-semibold text-slate-700 mb-1.5">Scope</label>
         <div className="flex gap-2">
           {['GLOBAL', 'USER', 'PROJECT'].map((s) => (
-            <button key={s} type="button"
-              onClick={() => setForm((prev) => ({ ...prev, scopeType: s, targetUserIds: [], targetProjectIds: [] }))}
+            <button
+              key={s}
+              type="button"
+              onClick={() => {
+                setScopeType(s);
+                setTargetUserIds([]);
+                setTargetProjectIds([]);
+              }}
               className={`flex-1 py-1.5 text-xs font-medium rounded border transition cursor-pointer ${
-                form.scopeType === s
+                scopeType === s
                   ? 'bg-slate-900 text-white border-slate-900'
                   : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
               }`}
@@ -146,21 +276,27 @@ function GrantForm({ targetUser, grantedCodes, users, projects, onSuccess, onCan
           ))}
         </div>
         <p className="mt-1 text-[11px] text-slate-400">
-          {form.scopeType === 'GLOBAL' ? 'Applies to all users and projects.'
-            : form.scopeType === 'USER' ? 'Restricted to specific users only.'
-            : 'Restricted to specific projects only.'}
+          {scopeType === 'GLOBAL'
+            ? 'Applies across all authorized users and projects in the system.'
+            : scopeType === 'USER'
+            ? 'Restricted strictly to the selected user targets below.'
+            : 'Restricted strictly to the selected project targets below.'}
         </p>
       </div>
 
       {/* User scope picker */}
-      {form.scopeType === 'USER' && (
+      {scopeType === 'USER' && (
         <div>
           <label className="block text-xs font-medium text-slate-700 mb-1.5">Target users</label>
           <div className="max-h-36 overflow-y-auto border border-slate-200 rounded divide-y divide-slate-100">
             {users.filter((u) => u.id !== targetUser.id && u.isActive).map((u) => (
               <label key={u.id} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer">
-                <input type="checkbox" checked={form.targetUserIds.includes(u.id)}
-                  onChange={() => toggleId('targetUserIds', u.id)} className="rounded border-slate-300" />
+                <input
+                  type="checkbox"
+                  checked={targetUserIds.includes(u.id)}
+                  onChange={() => toggleTargetId('targetUserIds', u.id)}
+                  className="rounded border-slate-300"
+                />
                 <span className="text-xs text-slate-700">{u.name}</span>
                 <span className="text-[11px] text-slate-400 ml-auto truncate">{u.email}</span>
               </label>
@@ -170,16 +306,19 @@ function GrantForm({ targetUser, grantedCodes, users, projects, onSuccess, onCan
       )}
 
       {/* Project scope picker */}
-      {form.scopeType === 'PROJECT' && (
+      {scopeType === 'PROJECT' && (
         <div>
           <label className="block text-xs font-medium text-slate-700 mb-1.5">Target projects</label>
           <div className="max-h-36 overflow-y-auto border border-slate-200 rounded divide-y divide-slate-100">
             {projects.filter((p) => p.status === 'ACTIVE').map((p) => (
               <label key={p.id} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer">
-                <input type="checkbox" checked={form.targetProjectIds.includes(p.id)}
-                  onChange={() => toggleId('targetProjectIds', p.id)} className="rounded border-slate-300" />
+                <input
+                  type="checkbox"
+                  checked={targetProjectIds.includes(p.id)}
+                  onChange={() => toggleTargetId('targetProjectIds', p.id)}
+                  className="rounded border-slate-300"
+                />
                 <span className="text-xs text-slate-700">{p.name}</span>
-                {/* clientName from getProjects service */}
                 <span className="text-[11px] text-slate-400 ml-auto truncate">{p.clientName}</span>
               </label>
             ))}
@@ -192,21 +331,363 @@ function GrantForm({ targetUser, grantedCodes, users, projects, onSuccess, onCan
         <label className="block text-xs font-medium text-slate-700 mb-1.5">
           Expiry date <span className="text-slate-400 font-normal">(optional)</span>
         </label>
-        <input type="date" value={form.expiresAt} onChange={set('expiresAt')}
+        <input
+          type="date"
+          value={expiresAt}
+          onChange={(e) => setExpiresAt(e.target.value)}
           min={new Date().toISOString().split('T')[0]}
-          className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition" />
+          className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition bg-white"
+        />
       </div>
 
-      <div className="flex gap-2 pt-1">
-        <button type="button" onClick={onCancel}
-          className="flex-1 py-2 px-3 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded transition cursor-pointer">
-          Cancel
-        </button>
-        <button type="submit" disabled={loading}
-          className="flex-1 py-2 px-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-xs font-medium rounded transition cursor-pointer disabled:cursor-not-allowed inline-flex items-center justify-center gap-1.5">
-          {loading && <Loader2 className="animate-spin" size={13} />}
-          {loading ? 'Granting...' : 'Grant capability'}
-        </button>
+      <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+        <span className="text-xs text-slate-500">
+          <span className="font-semibold text-slate-900">{selectedCodes.size}</span> capabilit
+          {selectedCodes.size === 1 ? 'y' : 'ies'} selected
+        </span>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="py-1.5 px-3 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded transition cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={loading || selectedCodes.size === 0}
+            className="py-1.5 px-3.5 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white text-xs font-medium rounded transition cursor-pointer disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+          >
+            {loading && <Loader2 className="animate-spin" size={13} />}
+            {loading ? 'Granting...' : `Grant ${selectedCodes.size > 0 ? selectedCodes.size : ''} Capabilit${selectedCodes.size === 1 ? 'y' : 'ies'}`}
+          </button>
+        </div>
+      </div>
+    </form>
+  );
+}
+
+// ─── Bulk Grant Team Form (Assign 1 Capability to Selected / All Users) ────────
+
+function BulkGrantTeamForm({ users, projects, currentUserId, onSuccess, onCancel }) {
+  const [selectedCapability, setSelectedCapability] = useState(ALL_CAP_CODES[0]);
+  const [selectedUserIds, setSelectedUserIds] = useState(new Set());
+  const [userSearch, setUserSearch] = useState('');
+  const [scopeType, setScopeType] = useState('GLOBAL');
+  const [expiresAt, setExpiresAt] = useState('');
+  const [targetScopeUserIds, setTargetScopeUserIds] = useState([]);
+  const [targetProjectIds, setTargetProjectIds] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  // Targetable active employees (excluding self and admins who already hold all capabilities)
+  const eligibleUsers = useMemo(() => {
+    return users.filter((u) => u.isActive && u.id !== currentUserId && u.accountType !== 'ADMIN');
+  }, [users, currentUserId]);
+
+  const filteredUsers = useMemo(() => {
+    const q = userSearch.toLowerCase().trim();
+    if (!q) return eligibleUsers;
+    return eligibleUsers.filter(
+      (u) =>
+        (u.name && u.name.toLowerCase().includes(q)) ||
+        (u.email && u.email.toLowerCase().includes(q))
+    );
+  }, [eligibleUsers, userSearch]);
+
+  const toggleUser = (id) => {
+    setSelectedUserIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    setSelectedUserIds(new Set(filteredUsers.map((u) => u.id)));
+  };
+
+  const clearSelection = () => {
+    setSelectedUserIds(new Set());
+  };
+
+  const toggleTargetId = (field, id) => {
+    if (field === 'targetScopeUserIds') {
+      setTargetScopeUserIds((prev) =>
+        prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      );
+    } else {
+      setTargetProjectIds((prev) =>
+        prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+      );
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedCapability) {
+      setError('Please select a capability to grant.');
+      return;
+    }
+    if (selectedUserIds.size === 0) {
+      setError('Please select at least one user.');
+      return;
+    }
+    if (scopeType === 'USER' && targetScopeUserIds.length === 0) {
+      setError('Select at least one target user for a user-scoped grant.');
+      return;
+    }
+    if (scopeType === 'PROJECT' && targetProjectIds.length === 0) {
+      setError('Select at least one project for a project-scoped grant.');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    const uIds = Array.from(selectedUserIds);
+    try {
+      // POST /api/access/grants with userIds
+      await api.post('/api/access/grants', {
+        userIds: uIds,
+        capabilityCode: selectedCapability,
+        expiresAt: expiresAt || undefined,
+        scopeType: scopeType === 'GLOBAL' ? undefined : scopeType,
+        targetUserIds: scopeType === 'USER' ? targetScopeUserIds : undefined,
+        targetProjectIds: scopeType === 'PROJECT' ? targetProjectIds : undefined,
+      });
+      onSuccess(selectedCapability, uIds);
+    } catch (err) {
+      // Fallback: individually grant if needed
+      try {
+        await Promise.all(
+          uIds.map((uid) =>
+            api.post('/api/access/grants', {
+              userId: uid,
+              capabilityCode: selectedCapability,
+              expiresAt: expiresAt || undefined,
+              scopeType: scopeType === 'GLOBAL' ? undefined : scopeType,
+              targetUserIds: scopeType === 'USER' ? targetScopeUserIds : undefined,
+              targetProjectIds: scopeType === 'PROJECT' ? targetProjectIds : undefined,
+            })
+          )
+        );
+        onSuccess(selectedCapability, uIds);
+      } catch (fallbackErr) {
+        setError(fallbackErr.message || err.message || 'Failed to grant capability.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const capMeta = CAP_META[selectedCapability] || {};
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <ErrorAlert message={error} onDismiss={() => setError('')} />
+
+      {/* Capability Selector */}
+      <div>
+        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+          Select Capability to Grant
+        </label>
+        <select
+          value={selectedCapability}
+          onChange={(e) => setSelectedCapability(e.target.value)}
+          className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 bg-white"
+        >
+          {ALL_CAP_CODES.map((code) => (
+            <option key={code} value={code}>
+              {CAP_META[code]?.label || code} ({code})
+            </option>
+          ))}
+        </select>
+        {capMeta.desc && (
+          <p className="mt-1 text-[11px] text-slate-500">{capMeta.desc}</p>
+        )}
+      </div>
+
+      {/* Scope Selector */}
+      <div>
+        <label className="block text-xs font-semibold text-slate-700 mb-1.5">Scope</label>
+        <div className="flex gap-2">
+          {['GLOBAL', 'USER', 'PROJECT'].map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => {
+                setScopeType(s);
+                setTargetScopeUserIds([]);
+                setTargetProjectIds([]);
+              }}
+              className={`flex-1 py-1.5 text-xs font-medium rounded border transition cursor-pointer ${
+                scopeType === s
+                  ? 'bg-slate-900 text-white border-slate-900'
+                  : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+              }`}
+            >
+              {s === 'GLOBAL' ? 'Global' : s === 'USER' ? 'User' : 'Project'}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* User scope picker */}
+      {scopeType === 'USER' && (
+        <div>
+          <label className="block text-xs font-medium text-slate-700 mb-1.5">Target users</label>
+          <div className="max-h-32 overflow-y-auto border border-slate-200 rounded divide-y divide-slate-100">
+            {users.filter((u) => u.isActive).map((u) => (
+              <label key={u.id} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={targetScopeUserIds.includes(u.id)}
+                  onChange={() => toggleTargetId('targetScopeUserIds', u.id)}
+                  className="rounded border-slate-300"
+                />
+                <span className="text-xs text-slate-700">{u.name}</span>
+                <span className="text-[11px] text-slate-400 ml-auto truncate">{u.email}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Project scope picker */}
+      {scopeType === 'PROJECT' && (
+        <div>
+          <label className="block text-xs font-medium text-slate-700 mb-1.5">Target projects</label>
+          <div className="max-h-32 overflow-y-auto border border-slate-200 rounded divide-y divide-slate-100">
+            {projects.filter((p) => p.status === 'ACTIVE').map((p) => (
+              <label key={p.id} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={targetProjectIds.includes(p.id)}
+                  onChange={() => toggleTargetId('targetProjectIds', p.id)}
+                  className="rounded border-slate-300"
+                />
+                <span className="text-xs text-slate-700">{p.name}</span>
+                <span className="text-[11px] text-slate-400 ml-auto truncate">{p.clientName}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Expiry */}
+      <div>
+        <label className="block text-xs font-medium text-slate-700 mb-1.5">
+          Expiry date <span className="text-slate-400 font-normal">(optional)</span>
+        </label>
+        <input
+          type="date"
+          value={expiresAt}
+          onChange={(e) => setExpiresAt(e.target.value)}
+          min={new Date().toISOString().split('T')[0]}
+          className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition bg-white"
+        />
+      </div>
+
+      {/* Target Users Multi-select */}
+      <div className="space-y-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+          <label className="text-xs font-semibold text-slate-700">
+            Select Users ({eligibleUsers.length} active employees)
+          </label>
+          <div className="flex items-center gap-2 text-xs">
+            <button
+              type="button"
+              onClick={selectAll}
+              className="text-[11px] font-medium text-indigo-600 hover:text-indigo-800 transition cursor-pointer"
+            >
+              Select all ({filteredUsers.length})
+            </button>
+            <span className="text-slate-300">|</span>
+            <button
+              type="button"
+              onClick={clearSelection}
+              className="text-[11px] font-medium text-slate-500 hover:text-slate-800 transition cursor-pointer"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+
+        <div className="relative">
+          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={userSearch}
+            onChange={(e) => setUserSearch(e.target.value)}
+            placeholder="Search employees by name or email..."
+            className="w-full pl-8 pr-2.5 py-1.5 text-xs border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 bg-white"
+          />
+        </div>
+
+        <div className="max-h-56 overflow-y-auto space-y-1 border border-slate-200 rounded p-1.5 bg-slate-50/50">
+          {filteredUsers.map((user) => {
+            const isSelected = selectedUserIds.has(user.id);
+            return (
+              <div
+                key={user.id}
+                onClick={() => toggleUser(user.id)}
+                className={`flex items-center justify-between px-3 py-2 rounded text-xs transition cursor-pointer select-none ${
+                  isSelected
+                    ? 'bg-indigo-50/90 border border-indigo-200 text-indigo-950 font-medium'
+                    : 'bg-white border border-slate-200/70 hover:bg-slate-50 text-slate-700'
+                }`}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => {}}
+                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 pointer-events-none"
+                  />
+                  <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[11px] font-semibold text-slate-600 shrink-0">
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="truncate font-medium">{user.name}</div>
+                    <div className="text-[11px] text-slate-400 truncate">{user.email}</div>
+                  </div>
+                </div>
+
+                <Badge
+                  variant={user.accountType === 'ADMIN' ? 'admin' : 'employee'}
+                  label={user.accountType === 'ADMIN' ? 'Admin' : 'Employee'}
+                />
+              </div>
+            );
+          })}
+          {filteredUsers.length === 0 && (
+            <p className="text-xs text-slate-400 italic text-center py-4">No employees match search.</p>
+          )}
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+        <span className="text-xs text-slate-600">
+          <span className="font-bold text-slate-900">{selectedUserIds.size}</span> user
+          {selectedUserIds.size === 1 ? '' : 's'} selected
+        </span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="py-2 px-3 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded transition cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={loading || selectedUserIds.size === 0}
+            className="py-2 px-4 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white text-xs font-medium rounded transition cursor-pointer disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+          >
+            {loading && <Loader2 className="animate-spin" size={13} />}
+            {loading ? 'Granting...' : `Grant to ${selectedUserIds.size > 0 ? selectedUserIds.size : ''} User${selectedUserIds.size === 1 ? '' : 's'}`}
+          </button>
+        </div>
       </div>
     </form>
   );
@@ -708,6 +1189,7 @@ function AuditLog() {
 
 export default function AccessPage() {
   const { user: currentUser } = useAuth();
+  const { notify } = useNotification();
 
   // GET /api/users → { success, data: [...users], message }
   // GET /api/projects → { success, data: [...projects], message }  projects have clientName
@@ -717,6 +1199,7 @@ export default function AccessPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [bulkGrantModal, setBulkGrantModal] = useState(false);
 
   const [userPage, setUserPage] = useState(1);
   const USERS_PER_PAGE = 10;
@@ -781,9 +1264,26 @@ export default function AccessPage() {
             Grant, scope, and revoke individual capabilities per employee. Effects are immediate.
           </p>
         </div>
-        <button type="button" onClick={() => fetchAccessData(false)} disabled={refreshing} title="Refresh access data" className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer disabled:opacity-50">
-          <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />Refresh
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+          <button
+            type="button"
+            onClick={() => fetchAccessData(false)}
+            disabled={refreshing}
+            title="Refresh access data"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+          <button
+            type="button"
+            onClick={() => setBulkGrantModal(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded transition cursor-pointer"
+          >
+            <Shield className="w-3.5 h-3.5" />
+            Grant Capability to Team
+          </button>
+        </div>
       </div>
 
       {refreshing && <div className="absolute inset-x-0 top-20 z-10 flex justify-center pointer-events-none"><div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white/95 px-4 py-3 text-sm font-medium text-slate-700 shadow-md"><RefreshCw className="w-5 h-5 text-slate-500 animate-spin" />Refreshing access data</div></div>}
@@ -897,6 +1397,28 @@ export default function AccessPage() {
           <AuditLog />
         </div>
       </div>
+
+      {/* Bulk Grant Capability to Team Modal */}
+      <Modal
+        isOpen={bulkGrantModal}
+        onClose={() => setBulkGrantModal(false)}
+        title="Grant Capability to Team Members"
+        size="lg"
+      >
+        <BulkGrantTeamForm
+          users={users}
+          projects={projects}
+          currentUserId={currentUser?.id}
+          onSuccess={(capabilityCode, userIds) => {
+            setBulkGrantModal(false);
+            fetchAccessData(false);
+            notify.success(
+              `Granted "${CAP_META[capabilityCode]?.label || capabilityCode}" to ${userIds.length} employee(s).`
+            );
+          }}
+          onCancel={() => setBulkGrantModal(false)}
+        />
+      </Modal>
     </main>
   );
 }
