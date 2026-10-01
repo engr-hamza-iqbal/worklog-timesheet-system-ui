@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Users, Plus, UserCheck, UserX, AlertCircle, RefreshCw,
   Search, FolderOpen, ChevronDown, ChevronUp, Loader2,
@@ -9,6 +9,7 @@ import Modal from '../components/Modal.jsx';
 import Badge from '../components/Badge.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
+import Pagination from '../components/Pagination.jsx';
 import { useNotification } from '../context/NotificationContext.jsx';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -356,11 +357,19 @@ export default function UsersPage() {
     }
   };
 
+  const [page, setPage] = useState(1);
+  const USERS_PER_PAGE = 10;
+
   const filtered = users.filter(
     (u) =>
       u.name.toLowerCase().includes(search.toLowerCase()) ||
       u.email.toLowerCase().includes(search.toLowerCase())
   );
+
+  const paginatedUsers = useMemo(() => {
+    const start = (page - 1) * USERS_PER_PAGE;
+    return filtered.slice(start, start + USERS_PER_PAGE);
+  }, [filtered, page]);
 
   if (loading && !users.length) {
     return (
@@ -405,14 +414,17 @@ export default function UsersPage() {
         <input
           type="text"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
           placeholder="Search by name or email..."
           className="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition"
         />
       </div>
 
       {/* Users list */}
-      <div className="relative mt-4 bg-white rounded-lg border border-slate-200 overflow-hidden">
+      <div className="relative mt-4 bg-white rounded-xl border border-slate-200/90 shadow-xs overflow-hidden">
         {loading && users.length > 0 && <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 backdrop-blur-[1px]"><div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-md"><RefreshCw className="w-5 h-5 text-slate-500 animate-spin" />Refreshing users</div></div>}
         {filtered.length === 0 ? (
           <EmptyState
@@ -441,7 +453,7 @@ export default function UsersPage() {
               {(canManageUsers || canAssign) && <div className="col-span-2 text-right">Actions</div>}
             </div>
 
-            {filtered.map((user) => (
+            {paginatedUsers.map((user) => (
               <div key={user.id} className="border-b border-slate-100 last:border-0">
                 {/* Row */}
                 <div
@@ -540,6 +552,12 @@ export default function UsersPage() {
             ))}
           </div>
         )}
+        <Pagination
+          currentPage={page}
+          totalItems={filtered.length}
+          itemsPerPage={USERS_PER_PAGE}
+          onPageChange={setPage}
+        />
       </div>
 
       {/* Stats */}

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   CalendarDays,
   Check,
@@ -12,6 +12,7 @@ import api from "../api/client.js";
 import Badge from "../components/Badge.jsx";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import Modal from "../components/Modal.jsx";
+import Pagination from "../components/Pagination.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useNotification } from "../context/NotificationContext.jsx";
 
@@ -28,6 +29,8 @@ export default function TimeOffPage() {
   const canDecide = isAdmin || !!capabilities.DECIDE_TIME_OFF;
   const [types, setTypes] = useState([]);
   const [requests, setRequests] = useState([]);
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 8;
   const [filters, setFilters] = useState({
     status: "",
     startDate: "",
@@ -91,8 +94,14 @@ export default function TimeOffPage() {
       notify.warn("End date cannot be earlier than start date.");
       return;
     }
+    setPage(1);
     load(filters);
   }
+
+  const paginatedRequests = useMemo(() => {
+    const start = (page - 1) * ITEMS_PER_PAGE;
+    return requests.slice(start, start + ITEMS_PER_PAGE);
+  }, [requests, page]);
 
   async function createRequest(event) {
     event.preventDefault();
@@ -358,7 +367,7 @@ export default function TimeOffPage() {
               </tr>
             </thead>
             <tbody>
-              {requests.map((request) => (
+              {paginatedRequests.map((request) => (
                 <tr
                   key={request.id}
                   className="border-t border-slate-100 align-top"
@@ -434,6 +443,12 @@ export default function TimeOffPage() {
             </tbody>
           </table>
         )}
+        <Pagination
+          currentPage={page}
+          totalItems={requests.length}
+          itemsPerPage={ITEMS_PER_PAGE}
+          onPageChange={setPage}
+        />
       </section>
       <ConfirmDialog
         isOpen={Boolean(confirmation)}

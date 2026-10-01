@@ -17,6 +17,7 @@ import api from "../api/client.js";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import Modal from "../components/Modal.jsx";
 import Badge from "../components/Badge.jsx";
+import Pagination from "../components/Pagination.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useNotification } from "../context/NotificationContext.jsx";
 
@@ -28,6 +29,10 @@ export default function ReviewPage() {
   const [activeTab, setActiveTab] = useState('timesheets');
   const [allEntries, setAllEntries] = useState([]);
   const [timeOffRequests, setTimeOffRequests] = useState([]);
+  const [page, setPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+  const [timeOffPage, setTimeOffPage] = useState(1);
+  const TIME_OFF_PER_PAGE = 8;
   const [scope, setScope] = useState(null);
   const [selected, setSelected] = useState([]);
   const [filters, setFilters] = useState({
@@ -130,11 +135,22 @@ export default function ReviewPage() {
     });
   }, [allEntries, filters]);
 
+  const paginatedEntries = useMemo(() => {
+    const start = (page - 1) * ITEMS_PER_PAGE;
+    return filteredEntries.slice(start, start + ITEMS_PER_PAGE);
+  }, [filteredEntries, page]);
+
+  const paginatedTimeOff = useMemo(() => {
+    const start = (timeOffPage - 1) * TIME_OFF_PER_PAGE;
+    return timeOffRequests.slice(start, start + TIME_OFF_PER_PAGE);
+  }, [timeOffRequests, timeOffPage]);
+
   const hasActiveFilters = Boolean(
     filters.userQuery || filters.projectQuery || filters.startDate || filters.endDate
   );
 
   function clearFilters() {
+    setPage(1);
     setFilters({
       userQuery: "",
       projectQuery: "",
@@ -152,6 +168,7 @@ export default function ReviewPage() {
       notify.warn("Start date cannot be later than end date.");
       return;
     }
+    setPage(1);
     setFilters((prev) => ({ ...prev, [key]: value }));
   }
 
@@ -193,7 +210,7 @@ export default function ReviewPage() {
   }
 
   function toggleAllEntries(checked) {
-    setSelected(checked ? filteredEntries.map((entry) => entry.id) : []);
+    setSelected(checked ? paginatedEntries.map((entry) => entry.id) : []);
   }
 
   // Return Entry for Correction
@@ -453,11 +470,11 @@ export default function ReviewPage() {
               <th className="p-3 w-10">
                 <input
                   type="checkbox"
-                  aria-label="Select all submitted entries"
-                  disabled={loading || !filteredEntries.length}
+                  aria-label="Select all submitted entries on this page"
+                  disabled={loading || !paginatedEntries.length}
                   checked={
-                    filteredEntries.length > 0 &&
-                    filteredEntries.every((entry) => selected.includes(entry.id))
+                    paginatedEntries.length > 0 &&
+                    paginatedEntries.every((entry) => selected.includes(entry.id))
                   }
                   onChange={(e) => toggleAllEntries(e.target.checked)}
                   className="rounded border-slate-300 cursor-pointer"
@@ -484,8 +501,8 @@ export default function ReviewPage() {
                   </span>
                 </td>
               </tr>
-            ) : filteredEntries.length > 0 ? (
-              filteredEntries.map((entry) => (
+            ) : paginatedEntries.length > 0 ? (
+              paginatedEntries.map((entry) => (
                 <tr
                   key={entry.id}
                   className="border-t border-slate-100 hover:bg-slate-50/60 align-top transition-colors"
@@ -546,6 +563,13 @@ export default function ReviewPage() {
           </tbody>
         </table>
 
+        <Pagination
+          currentPage={page}
+          totalItems={filteredEntries.length}
+          itemsPerPage={ITEMS_PER_PAGE}
+          onPageChange={setPage}
+        />
+
         {loading && allEntries.length > 0 && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 backdrop-blur-[1px]">
             <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-700 shadow-md">
@@ -571,8 +595,8 @@ export default function ReviewPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {timeOffRequests.length ? (
-                timeOffRequests.map((reqItem) => (
+              {paginatedTimeOff.length ? (
+                paginatedTimeOff.map((reqItem) => (
                   <tr key={reqItem.id} className="hover:bg-slate-50/80 transition">
                     <td className="py-3 px-4">
                       <div className="font-semibold text-slate-900">{reqItem.user?.name}</div>
@@ -625,6 +649,13 @@ export default function ReviewPage() {
               )}
             </tbody>
           </table>
+
+          <Pagination
+            currentPage={timeOffPage}
+            totalItems={timeOffRequests.length}
+            itemsPerPage={TIME_OFF_PER_PAGE}
+            onPageChange={setTimeOffPage}
+          />
         </div>
       )}
 

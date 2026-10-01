@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Building2, FolderOpen, Plus, Pencil, CheckCircle, XCircle,
   ChevronRight, DollarSign, RefreshCw, AlertCircle, Users, Loader2,
@@ -9,6 +9,7 @@ import Modal from '../components/Modal.jsx';
 import Badge from '../components/Badge.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
+import Pagination from '../components/Pagination.jsx';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -253,6 +254,9 @@ export default function ClientsProjectsPage() {
   const [confirmation, setConfirmation] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
+  const [projectPage, setProjectPage] = useState(1);
+  const PROJECTS_PER_PAGE = 8;
+
   // GET /api/clients → { success, data: [ { id, name, isActive, _count: { projects } } ], message }
   const fetchClients = useCallback(async () => {
     try {
@@ -291,9 +295,15 @@ export default function ClientsProjectsPage() {
 
   useEffect(() => {
     if (selectedClientId) {
+      setProjectPage(1);
       fetchProjects(selectedClientId);
     }
   }, [selectedClientId]);
+
+  const paginatedProjects = useMemo(() => {
+    const start = (projectPage - 1) * PROJECTS_PER_PAGE;
+    return projects.slice(start, start + PROJECTS_PER_PAGE);
+  }, [projects, projectPage]);
 
   const refreshPage = async () => {
     setRefreshing(true);
@@ -504,72 +514,80 @@ export default function ClientsProjectsPage() {
                   }
                 />
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs min-w-[500px]">
-                    <thead className="bg-slate-50 text-[10px] font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200">
-                      <tr>
-                        <th className="py-2.5 px-5">Project</th>
-                        <th className="py-2.5 px-4">Status</th>
-                        <th className="py-2.5 px-4">Rate / hr</th>
-                        <th className="py-2.5 px-4">Team</th>
-                        {canManage && <th className="py-2.5 px-4 text-right">Actions</th>}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {projects.map((project) => (
-                        <tr key={project.id} className="hover:bg-slate-50/60 transition">
-                          <td className="py-3 px-5">
-                            <div className="font-medium text-slate-900">{project.name}</div>
-                          </td>
-                          <td className="py-3 px-4">
-                            <Badge
-                              variant={project.status === 'ACTIVE' ? 'active' : 'closed'}
-                              label={project.status === 'ACTIVE' ? 'Active' : 'Closed'}
-                              dot
-                            />
-                          </td>
-                          <td className="py-3 px-4 text-slate-700">
-                            {/* currentRate comes directly from service (not rates[]) */}
-                            {project.currentRate != null
-                              ? <span className="font-medium">${Number(project.currentRate).toFixed(2)}</span>
-                              : <span className="text-slate-400">—</span>}
-                          </td>
-                          <td className="py-3 px-4">
-                            {/* assignedEmployees array from service */}
-                            {project.assignedEmployees && project.assignedEmployees.length > 0 ? (
-                              <span className="inline-flex items-center gap-1 text-slate-600">
-                                <Users className="w-3 h-3 text-slate-400" />
-                                {project.assignedEmployees.length}
-                              </span>
-                            ) : (
-                              <span className="text-slate-400">—</span>
-                            )}
-                          </td>
-                          {canManage && (
-                            <td className="py-3 px-4 text-right">
-                              <div className="flex items-center gap-1.5 justify-end">
-                                <button
-                                  onClick={() => { setRateProjectId(project.id); setModal('addRate'); }}
-                                  className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer"
-                                >
-                                  <DollarSign className="w-3 h-3" />Rate
-                                </button>
-                                <button
-                                  onClick={() => handleProjectStatusToggle(project)}
-                                  className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer"
-                                >
-                                  {project.status === 'ACTIVE'
-                                    ? <><XCircle className="w-3 h-3" />Close</>
-                                    : <><CheckCircle className="w-3 h-3" />Reopen</>}
-                                </button>
-                              </div>
-                            </td>
-                          )}
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs min-w-[500px]">
+                      <thead className="bg-slate-50 text-[10px] font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                        <tr>
+                          <th className="py-2.5 px-5">Project</th>
+                          <th className="py-2.5 px-4">Status</th>
+                          <th className="py-2.5 px-4">Rate / hr</th>
+                          <th className="py-2.5 px-4">Team</th>
+                          {canManage && <th className="py-2.5 px-4 text-right">Actions</th>}
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {paginatedProjects.map((project) => (
+                          <tr key={project.id} className="hover:bg-slate-50/60 transition">
+                            <td className="py-3 px-5">
+                              <div className="font-medium text-slate-900">{project.name}</div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <Badge
+                                variant={project.status === 'ACTIVE' ? 'active' : 'closed'}
+                                label={project.status === 'ACTIVE' ? 'Active' : 'Closed'}
+                                dot
+                              />
+                            </td>
+                            <td className="py-3 px-4 text-slate-700">
+                              {/* currentRate comes directly from service (not rates[]) */}
+                              {project.currentRate != null
+                                ? <span className="font-medium">${Number(project.currentRate).toFixed(2)}</span>
+                                : <span className="text-slate-400">—</span>}
+                            </td>
+                            <td className="py-3 px-4">
+                              {/* assignedEmployees array from service */}
+                              {project.assignedEmployees && project.assignedEmployees.length > 0 ? (
+                                <span className="inline-flex items-center gap-1 text-slate-600">
+                                  <Users className="w-3 h-3 text-slate-400" />
+                                  {project.assignedEmployees.length}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400">—</span>
+                              )}
+                            </td>
+                            {canManage && (
+                              <td className="py-3 px-4 text-right">
+                                <div className="flex items-center gap-1.5 justify-end">
+                                  <button
+                                    onClick={() => { setRateProjectId(project.id); setModal('addRate'); }}
+                                    className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer"
+                                  >
+                                    <DollarSign className="w-3 h-3" />Rate
+                                  </button>
+                                  <button
+                                    onClick={() => handleProjectStatusToggle(project)}
+                                    className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer"
+                                  >
+                                    {project.status === 'ACTIVE'
+                                      ? <><XCircle className="w-3 h-3" />Close</>
+                                      : <><CheckCircle className="w-3 h-3" />Reopen</>}
+                                  </button>
+                                </div>
+                              </td>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <Pagination
+                    currentPage={projectPage}
+                    totalItems={projects.length}
+                    itemsPerPage={PROJECTS_PER_PAGE}
+                    onPageChange={setProjectPage}
+                  />
+                </>
               )}
             </div>
           )}

@@ -14,6 +14,7 @@ import {
   Mail,
   X,
   LogOut,
+  Sparkles,
 } from 'lucide-react';
 
 export default function Sidebar({
@@ -32,15 +33,15 @@ export default function Sidebar({
   const hasAnalyticsAccess = isAdmin || !!capabilities['VIEW_ANALYTICS'];
 
   const linkClass = ({ isActive }) =>
-    `group flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer select-none ${
+    `group flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-150 cursor-pointer select-none ${
       isActive
-        ? 'bg-slate-900 text-white shadow-xs font-semibold'
-        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+        ? 'bg-indigo-600 text-white shadow-xs font-semibold'
+        : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/70'
     }`;
 
   const iconClass = (isActive) =>
-    `w-4.5 h-4.5 shrink-0 transition-colors ${
-      isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-700'
+    `w-4 h-4 shrink-0 transition-colors ${
+      isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'
     }`;
 
   const renderNavContent = (isMobile = false) => {
@@ -51,29 +52,29 @@ export default function Sidebar({
     };
 
     return (
-      <div className="flex flex-col h-full justify-between select-none">
-        {/* Top Header - No duplicate close button on desktop */}
-        <div className="p-4 pb-3 flex items-center justify-between border-b border-slate-100">
+      <div className="flex flex-col h-full justify-between select-none bg-slate-900 text-slate-300">
+        {/* Top Header */}
+        <div className="p-4 pb-3 flex items-center justify-between border-b border-slate-800/80">
           <Link
             to="/dashboard"
             onClick={handleItemClick}
             className="flex items-center gap-2.5 group cursor-pointer"
           >
-            <div className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold text-sm shadow-xs group-hover:bg-slate-800 transition">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-500 to-sky-400 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-indigo-950/50 group-hover:brightness-110 transition">
               W
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-bold text-slate-900 tracking-tight leading-tight flex items-center gap-1.5">
+              <span className="text-sm font-bold text-white tracking-tight leading-tight flex items-center gap-1.5">
                 Work Log
               </span>
-              <span className="text-[11px] text-slate-500 font-medium">Timesheet System</span>
+              <span className="text-[11px] text-slate-400 font-medium">Timesheet Portal</span>
             </div>
           </Link>
           {/* Close button ONLY on mobile drawer */}
           {isMobile && (
             <button
               onClick={onMobileClose}
-              className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
               aria-label="Close sidebar"
             >
               <X className="w-5 h-5" />
@@ -85,7 +86,7 @@ export default function Sidebar({
         <div className="flex-1 overflow-y-auto px-3 py-3 space-y-5">
           {/* Main / Work Section */}
           <div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pb-1.5">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 px-3 pb-1.5">
               Work &amp; Time
             </div>
             <nav className="space-y-1" aria-label="Work navigation">
@@ -121,7 +122,7 @@ export default function Sidebar({
           {/* Approvals & Insights Section */}
           {(hasReviewAccess || hasReportsAccess || hasAnalyticsAccess) && (
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pb-1.5">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 px-3 pb-1.5">
                 Reviews &amp; Reports
               </div>
               <nav className="space-y-1" aria-label="Reports navigation">
@@ -164,7 +165,7 @@ export default function Sidebar({
           {/* Administration Section */}
           {(hasClientProjectAccess || hasUserAccess || hasAccessManagement || isAdmin) && (
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pb-1.5">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 px-3 pb-1.5">
                 Administration
               </div>
               <nav className="space-y-1" aria-label="Admin navigation">
@@ -216,12 +217,25 @@ export default function Sidebar({
           )}
         </div>
 
-        {/* Bottom Section: ONLY Sign Out Button with Icon and Text */}
+        {/* Bottom Section: Profile & Sign Out Card */}
         {user && (
-          <div className="p-3 border-t border-slate-100 bg-slate-50/70">
+          <div className="p-3 border-t border-slate-800/80 bg-slate-950/50">
+            <div className="flex items-center gap-2.5 px-2 py-1.5">
+              <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700/80 text-indigo-400 font-bold text-xs flex items-center justify-center shrink-0">
+                {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-semibold text-white truncate">{user.name}</div>
+                <div className="text-[10px] text-slate-400 truncate flex items-center gap-1">
+                  <span className={`w-1.5 h-1.5 rounded-full ${isAdmin ? 'bg-violet-400' : 'bg-emerald-400'}`} />
+                  <span>{isAdmin ? 'Administrator' : 'Employee'}</span>
+                </div>
+              </div>
+            </div>
+
             <button
               onClick={onRequestLogout}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold text-red-600 hover:text-red-700 bg-white hover:bg-red-50 border border-slate-200 hover:border-red-200 rounded-lg shadow-2xs transition cursor-pointer"
+              className="mt-2.5 w-full flex items-center justify-center gap-1.5 py-1.5 px-3 text-xs font-medium text-slate-300 hover:text-rose-300 bg-slate-800/70 hover:bg-rose-950/40 border border-slate-700/80 hover:border-rose-900/60 rounded-xl transition cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span>Sign out</span>
@@ -236,7 +250,7 @@ export default function Sidebar({
     <>
       {/* ── Desktop Sidebar ── */}
       <aside
-        className={`hidden md:block border-r border-slate-200 bg-white h-screen sticky top-0 shrink-0 z-30 transition-[width] duration-200 ease-in-out overflow-hidden ${
+        className={`hidden md:block border-r border-slate-800/90 bg-slate-900 h-screen sticky top-0 shrink-0 z-30 transition-[width] duration-200 ease-in-out overflow-hidden shadow-sm ${
           isOpen ? 'w-60' : 'w-0 border-r-0'
         }`}
         aria-label="Sidebar navigation"
@@ -247,13 +261,13 @@ export default function Sidebar({
       {/* ── Mobile Drawer ── */}
       {isMobileOpen && (
         <div
-          className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 md:hidden transition-opacity"
+          className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs z-40 md:hidden transition-opacity"
           onClick={onMobileClose}
           aria-hidden="true"
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 w-72 bg-white z-50 shadow-2xl flex flex-col md:hidden transform transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 left-0 w-72 bg-slate-900 border-r border-slate-800 z-50 shadow-2xl flex flex-col md:hidden transform transition-transform duration-300 ease-in-out ${
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         aria-label="Mobile sidebar navigation"
