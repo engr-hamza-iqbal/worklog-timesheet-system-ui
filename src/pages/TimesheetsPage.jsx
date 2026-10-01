@@ -438,6 +438,14 @@ export default function TimesheetsPage() {
                   </span>{" "}
                   <span className="text-xs font-normal text-slate-400">/ 24h limit</span>
                 </div>
+                <div className="w-32 h-1.5 bg-slate-100 rounded-full mt-1 overflow-hidden sm:ml-auto">
+                  <div
+                    className={`h-full rounded-full transition-all duration-300 ${
+                      selectedDayTotalHours > 24 ? 'bg-rose-500' : selectedDayTotalHours >= 8 ? 'bg-emerald-500' : 'bg-indigo-600'
+                    }`}
+                    style={{ width: `${Math.min((selectedDayTotalHours / 8) * 100, 100)}%` }}
+                  />
+                </div>
               </div>
 
               {selectedDayEditable.length > 0 && (
