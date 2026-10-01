@@ -354,7 +354,7 @@ function BulkAssignTeamForm({ users, onSuccess, onCancel }) {
   }, [selectedProjectId]);
 
   const activeUsers = useMemo(() => {
-    return users.filter((u) => u.isActive);
+    return users.filter((u) => u.isActive && u.accountType !== 'ADMIN');
   }, [users]);
 
   const filteredUsers = useMemo(() => {
@@ -587,6 +587,15 @@ function UserAssignments({ user, canAssign, onAssigned }) {
     setAssignments(user.activeAssignments || []);
   }, [user.activeAssignments]);
 
+  if (user.accountType === 'ADMIN') {
+    return (
+      <div className="px-5 py-3.5 bg-slate-50/70 border-t border-slate-100 text-xs text-slate-500 italic flex items-center gap-2">
+        <FolderOpen className="w-4 h-4 text-slate-400 shrink-0" />
+        <span>Administrators have system-wide access across all clients and projects and do not receive individual project assignments.</span>
+      </div>
+    );
+  }
+
   const handleRemove = (projectId) => {
     setRemoveConfirmation(projectId);
   };
@@ -767,7 +776,14 @@ export default function UsersPage() {
     }
   };
 
-  const filtered = users.filter(
+  const visibleUsers = useMemo(() => {
+    if (!isAdmin) {
+      return users.filter((u) => u.accountType !== 'ADMIN');
+    }
+    return users;
+  }, [users, isAdmin]);
+
+  const filtered = visibleUsers.filter(
     (u) =>
       u.name.toLowerCase().includes(search.toLowerCase()) ||
       u.email.toLowerCase().includes(search.toLowerCase())
@@ -980,9 +996,14 @@ export default function UsersPage() {
 
                   {/* Active project count */}
                   <div className="hidden sm:flex col-span-2 items-center gap-1 text-xs text-slate-500">
-                    <FolderOpen className="w-3.5 h-3.5 text-slate-400" />
-                    {/* activeAssignments is the array of project objects */}
-                    {(user.activeAssignments || []).length}
+                    {user.accountType === 'ADMIN' ? (
+                      <span className="text-[11px] text-slate-400 italic">Global access</span>
+                    ) : (
+                      <>
+                        <FolderOpen className="w-3.5 h-3.5 text-slate-400" />
+                        {(user.activeAssignments || []).length}
+                      </>
+                    )}
                   </div>
 
                   {/* Actions */}

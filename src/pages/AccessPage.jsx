@@ -289,7 +289,7 @@ function GrantForm({ targetUser, grantedCodes, users, projects, onSuccess, onCan
         <div>
           <label className="block text-xs font-medium text-slate-700 mb-1.5">Target users</label>
           <div className="max-h-36 overflow-y-auto border border-slate-200 rounded divide-y divide-slate-100">
-            {users.filter((u) => u.id !== targetUser.id && u.isActive).map((u) => (
+            {users.filter((u) => u.id !== targetUser.id && u.isActive && u.accountType !== 'ADMIN').map((u) => (
               <label key={u.id} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer">
                 <input
                   type="checkbox"
