@@ -206,125 +206,136 @@ export default function TimeOffPage() {
       </div>
       <form
         onSubmit={createRequest}
-        className="mb-6 grid gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-xs grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-[1.2fr_1fr_1fr_2fr_auto] items-end"
+        className="mb-6 rounded-xl border border-slate-200/90 bg-white p-5 shadow-xs"
       >
-        <label className="text-xs font-medium text-slate-600">
-          Type
-          <select
-            required
-            value={form.timeOffTypeId}
-            onChange={(e) =>
-              setForm({ ...form, timeOffTypeId: e.target.value })
-            }
-            className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
-          >
-            <option value="">Select type</option>
-            {types.map((type) => (
-              <option key={type.id} value={type.id}>
-                {type.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="text-xs font-medium text-slate-600">
-          Start date
-          <input
-            required
-            type="date"
-            value={form.startDate}
-            onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-            className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
-          />
-        </label>
-        <label className="text-xs font-medium text-slate-600">
-          End date
-          <input
-            required
-            type="date"
-            min={form.startDate || undefined}
-            value={form.endDate}
-            onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-            className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
-          />
-        </label>
-        <label className="text-xs font-medium text-slate-600">
-          Reason
-          <input
-            required
-            minLength="5"
-            value={form.reason}
-            onChange={(e) => setForm({ ...form, reason: e.target.value })}
-            placeholder="Annual family leave"
-            className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
-          />
-        </label>
-        <button
-          type="submit"
-          disabled={saving || !types.length}
-          className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-3 py-2 text-sm text-white hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer disabled:cursor-not-allowed w-full xl:w-auto"
-        >
-          {saving ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />}
-          {saving ? "Submitting request..." : "Request leave"}
-        </button>
+        <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">
+          Submit Leave Request
+        </h2>
+        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-12 items-end">
+          <label className="text-xs font-medium text-slate-600 sm:col-span-1 md:col-span-1 lg:col-span-3">
+            Leave Type
+            <select
+              required
+              value={form.timeOffTypeId}
+              onChange={(e) =>
+                setForm({ ...form, timeOffTypeId: e.target.value })
+              }
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs focus:border-slate-900 focus:outline-none"
+            >
+              <option value="">Select type</option>
+              {types.map((type) => (
+                <option key={type.id} value={type.id}>
+                  {type.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs font-medium text-slate-600 sm:col-span-1 md:col-span-1 lg:col-span-2">
+            Start date
+            <input
+              required
+              type="date"
+              value={form.startDate}
+              onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs focus:border-slate-900 focus:outline-none"
+            />
+          </label>
+          <label className="text-xs font-medium text-slate-600 sm:col-span-1 md:col-span-1 lg:col-span-2">
+            End date
+            <input
+              required
+              type="date"
+              min={form.startDate || undefined}
+              value={form.endDate}
+              onChange={(e) => setForm({ ...form, endDate: e.target.value })}
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs focus:border-slate-900 focus:outline-none"
+            />
+          </label>
+          <label className="text-xs font-medium text-slate-600 sm:col-span-1 md:col-span-2 lg:col-span-3">
+            Reason
+            <input
+              required
+              minLength="5"
+              value={form.reason}
+              onChange={(e) => setForm({ ...form, reason: e.target.value })}
+              placeholder="e.g. Annual family leave"
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs focus:border-slate-900 focus:outline-none"
+            />
+          </label>
+          <div className="sm:col-span-2 md:col-span-1 lg:col-span-2">
+            <button
+              type="submit"
+              disabled={saving || !types.length}
+              className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer disabled:cursor-not-allowed shadow-xs"
+            >
+              {saving ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+              <span>{saving ? "Submitting..." : "Submit"}</span>
+            </button>
+          </div>
+        </div>
       </form>
       <form
         onSubmit={applyFilters}
-        className="mb-4 grid gap-3 rounded-lg border border-slate-200 bg-white p-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-[minmax(150px,1fr)_minmax(150px,1fr)_minmax(150px,1fr)_auto_auto] lg:items-end"
+        className="mb-6 rounded-xl border border-slate-200/90 bg-white p-4 shadow-xs"
       >
-        <label className="text-xs font-medium text-slate-600">
-          Status
-          <select
-            value={filters.status}
-            onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-            className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
-          >
-            <option value="">All statuses</option>
-            {["PENDING", "APPROVED", "DECLINED", "CANCELLED"].map((status) => (
-              <option key={status}>{status}</option>
-            ))}
-          </select>
-        </label>
-        <label className="text-xs font-medium text-slate-600">
-          From
-          <input
-            type="date"
-            value={filters.startDate}
-            onChange={(e) =>
-              setFilters({ ...filters, startDate: e.target.value })
-            }
-            className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
-          />
-        </label>
-        <label className="text-xs font-medium text-slate-600">
-          To
-          <input
-            type="date"
-            min={filters.startDate || undefined}
-            value={filters.endDate}
-            onChange={(e) =>
-              setFilters({ ...filters, endDate: e.target.value })
-            }
-            className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
-          />
-        </label>
-        <button className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-3 py-2 text-sm text-white w-full sm:w-auto">
-          <CalendarDays size={15} />
-          Filter
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            const cleared = { status: "", startDate: "", endDate: "" };
-            setFilters(cleared);
-            load(cleared);
-          }}
-          className="inline-flex items-center justify-center gap-2 rounded-md border px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 w-full sm:w-auto"
-        >
-          <X size={15} />
-          Clear
-        </button>
+        <div className="flex flex-col sm:flex-row flex-wrap sm:items-end gap-3">
+          <label className="text-xs font-medium text-slate-600 w-full sm:w-44">
+            Filter Status
+            <select
+              value={filters.status}
+              onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs focus:border-slate-900 focus:outline-none"
+            >
+              <option value="">All statuses</option>
+              {["PENDING", "APPROVED", "DECLINED", "CANCELLED"].map((status) => (
+                <option key={status}>{status}</option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs font-medium text-slate-600 w-full sm:w-36">
+            From
+            <input
+              type="date"
+              value={filters.startDate}
+              onChange={(e) =>
+                setFilters({ ...filters, startDate: e.target.value })
+              }
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs focus:border-slate-900 focus:outline-none"
+            />
+          </label>
+          <label className="text-xs font-medium text-slate-600 w-full sm:w-36">
+            To
+            <input
+              type="date"
+              min={filters.startDate || undefined}
+              value={filters.endDate}
+              onChange={(e) =>
+                setFilters({ ...filters, endDate: e.target.value })
+              }
+              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs focus:border-slate-900 focus:outline-none"
+            />
+          </label>
+          <div className="flex items-center gap-2 mt-1 sm:mt-0 w-full sm:w-auto">
+            <button type="submit" className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white hover:bg-slate-800 transition cursor-pointer shadow-xs">
+              <CalendarDays size={13} />
+              <span>Filter</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const cleared = { status: "", startDate: "", endDate: "" };
+                setFilters(cleared);
+                load(cleared);
+              }}
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+            >
+              <X size={13} />
+              <span>Clear</span>
+            </button>
+          </div>
+        </div>
       </form>
-      <section className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
+      <section className="overflow-x-auto rounded-xl border border-slate-200/90 bg-white shadow-xs">
         {loading ? (
           <div className="flex min-h-48 items-center justify-center gap-3 text-sm text-slate-500">
             <RefreshCw className="animate-spin" size={20} />

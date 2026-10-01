@@ -341,83 +341,82 @@ export default function ReviewPage() {
       {activeTab === 'timesheets' ? (
         <>
           {/* Auto-filtering Toolbar (No Filter submit button; auto-filters in-memory without DB roundtrips) */}
-          <div className="bg-white border border-slate-200 rounded-lg p-4 mb-5 shadow-xs">
-        <div className="flex flex-col sm:flex-row flex-wrap sm:items-end gap-3">
-          <div className="w-full sm:flex-1 sm:min-w-[200px]">
-            <label className="block text-xs font-medium text-slate-600 mb-1">
-              Employee
-            </label>
-            <div className="relative">
-              <input
-                placeholder="Search name or email..."
-                value={filters.userQuery}
-                onChange={(e) => handleFilterChange("userQuery", e.target.value)}
-                className="w-full border border-slate-300 rounded-md pl-8 pr-3 py-2 text-sm focus:border-slate-900 focus:outline-none transition"
-              />
-              <Search
-                size={14}
-                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
-              />
+          <div className="bg-white border border-slate-200/90 rounded-xl p-4 sm:p-5 mb-5 shadow-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:items-end">
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">
+                  Employee
+                </label>
+                <div className="relative">
+                  <input
+                    placeholder="Search name or email..."
+                    value={filters.userQuery}
+                    onChange={(e) => handleFilterChange("userQuery", e.target.value)}
+                    className="w-full border border-slate-300 rounded-lg pl-8 pr-3 py-2 text-xs focus:border-slate-900 focus:outline-none transition"
+                  />
+                  <Search
+                    size={13}
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">
+                  Project
+                </label>
+                <input
+                  placeholder="Search project..."
+                  value={filters.projectQuery}
+                  onChange={(e) => handleFilterChange("projectQuery", e.target.value)}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:border-slate-900 focus:outline-none transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-1">
+                  Start date
+                </label>
+                <input
+                  aria-label="Start date"
+                  type="date"
+                  max={filters.endDate || undefined}
+                  value={filters.startDate}
+                  onChange={(e) => handleFilterChange("startDate", e.target.value)}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:border-slate-900 focus:outline-none transition"
+                />
+              </div>
+
+              <div className="flex items-end gap-2">
+                <div className="flex-1">
+                  <label className="block text-xs font-medium text-slate-600 mb-1">
+                    End date
+                  </label>
+                  <input
+                    aria-label="End date"
+                    type="date"
+                    min={filters.startDate || undefined}
+                    value={filters.endDate}
+                    onChange={(e) => handleFilterChange("endDate", e.target.value)}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs focus:border-slate-900 focus:outline-none transition"
+                  />
+                </div>
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 inline-flex items-center justify-center gap-1 hover:bg-slate-50 transition cursor-pointer shrink-0"
+                    title="Clear all active filters"
+                  >
+                    <X size={13} />
+                    <span>Clear</span>
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
 
-          <div className="w-full sm:flex-1 sm:min-w-[180px]">
-            <label className="block text-xs font-medium text-slate-600 mb-1">
-              Project
-            </label>
-            <input
-              placeholder="Search project..."
-              value={filters.projectQuery}
-              onChange={(e) => handleFilterChange("projectQuery", e.target.value)}
-              className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-slate-900 focus:outline-none transition"
-            />
-          </div>
-
-          <div className="w-full sm:w-auto sm:min-w-[140px]">
-            <label className="block text-xs font-medium text-slate-600 mb-1">
-              Start date
-            </label>
-            <input
-              aria-label="Start date"
-              type="date"
-              max={filters.endDate || undefined}
-              value={filters.startDate}
-              onChange={(e) => handleFilterChange("startDate", e.target.value)}
-              className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-slate-900 focus:outline-none transition"
-            />
-          </div>
-
-          <div className="w-full sm:w-auto sm:min-w-[140px]">
-            <label className="block text-xs font-medium text-slate-600 mb-1">
-              End date
-            </label>
-            <input
-              aria-label="End date"
-              type="date"
-              min={filters.startDate || undefined}
-              value={filters.endDate}
-              onChange={(e) => handleFilterChange("endDate", e.target.value)}
-              className="w-full border border-slate-300 rounded-md px-3 py-2 text-sm focus:border-slate-900 focus:outline-none transition"
-            />
-          </div>
-
-          {hasActiveFilters && (
-            <div className="flex items-center gap-2 w-full sm:w-auto shrink-0">
-              <button
-                type="button"
-                onClick={clearFilters}
-                className="w-full sm:w-auto rounded-md border border-slate-200 bg-white px-3.5 py-2 text-sm font-medium text-slate-600 inline-flex items-center justify-center gap-1.5 hover:bg-slate-50 transition cursor-pointer"
-                title="Clear all active filters"
-              >
-                <X size={15} />
-                Clear
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Filter stats & helper text */}
-        <div className="mt-2.5 flex items-center justify-between text-xs text-slate-500">
+            {/* Filter stats & helper text */}
+            <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
           <span>
             {hasActiveFilters ? (
               <>

@@ -6,9 +6,9 @@ import { useNotification } from '../context/NotificationContext.jsx';
 
 function MetricTable({ title, rows = [], columns = [] }) {
   return (
-    <section className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-200 bg-slate-50 px-5 py-4">
-        <h2 className="text-base font-semibold text-slate-900">{title}</h2>
+    <section className="overflow-x-auto rounded-xl border border-slate-200/90 bg-white shadow-xs">
+      <div className="border-b border-slate-200 bg-slate-50/70 px-5 py-3.5">
+        <h2 className="text-sm font-bold text-slate-900">{title}</h2>
       </div>
       {rows && rows.length ? (
         <table className="w-full text-left text-sm min-w-[340px]">
@@ -280,7 +280,7 @@ export default function ReportsPage() {
             </div>
           ) : report ? (
             <div className="relative">
-              <div className="grid gap-5 xl:grid-cols-2">
+              <div className="grid gap-5 lg:grid-cols-2">
                 <MetricTable
                   title="Hours by project"
                   rows={report.byProject}

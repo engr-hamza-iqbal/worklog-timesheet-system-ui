@@ -189,19 +189,19 @@ export default function EmailLogPage() {
       {/* Filters */}
       <form
         onSubmit={handleFilterSubmit}
-        className="mb-6 flex flex-col sm:flex-row flex-wrap sm:items-end gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+        className="mb-6 flex flex-col sm:flex-row flex-wrap sm:items-end gap-3 rounded-xl border border-slate-200/90 bg-white p-4 shadow-xs"
       >
         <div className="w-full sm:min-w-[200px] sm:flex-1">
           <label className="text-xs font-medium text-slate-600">
             Search
             <div className="relative mt-1">
-              <Search className="absolute left-3 top-2.5 text-slate-400" size={15} />
+              <Search className="absolute left-3 top-2.5 text-slate-400" size={14} />
               <input
                 type="text"
                 value={filters.search}
                 onChange={(e) => setFilters({ ...filters, search: e.target.value })}
                 placeholder="Search recipient or subject..."
-                className="block w-full rounded-md border border-slate-300 py-2 pl-9 pr-3 text-sm focus:border-slate-900 focus:outline-none"
+                className="block w-full rounded-lg border border-slate-300 py-2 pl-9 pr-3 text-xs focus:border-slate-900 focus:outline-none"
               />
             </div>
           </label>
@@ -213,7 +213,7 @@ export default function EmailLogPage() {
             <select
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
+              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-xs focus:border-slate-900 focus:outline-none"
             >
               <option value="">All Statuses</option>
               <option value="SENT">Sent</option>
@@ -229,7 +229,7 @@ export default function EmailLogPage() {
             <select
               value={filters.emailType}
               onChange={(e) => setFilters({ ...filters, emailType: e.target.value })}
-              className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
+              className="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-xs focus:border-slate-900 focus:outline-none"
             >
               <option value="">All Types</option>
               <option value="MISSING_TIMESHEET">Missing Timesheet</option>
@@ -240,21 +240,23 @@ export default function EmailLogPage() {
           </label>
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="inline-flex items-center justify-center rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-800 disabled:opacity-50 w-full sm:w-auto"
-        >
-          Filter
-        </button>
-        <button
-          type="button"
-          onClick={handleClear}
-          disabled={loading}
-          className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 w-full sm:w-auto"
-        >
-          Clear
-        </button>
+        <div className="flex items-center gap-2 w-full sm:w-auto mt-1 sm:mt-0">
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer"
+          >
+            Filter
+          </button>
+          <button
+            type="button"
+            onClick={handleClear}
+            disabled={loading}
+            className="flex-1 sm:flex-initial inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 transition cursor-pointer"
+          >
+            Clear
+          </button>
+        </div>
       </form>
 
       {error && (

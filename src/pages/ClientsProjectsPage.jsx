@@ -393,13 +393,13 @@ export default function ClientsProjectsPage() {
         </div>
       )}
 
-      <div className="mt-6 flex flex-col lg:flex-row gap-6">
+      <div className="mt-6 flex flex-col md:flex-row gap-6">
         {/* ── Left: Client list ── */}
         <div className="w-full md:w-60 lg:w-64 shrink-0">
-          <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs overflow-hidden">
             <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Clients</span>
-              <span className="text-[11px] text-slate-400">{clients.length}</span>
+              <span className="text-[11px] font-mono font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded">{clients.length}</span>
             </div>
 
             {clients.length === 0 ? (
