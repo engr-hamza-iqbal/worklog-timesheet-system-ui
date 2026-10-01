@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Loader2, UserPlus, ArrowRight } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
-import AppLogo from '../components/AppLogo.jsx';
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -42,32 +41,21 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center px-4 py-12 sm:py-16 relative">
-      {/* Ambient background decoration */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-100/40 rounded-full blur-3xl -z-10 pointer-events-none" />
-
-      <div className="w-full max-w-md">
-        {/* Brand Icon & Header */}
-        <div className="text-center mb-6">
-          <AppLogo className="w-14 h-14 rounded-2xl shadow-md mb-3 mx-auto p-1 bg-white border border-slate-200/80" />
-          <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Create your account</h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Join the Work Log portal to track time, request leaves, and log project activity.
-          </p>
-        </div>
+    <div className="flex-1 flex flex-col items-center justify-center px-4 py-4 sm:py-6 relative">
+      <div className="w-full max-w-sm">
 
         {/* Auth Card */}
-        <div className="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200/90 shadow-lg">
+        <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/90 shadow-md">
           {errorMessage && (
-            <div className="mb-5 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
+            <div className="mb-4 p-2.5 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-red-500 shrink-0" />
               <span>{errorMessage}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Full Name
               </label>
               <input
@@ -76,13 +64,13 @@ export default function RegisterPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Jane Smith"
-                className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 transition"
+                className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 transition"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                Work Email Address
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Work Email
               </label>
               <input
                 type="email"
@@ -90,12 +78,12 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="jane@company.com"
-                className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 transition"
+                className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 transition"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Password
               </label>
               <input
@@ -104,12 +92,12 @@ export default function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Minimum 8 characters"
-                className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 transition"
+                className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 transition"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Confirm Password
               </label>
               <input
@@ -118,32 +106,23 @@ export default function RegisterPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Re-enter password"
-                className="w-full px-3.5 py-2.5 text-xs sm:text-sm bg-white border border-slate-300 rounded-xl focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 transition"
+                className="w-full px-3 py-2 text-xs sm:text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100 transition"
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 px-4 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-xs sm:text-sm font-semibold rounded-xl transition cursor-pointer shadow-sm hover:shadow inline-flex items-center justify-center gap-2 disabled:cursor-not-allowed group mt-2"
+              className="w-full mt-1 py-2 px-4 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-xs sm:text-sm font-semibold rounded-lg transition cursor-pointer shadow-xs inline-flex items-center justify-center gap-2 disabled:cursor-not-allowed"
             >
-              {loading ? (
-                <>
-                  <Loader2 className="animate-spin" size={15} />
-                  <span>Registering account...</span>
-                </>
-              ) : (
-                <>
-                  <span>Create Account</span>
-                  <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
-                </>
-              )}
+              {loading && <Loader2 className="animate-spin" size={14} />}
+              <span>{loading ? 'Registering...' : 'Register'}</span>
             </button>
           </form>
         </div>
 
         {/* Footer */}
-        <p className="text-center text-xs text-slate-500 mt-6">
+        <p className="text-center text-xs text-slate-500 mt-4">
           Already have an account?{' '}
           <Link to="/login" className="text-indigo-600 font-semibold hover:underline">
             Sign in

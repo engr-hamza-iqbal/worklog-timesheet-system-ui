@@ -81,8 +81,8 @@ export default function Sidebar({
           )}
         </div>
 
-        {/* Scrollable Navigation Sections */}
-        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-5">
+        {/* Scrollable Navigation Sections (hidden scrollbar) */}
+        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {/* Main / Work Section */}
           <div>
             <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 px-3 pb-1.5">
