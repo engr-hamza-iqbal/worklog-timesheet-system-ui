@@ -53,7 +53,8 @@ export default function EmailLogPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [page, setPage] = useState(1);
-  const [pagination, setPagination] = useState({ page: 1, limit: 25, total: 0, totalPages: 1 });
+  const PAGE_LIMIT = 10;
+  const [pagination, setPagination] = useState({ page: 1, limit: PAGE_LIMIT, total: 0, totalPages: 1 });
   const [filters, setFilters] = useState({
     status: '',
     emailType: '',
@@ -77,7 +78,7 @@ export default function EmailLogPage() {
       setError('');
       const params = {
         page: pageNumber,
-        limit: 25,
+        limit: PAGE_LIMIT,
         ...(currentFilters.status ? { status: currentFilters.status } : {}),
         ...(currentFilters.emailType ? { emailType: currentFilters.emailType } : {}),
         ...(currentFilters.search ? { search: currentFilters.search } : {}),
@@ -85,7 +86,7 @@ export default function EmailLogPage() {
       const res = await api.get('/api/emails', { params });
       const data = res.data || res;
       setLogs(data.logs || []);
-      setPagination(data.pagination || { page: 1, limit: 25, total: 0, totalPages: 1 });
+      setPagination(data.pagination || { page: pageNumber, limit: PAGE_LIMIT, total: 0, totalPages: 1 });
     } catch (err) {
       setError(err.message || 'Failed to load email logs.');
     } finally {

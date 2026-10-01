@@ -30,7 +30,7 @@ export default function TimeOffPage() {
   const [types, setTypes] = useState([]);
   const [requests, setRequests] = useState([]);
   const [page, setPage] = useState(1);
-  const ITEMS_PER_PAGE = 8;
+  const ITEMS_PER_PAGE = 10;
   const [filters, setFilters] = useState({
     status: "",
     startDate: "",

@@ -544,7 +544,7 @@ export default function AccessPage() {
   const [refreshing, setRefreshing] = useState(false);
 
   const [userPage, setUserPage] = useState(1);
-  const USERS_PER_PAGE = 8;
+  const USERS_PER_PAGE = 10;
 
   const fetchAccessData = async (initial = false) => {
     if (initial) setLoading(true);

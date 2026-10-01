@@ -20,6 +20,7 @@ import {
 import api from "../api/client.js";
 import Badge from "../components/Badge.jsx";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
+import Pagination from "../components/Pagination.jsx";
 import { useNotification } from "../context/NotificationContext.jsx";
 
 function dateOnly(date) {
@@ -943,31 +944,12 @@ export default function TimesheetsPage() {
             </table>
 
             {/* Pagination Controls */}
-            {totalHistoryPages > 1 && (
-              <div className="p-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs">
-                <span className="text-slate-500">
-                  Page {historyPage} of {totalHistoryPages}
-                </span>
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    disabled={historyPage <= 1}
-                    onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
-                    className="px-2.5 py-1 rounded border border-slate-200 bg-white text-slate-700 disabled:opacity-40 transition cursor-pointer"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    type="button"
-                    disabled={historyPage >= totalHistoryPages}
-                    onClick={() => setHistoryPage((p) => Math.min(totalHistoryPages, p + 1))}
-                    className="px-2.5 py-1 rounded border border-slate-200 bg-white text-slate-700 disabled:opacity-40 transition cursor-pointer"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            )}
+            <Pagination
+              currentPage={historyPage}
+              totalItems={filteredHistory.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+              onPageChange={setHistoryPage}
+            />
           </div>
         </div>
       )}

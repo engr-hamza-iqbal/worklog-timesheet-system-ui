@@ -32,7 +32,7 @@ export default function ReviewPage() {
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
   const [timeOffPage, setTimeOffPage] = useState(1);
-  const TIME_OFF_PER_PAGE = 8;
+  const TIME_OFF_PER_PAGE = 10;
   const [scope, setScope] = useState(null);
   const [selected, setSelected] = useState([]);
   const [filters, setFilters] = useState({

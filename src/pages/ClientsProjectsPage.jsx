@@ -255,7 +255,7 @@ export default function ClientsProjectsPage() {
   const [refreshing, setRefreshing] = useState(false);
 
   const [projectPage, setProjectPage] = useState(1);
-  const PROJECTS_PER_PAGE = 8;
+  const PROJECTS_PER_PAGE = 10;
 
   // GET /api/clients → { success, data: [ { id, name, isActive, _count: { projects } } ], message }
   const fetchClients = useCallback(async () => {
