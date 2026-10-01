@@ -20,6 +20,8 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  FolderOpen,
+  User,
 } from 'lucide-react';
 
 const SYSTEM_CAPABILITIES = [
@@ -312,12 +314,45 @@ export default function DashboardPage() {
                             Global Access
                           </span>
                         ) : (
-                          <span className="text-[11px] text-slate-700 font-medium">
-                            {[
-                              projectCount > 0 ? `${projectCount} project(s)` : null,
-                              userCount > 0 ? `${userCount} user(s)` : null,
-                            ].filter(Boolean).join(', ')}
-                          </span>
+                          <div className="flex flex-wrap gap-1 max-w-xs">
+                            {grant?.allowedProjects && grant.allowedProjects.length > 0 ? (
+                              grant.allowedProjects.map((p) => (
+                                <span
+                                  key={p.id}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200"
+                                  title={p.name}
+                                >
+                                  <FolderOpen size={10} className="text-slate-400 shrink-0" />
+                                  <span className="truncate max-w-[120px]">{p.name}</span>
+                                </span>
+                              ))
+                            ) : projectCount > 0 ? (
+                              <span className="text-[11px] text-slate-700 font-medium">
+                                {projectCount} project(s)
+                              </span>
+                            ) : null}
+
+                            {grant?.allowedUsers && grant.allowedUsers.length > 0 ? (
+                              grant.allowedUsers.map((u) => (
+                                <span
+                                  key={u.id}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200"
+                                  title={u.name}
+                                >
+                                  <User size={10} className="text-slate-400 shrink-0" />
+                                  <span className="truncate max-w-[120px]">{u.name}</span>
+                                </span>
+                              ))
+                            ) : userCount > 0 ? (
+                              <span className="text-[11px] text-slate-700 font-medium">
+                                {userCount} user(s)
+                              </span>
+                            ) : null}
+
+                            {!grant?.allowedProjects?.length && !grant?.allowedUsers?.length && projectCount === 0 && userCount === 0 && (
+                              <span className="text-[11px] text-slate-400 italic">No specific scope</span>
+                            )}
+                          </div>
                         )
                       ) : (
                         <span className="text-slate-300 font-mono">—</span>

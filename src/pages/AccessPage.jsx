@@ -3,6 +3,7 @@ import {
   Shield, XCircle, Plus, RefreshCw, AlertCircle,
   ChevronDown, ChevronUp, Clock, CheckCircle, Loader2,
   ArrowUpDown, ArrowUp, ArrowDown, Users, Search, Check,
+  FolderOpen, User, Trash2, ShieldAlert,
 } from 'lucide-react';
 import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -693,21 +694,242 @@ function BulkGrantTeamForm({ users, projects, currentUserId, onSuccess, onCancel
   );
 }
 
+// ─── Bulk Revoke Capability from Team Form ────────────────────────────────────
+
+function BulkRevokeTeamForm({ users, onSuccess, onCancel }) {
+  const [selectedCapability, setSelectedCapability] = useState('VIEW_OTHER_RECORDS');
+  const [selectedUserIds, setSelectedUserIds] = useState(new Set());
+  const [userSearch, setUserSearch] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  // Active non-admin employees who currently hold this capability
+  const eligibleUsers = useMemo(() => {
+    return users.filter(
+      (u) =>
+        u.isActive &&
+        u.accountType !== 'ADMIN' &&
+        Array.isArray(u.activeCapabilityCodes) &&
+        u.activeCapabilityCodes.includes(selectedCapability)
+    );
+  }, [users, selectedCapability]);
+
+  // When capability changes, clear selection
+  useEffect(() => {
+    setSelectedUserIds(new Set());
+  }, [selectedCapability]);
+
+  const filteredUsers = useMemo(() => {
+    const q = userSearch.toLowerCase().trim();
+    if (!q) return eligibleUsers;
+    return eligibleUsers.filter(
+      (u) =>
+        (u.name && u.name.toLowerCase().includes(q)) ||
+        (u.email && u.email.toLowerCase().includes(q))
+    );
+  }, [eligibleUsers, userSearch]);
+
+  const toggleUser = (id) => {
+    setSelectedUserIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = () => {
+    setSelectedUserIds(new Set(filteredUsers.map((u) => u.id)));
+  };
+
+  const clearSelection = () => {
+    setSelectedUserIds(new Set());
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (selectedUserIds.size === 0) {
+      setError('Please select at least one employee.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    const uIds = Array.from(selectedUserIds);
+    try {
+      await api.post('/api/access/grants/revoke', {
+        capabilityCode: selectedCapability,
+        userIds: uIds,
+      });
+      onSuccess(selectedCapability, uIds);
+    } catch (err) {
+      setError(err.message || 'Failed to revoke capability.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <ErrorAlert message={error} onDismiss={() => setError('')} />
+
+      {/* Capability Selector */}
+      <div>
+        <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+          Select Capability to Revoke
+        </label>
+        <select
+          value={selectedCapability}
+          onChange={(e) => setSelectedCapability(e.target.value)}
+          className="w-full px-3 py-2 text-xs border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 bg-white"
+        >
+          {ALL_CAP_CODES.map((code) => {
+            const count = users.filter(
+              (u) =>
+                u.isActive &&
+                u.accountType !== 'ADMIN' &&
+                Array.isArray(u.activeCapabilityCodes) &&
+                u.activeCapabilityCodes.includes(code)
+            ).length;
+            return (
+              <option key={code} value={code}>
+                {CAP_META[code]?.label || code} ({count} employee{count === 1 ? '' : 's'})
+              </option>
+            );
+          })}
+        </select>
+        {CAP_META[selectedCapability]?.desc && (
+          <p className="mt-1 text-[11px] text-slate-500">{CAP_META[selectedCapability].desc}</p>
+        )}
+      </div>
+
+      {/* Target Users Multi-select */}
+      <div className="space-y-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+          <label className="text-xs font-semibold text-slate-700">
+            Select Employees with this Capability ({eligibleUsers.length} total)
+          </label>
+          {eligibleUsers.length > 0 && (
+            <div className="flex items-center gap-2 text-xs">
+              <button
+                type="button"
+                onClick={selectAll}
+                className="text-[11px] font-medium text-red-600 hover:text-red-800 transition cursor-pointer"
+              >
+                Select all ({filteredUsers.length})
+              </button>
+              <span className="text-slate-300">|</span>
+              <button
+                type="button"
+                onClick={clearSelection}
+                className="text-[11px] font-medium text-slate-500 hover:text-slate-800 transition cursor-pointer"
+              >
+                Clear
+              </button>
+            </div>
+          )}
+        </div>
+
+        {eligibleUsers.length === 0 ? (
+          <div className="p-6 text-center border border-dashed border-slate-200 rounded-lg bg-slate-50">
+            <CheckCircle className="w-6 h-6 text-emerald-500 mx-auto mb-1.5" />
+            <p className="text-xs font-medium text-slate-700">No employees currently hold this capability.</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">Nobody has an active grant for this capability.</p>
+          </div>
+        ) : (
+          <>
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+                placeholder="Search employees by name or email..."
+                className="w-full pl-8 pr-2.5 py-1.5 text-xs border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 bg-white"
+              />
+            </div>
+
+            <div className="max-h-56 overflow-y-auto space-y-1 border border-slate-200 rounded p-1.5 bg-slate-50/50">
+              {filteredUsers.map((user) => {
+                const isSelected = selectedUserIds.has(user.id);
+                return (
+                  <div
+                    key={user.id}
+                    onClick={() => toggleUser(user.id)}
+                    className={`flex items-center justify-between px-3 py-2 rounded text-xs transition cursor-pointer select-none ${
+                      isSelected
+                        ? 'bg-red-50/90 border border-red-200 text-red-950 font-medium'
+                        : 'bg-white border border-slate-200/70 hover:bg-slate-50 text-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => {}}
+                        className="rounded border-slate-300 text-red-600 focus:ring-red-500 pointer-events-none"
+                      />
+                      <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[11px] font-semibold text-slate-600 shrink-0">
+                        {user.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="truncate font-medium">{user.name}</div>
+                        <div className="text-[11px] text-slate-400 truncate">{user.email}</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              {filteredUsers.length === 0 && (
+                <p className="text-xs text-slate-400 italic text-center py-4">No employees match search.</p>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+        <span className="text-xs text-slate-600">
+          <span className="font-bold text-slate-900">{selectedUserIds.size}</span> employee
+          {selectedUserIds.size === 1 ? '' : 's'} selected
+        </span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="py-2 px-3 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded transition cursor-pointer"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={loading || selectedUserIds.size === 0}
+            className="py-2 px-4 bg-red-600 hover:bg-red-700 disabled:bg-slate-300 text-white text-xs font-medium rounded transition cursor-pointer disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+          >
+            {loading && <Loader2 className="animate-spin" size={13} />}
+            {loading ? 'Revoking...' : `Revoke from ${selectedUserIds.size > 0 ? selectedUserIds.size : ''} User${selectedUserIds.size === 1 ? '' : 's'}`}
+          </button>
+        </div>
+      </div>
+    </form>
+  );
+}
+
 // ─── User Access Panel ────────────────────────────────────────────────────────
 
 function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
   // GET /api/access/users/:userId/grants → { success, data: [grants], message }
-  // Each grant: { id, userId, capabilityId, grantedById, expiresAt, revokedAt, createdAt,
-  //               capability: { id, code, description },
-  //               grantedBy: { id, name, email },
-  //               scopes: [{ id, grantId, scopeType, targetUserId, targetProjectId,
-  //                          targetUser: {id, name}, targetProject: {id, name} }] }
   const [grants, setGrants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [revoking, setRevoking] = useState(null);
   const [grantModal, setGrantModal] = useState(false);
   const [revokeConfirmation, setRevokeConfirmation] = useState(null);
+  const [selectedGrantIds, setSelectedGrantIds] = useState(new Set());
+  const [bulkRevokeConfirm, setBulkRevokeConfirm] = useState(false);
+  const [bulkRevoking, setBulkRevoking] = useState(false);
+  const { notify } = useNotification();
 
   const fetchGrants = useCallback(async () => {
     setLoading(true);
@@ -723,7 +945,10 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
     }
   }, [targetUser.id]);
 
-  useEffect(() => { fetchGrants(); }, [fetchGrants]);
+  useEffect(() => {
+    fetchGrants();
+    setSelectedGrantIds(new Set());
+  }, [fetchGrants]);
 
   // Only grants that are currently active (not revoked, not expired)
   const now = new Date();
@@ -742,7 +967,7 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
   const grantedCodes = new Set(Object.keys(activeByCode));
   const isSelf = targetUser.id === currentUserId;
 
-  // POST /api/access/grants/:grantId/revoke → { success, data: {...}, message }
+  // Single grant revoke
   const handleRevoke = (grantId) => {
     setRevokeConfirmation(grantId);
   };
@@ -753,11 +978,16 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
     setError('');
     try {
       await api.post(`/api/access/grants/${grantId}/revoke`);
-      // Optimistically update — remove from activeGrants by marking revokedAt
       setGrants((prev) =>
-        prev.map((g) => g.id === grantId ? { ...g, revokedAt: new Date().toISOString() } : g)
+        prev.map((g) => (g.id === grantId ? { ...g, revokedAt: new Date().toISOString() } : g))
       );
+      setSelectedGrantIds((prev) => {
+        const next = new Set(prev);
+        next.delete(grantId);
+        return next;
+      });
       setRevokeConfirmation(null);
+      notify.success('Capability grant revoked.');
     } catch (err) {
       setError(err.message || 'Failed to revoke grant.');
       setRevokeConfirmation(null);
@@ -766,13 +996,98 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
     }
   };
 
-  const getScopeLabel = (grant) => {
+  // Multiple grant revoke on this user
+  const confirmBulkRevoke = async () => {
+    const gIds = Array.from(selectedGrantIds);
+    setBulkRevoking(true);
+    setError('');
+    try {
+      await api.post('/api/access/grants/revoke', { grantIds: gIds });
+      const nowIso = new Date().toISOString();
+      setGrants((prev) =>
+        prev.map((g) => (gIds.includes(g.id) ? { ...g, revokedAt: nowIso } : g))
+      );
+      setSelectedGrantIds(new Set());
+      setBulkRevokeConfirm(false);
+      notify.success(`Revoked ${gIds.length} capability grant(s).`);
+    } catch (err) {
+      setError(err.message || 'Failed to revoke selected capabilities.');
+      setBulkRevokeConfirm(false);
+    } finally {
+      setBulkRevoking(false);
+    }
+  };
+
+  const renderScope = (grant) => {
+    if (!grant) return <span className="text-slate-300">—</span>;
+    const scopes = grant.scopes || [];
+    if (scopes.length === 0) {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+          Global Access
+        </span>
+      );
+    }
+
+    const type = scopes[0].scopeType;
+    if (type === 'PROJECT') {
+      return (
+        <div className="flex flex-col gap-1 py-0.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
+              <FolderOpen size={10} />
+              {scopes.length} {scopes.length === 1 ? 'Project' : 'Projects'}
+            </span>
+            {scopes.map((s) => {
+              const pName = s.targetProject?.name || s.targetProjectId;
+              const cName = s.targetProject?.client?.name;
+              return (
+                <span
+                  key={s.id || s.targetProjectId}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200 max-w-[200px] truncate"
+                  title={cName ? `${pName} (${cName})` : pName}
+                >
+                  <FolderOpen size={10} className="text-slate-400 shrink-0" />
+                  <span className="truncate">{pName}</span>
+                </span>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-col gap-1 py-0.5">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+            <Users size={10} />
+            {scopes.length} {scopes.length === 1 ? 'User' : 'Users'}
+          </span>
+          {scopes.map((s) => {
+            const uName = s.targetUser?.name || s.targetUserId;
+            return (
+              <span
+                key={s.id || s.targetUserId}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200 max-w-[200px] truncate"
+                title={s.targetUser?.email ? `${uName} (${s.targetUser.email})` : uName}
+              >
+                <User size={10} className="text-slate-400 shrink-0" />
+                <span className="truncate">{uName}</span>
+              </span>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const getScopeSortKey = (grant) => {
+    if (!grant) return '';
     const scopes = grant.scopes || [];
     if (scopes.length === 0) return 'Global';
     const type = scopes[0].scopeType;
-    return type === 'USER'
-      ? `${scopes.length} user${scopes.length > 1 ? 's' : ''}`
-      : `${scopes.length} project${scopes.length > 1 ? 's' : ''}`;
+    return `${type} ${scopes.length}`;
   };
 
   const [capSortField, setCapSortField] = useState('name');
@@ -795,8 +1110,8 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
       if (capSortField === 'name') {
         cmp = (CAP_META[codeA]?.label || '').localeCompare(CAP_META[codeB]?.label || '');
       } else if (capSortField === 'scope') {
-        const scopeA = grantA ? getScopeLabel(grantA) : '';
-        const scopeB = grantB ? getScopeLabel(grantB) : '';
+        const scopeA = getScopeSortKey(grantA);
+        const scopeB = getScopeSortKey(grantB);
         cmp = scopeA.localeCompare(scopeB);
       } else if (capSortField === 'grantedBy') {
         const gA = grantA?.grantedBy?.name || '';
@@ -814,6 +1129,36 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
   return (
     <div>
       <ErrorAlert message={error} onDismiss={() => setError('')} />
+
+      {/* Multiple capabilities revoke action bar */}
+      {selectedGrantIds.size > 0 && !isSelf && (
+        <div className="bg-red-50/90 border border-red-200 px-4 py-2.5 rounded-lg flex items-center justify-between gap-3 mt-2 animate-fadeIn">
+          <div className="flex items-center gap-2 text-xs text-red-900 font-medium">
+            <ShieldAlert size={15} className="text-red-600 shrink-0" />
+            <span>
+              <strong>{selectedGrantIds.size}</strong> capability grant{selectedGrantIds.size === 1 ? '' : 's'} selected
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setSelectedGrantIds(new Set())}
+              className="px-2.5 py-1 text-xs text-slate-600 hover:text-slate-800 bg-white border border-slate-200 rounded transition cursor-pointer"
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              onClick={() => setBulkRevokeConfirm(true)}
+              disabled={bulkRevoking}
+              className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded transition cursor-pointer disabled:opacity-50"
+            >
+              {bulkRevoking ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Trash2 size={12} />}
+              Revoke Selected ({selectedGrantIds.size})
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-lg border border-slate-200 overflow-hidden mt-2">
         <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
@@ -834,9 +1179,28 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left min-w-[460px]">
+            <table className="w-full text-xs text-left min-w-[520px]">
               <thead className="bg-slate-50 text-[10px] font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 select-none">
                 <tr>
+                  {!isSelf && (
+                    <th className="py-2.5 px-3 w-8">
+                      {activeGrants.length > 0 && (
+                        <input
+                          type="checkbox"
+                          checked={selectedGrantIds.size > 0 && selectedGrantIds.size === activeGrants.length}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedGrantIds(new Set(activeGrants.map((g) => g.id)));
+                            } else {
+                              setSelectedGrantIds(new Set());
+                            }
+                          }}
+                          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                          title="Select all active grants"
+                        />
+                      )}
+                    </th>
+                  )}
                   <th
                     onClick={() => toggleCapSort('name')}
                     className="py-2.5 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
@@ -899,15 +1263,33 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
 
                   return (
                     <tr key={code} className="hover:bg-slate-50/50 transition">
+                      {!isSelf && (
+                        <td className="py-3 px-3 w-8">
+                          {isGranted ? (
+                            <input
+                              type="checkbox"
+                              checked={selectedGrantIds.has(grant.id)}
+                              onChange={() => {
+                                setSelectedGrantIds((prev) => {
+                                  const next = new Set(prev);
+                                  if (next.has(grant.id)) next.delete(grant.id);
+                                  else next.add(grant.id);
+                                  return next;
+                                });
+                              }}
+                              className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                            />
+                          ) : null}
+                        </td>
+                      )}
+
                       <td className="py-3 px-4">
                         <div className="font-medium text-slate-900">{CAP_META[code].label}</div>
                         <div className="text-[10px] font-mono text-slate-400">{code}</div>
                       </td>
 
                       <td className="py-3 px-4 text-slate-600">
-                        {isGranted
-                          ? getScopeLabel(grant)
-                          : <span className="text-slate-300">—</span>}
+                        {renderScope(grant)}
                       </td>
 
                       <td className="py-3 px-4 text-slate-600 hidden sm:table-cell">
@@ -976,6 +1358,8 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
           onCancel={() => setGrantModal(false)}
         />
       </Modal>
+
+      {/* Single revoke confirmation */}
       <ConfirmDialog
         isOpen={Boolean(revokeConfirmation)}
         onClose={() => (revoking ? null : setRevokeConfirmation(null))}
@@ -985,6 +1369,18 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
         confirmLabel="Revoke"
         tone="danger"
         loading={Boolean(revoking)}
+      />
+
+      {/* Bulk revoke confirmation */}
+      <ConfirmDialog
+        isOpen={bulkRevokeConfirm}
+        onClose={() => (bulkRevoking ? null : setBulkRevokeConfirm(false))}
+        onConfirm={confirmBulkRevoke}
+        title={`Revoke ${selectedGrantIds.size} Capabilities`}
+        message={`Are you sure you want to revoke the ${selectedGrantIds.size} selected capabilities from ${targetUser.name}? They will lose these permissions immediately.`}
+        confirmLabel={`Revoke ${selectedGrantIds.size} Capabilities`}
+        tone="danger"
+        loading={bulkRevoking}
       />
     </div>
   );
@@ -1200,6 +1596,7 @@ export default function AccessPage() {
   const [search, setSearch] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [bulkGrantModal, setBulkGrantModal] = useState(false);
+  const [bulkRevokeModal, setBulkRevokeModal] = useState(false);
 
   const [userPage, setUserPage] = useState(1);
   const USERS_PER_PAGE = 10;
@@ -1282,6 +1679,14 @@ export default function AccessPage() {
           >
             <Shield className="w-3.5 h-3.5" />
             Grant Capability to Team
+          </button>
+          <button
+            type="button"
+            onClick={() => setBulkRevokeModal(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded transition cursor-pointer"
+          >
+            <ShieldAlert className="w-3.5 h-3.5 text-red-600" />
+            Revoke Capability from Team
           </button>
         </div>
       </div>
@@ -1417,6 +1822,26 @@ export default function AccessPage() {
             );
           }}
           onCancel={() => setBulkGrantModal(false)}
+        />
+      </Modal>
+
+      {/* Bulk Revoke Capability from Team Modal */}
+      <Modal
+        isOpen={bulkRevokeModal}
+        onClose={() => setBulkRevokeModal(false)}
+        title="Revoke Capability from Team Members"
+        size="lg"
+      >
+        <BulkRevokeTeamForm
+          users={users}
+          onSuccess={(capabilityCode, userIds) => {
+            setBulkRevokeModal(false);
+            fetchAccessData(false);
+            notify.success(
+              `Revoked "${CAP_META[capabilityCode]?.label || capabilityCode}" from ${userIds.length} employee(s).`
+            );
+          }}
+          onCancel={() => setBulkRevokeModal(false)}
         />
       </Modal>
     </main>
