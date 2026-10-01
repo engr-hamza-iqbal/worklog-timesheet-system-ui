@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Loader2, Clock, ArrowRight, ShieldCheck, UserCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
+import AppLogo from '../components/AppLogo.jsx';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -41,9 +42,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Brand Icon & Header */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-slate-900 text-white shadow-md mb-3">
-            <Clock size={22} className="text-indigo-400" />
-          </div>
+          <AppLogo className="w-14 h-14 rounded-2xl shadow-md mb-3 mx-auto p-1 bg-white border border-slate-200/80" />
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Sign in to your account</h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
             Access your active timesheets, approval queues, and project hours.

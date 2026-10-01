@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Loader2, UserPlus, ArrowRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
+import AppLogo from '../components/AppLogo.jsx';
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -48,9 +49,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-md">
         {/* Brand Icon & Header */}
         <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-slate-900 text-white shadow-md mb-3">
-            <UserPlus size={22} className="text-indigo-400" />
-          </div>
+          <AppLogo className="w-14 h-14 rounded-2xl shadow-md mb-3 mx-auto p-1 bg-white border border-slate-200/80" />
           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Create your account</h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
             Join the Work Log portal to track time, request leaves, and log project activity.

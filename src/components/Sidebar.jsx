@@ -16,6 +16,7 @@ import {
   LogOut,
   Sparkles,
 } from 'lucide-react';
+import AppLogo from './AppLogo.jsx';
 
 export default function Sidebar({
   isOpen,
@@ -60,9 +61,7 @@ export default function Sidebar({
             onClick={handleItemClick}
             className="flex items-center gap-2.5 group cursor-pointer"
           >
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-500 to-sky-400 text-white flex items-center justify-center font-bold text-sm shadow-md shadow-indigo-950/50 group-hover:brightness-110 transition">
-              W
-            </div>
+            <AppLogo className="w-8 h-8 rounded-xl shadow-md shadow-indigo-950/50 group-hover:scale-105 transition" />
             <div className="flex flex-col">
               <span className="text-sm font-bold text-white tracking-tight leading-tight flex items-center gap-1.5">
                 Work Log

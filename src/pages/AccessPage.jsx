@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Shield, XCircle, Plus, RefreshCw, AlertCircle,
   ChevronDown, ChevronUp, Clock, CheckCircle, Loader2,
@@ -9,6 +9,7 @@ import Modal from '../components/Modal.jsx';
 import Badge from '../components/Badge.jsx';
 import EmptyState from '../components/EmptyState.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
+import Pagination from '../components/Pagination.jsx';
 
 // ─── Capability metadata ───────────────────────────────────────────────────────
 
@@ -426,30 +427,35 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
 // ─── Audit Log ────────────────────────────────────────────────────────────────
 
 function AuditLog() {
-  // GET /api/access/audit-logs?limit=20 → { success, data: { logs: [...], total: N }, message }
   const [logs, setLogs] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [expanded, setExpanded] = useState(false);
+  const [page, setPage] = useState(1);
+  const LIMIT = 10;
+
+  const fetchLogs = useCallback(async (pageNumber = 1) => {
+    setLoading(true);
+    try {
+      const offset = (pageNumber - 1) * LIMIT;
+      const res = await api.get(`/api/access/audit-logs?limit=${LIMIT}&offset=${offset}`);
+      const data = res.data;
+      if (data && Array.isArray(data.logs)) {
+        setLogs(data.logs);
+        setTotal(data.total || data.logs.length);
+      } else if (Array.isArray(data)) {
+        setLogs(data);
+        setTotal(data.length);
+      }
+    } catch {
+      // Keep previous logs on error
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    api.get('/api/access/audit-logs?limit=20&offset=0')
-      .then((res) => {
-        // res.data = { logs: [...], total } because the service returns { logs, total }
-        // and the HTTP layer wraps it in { success, data: { logs, total }, message }
-        const data = res.data;
-        if (data && Array.isArray(data.logs)) {
-          setLogs(data.logs);
-          setTotal(data.total || data.logs.length);
-        } else if (Array.isArray(data)) {
-          // Fallback if shape differs
-          setLogs(data);
-          setTotal(data.length);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
+    fetchLogs(page);
+  }, [page, fetchLogs]);
 
   const ACTION_COLORS = {
     GRANT:         'text-emerald-700 bg-emerald-50',
@@ -458,8 +464,6 @@ function AuditLog() {
     CHANGE_EXPIRY: 'text-amber-700 bg-amber-50',
   };
 
-  const visible = expanded ? logs : logs.slice(0, 6);
-
   return (
     <div className="mt-8 bg-white rounded-lg border border-slate-200 overflow-hidden">
       <div className="px-5 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
@@ -467,7 +471,7 @@ function AuditLog() {
         <span className="text-[11px] text-slate-400">{total} events</span>
       </div>
 
-      {loading ? (
+      {loading && logs.length === 0 ? (
         <div className="flex justify-center py-8">
           <RefreshCw className="w-4 h-4 text-slate-400 animate-spin" />
         </div>
@@ -487,7 +491,7 @@ function AuditLog() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {visible.map((log) => (
+                {logs.map((log) => (
                   <tr key={log.id} className="hover:bg-slate-50/50 transition">
                     <td className="py-2.5 px-5">
                       <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${ACTION_COLORS[log.action] || 'text-slate-700'}`}>
@@ -497,7 +501,6 @@ function AuditLog() {
                     <td className="py-2.5 px-4 font-mono text-[11px] text-slate-600">
                       {log.capabilityCode}
                     </td>
-                    {/* actor and targetUser from getAccessAuditLogs include */}
                     <td className="py-2.5 px-4 text-slate-600 hidden sm:table-cell">
                       {log.actor?.name || '—'}
                     </td>
@@ -514,16 +517,12 @@ function AuditLog() {
               </tbody>
             </table>
           </div>
-          {logs.length > 6 && (
-            <button
-              onClick={() => setExpanded((v) => !v)}
-              className="w-full py-2.5 text-xs text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition flex items-center justify-center gap-1 border-t border-slate-100"
-            >
-              {expanded
-                ? <><ChevronUp className="w-3.5 h-3.5" />Show less</>
-                : <><ChevronDown className="w-3.5 h-3.5" />Show all {logs.length} entries</>}
-            </button>
-          )}
+          <Pagination
+            currentPage={page}
+            totalItems={total}
+            itemsPerPage={LIMIT}
+            onPageChange={(nextPage) => setPage(nextPage)}
+          />
         </div>
       )}
     </div>
@@ -543,6 +542,9 @@ export default function AccessPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+
+  const [userPage, setUserPage] = useState(1);
+  const USERS_PER_PAGE = 8;
 
   const fetchAccessData = async (initial = false) => {
     if (initial) setLoading(true);
@@ -571,11 +573,18 @@ export default function AccessPage() {
     fetchAccessData(true);
   }, []);
 
-  const filteredUsers = users.filter(
-    (u) =>
-      u.name.toLowerCase().includes(search.toLowerCase()) ||
-      u.email.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredUsers = useMemo(() => {
+    return users.filter(
+      (u) =>
+        u.name.toLowerCase().includes(search.toLowerCase()) ||
+        u.email.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [users, search]);
+
+  const paginatedUsers = useMemo(() => {
+    const start = (userPage - 1) * USERS_PER_PAGE;
+    return filteredUsers.slice(start, start + USERS_PER_PAGE);
+  }, [filteredUsers, userPage]);
 
   const selectedUser = users.find((u) => u.id === selectedUserId);
 
@@ -612,40 +621,55 @@ export default function AccessPage() {
               <input
                 type="text"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setUserPage(1);
+                }}
                 placeholder="Filter users..."
                 className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition"
               />
             </div>
-            <ul className="divide-y divide-slate-100 max-h-[55vh] overflow-y-auto">
-              {filteredUsers.map((user) => (
-                <li key={user.id}>
-                  <button
-                    onClick={() => setSelectedUserId(user.id)}
-                    className={`w-full flex items-center gap-2.5 px-4 py-3 text-left transition ${
-                      selectedUserId === user.id
-                        ? 'bg-slate-900 text-white'
-                        : 'hover:bg-slate-50 text-slate-700'
-                    }`}
-                  >
-                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-                      selectedUserId === user.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
-                    }`}>
-                      {user.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-xs font-medium truncate">{user.name}</div>
-                      <div className={`text-[10px] truncate ${selectedUserId === user.id ? 'text-slate-300' : 'text-slate-400'}`}>
-                        {user.accountType === 'ADMIN' ? 'Administrator' : 'Employee'}
+            {paginatedUsers.length === 0 ? (
+              <div className="p-4 text-center text-xs text-slate-400">
+                No users found.
+              </div>
+            ) : (
+              <ul className="divide-y divide-slate-100 max-h-[55vh] overflow-y-auto">
+                {paginatedUsers.map((user) => (
+                  <li key={user.id}>
+                    <button
+                      onClick={() => setSelectedUserId(user.id)}
+                      className={`w-full flex items-center gap-2.5 px-4 py-3 text-left transition ${
+                        selectedUserId === user.id
+                          ? 'bg-slate-900 text-white'
+                          : 'hover:bg-slate-50 text-slate-700'
+                      }`}
+                    >
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                        selectedUserId === user.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                      }`}>
+                        {user.name.charAt(0).toUpperCase()}
                       </div>
-                    </div>
-                    {user.accountType === 'ADMIN' && (
-                      <Shield className={`w-3.5 h-3.5 ml-auto shrink-0 ${selectedUserId === user.id ? 'text-slate-300' : 'text-slate-400'}`} />
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
+                      <div className="min-w-0">
+                        <div className="text-xs font-medium truncate">{user.name}</div>
+                        <div className={`text-[10px] truncate ${selectedUserId === user.id ? 'text-slate-300' : 'text-slate-400'}`}>
+                          {user.accountType === 'ADMIN' ? 'Administrator' : 'Employee'}
+                        </div>
+                      </div>
+                      {user.accountType === 'ADMIN' && (
+                        <Shield className={`w-3.5 h-3.5 ml-auto shrink-0 ${selectedUserId === user.id ? 'text-slate-300' : 'text-slate-400'}`} />
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <Pagination
+              currentPage={userPage}
+              totalItems={filteredUsers.length}
+              itemsPerPage={USERS_PER_PAGE}
+              onPageChange={setUserPage}
+            />
           </div>
         </div>
 

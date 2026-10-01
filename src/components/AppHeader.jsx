@@ -11,6 +11,7 @@ import {
   LayoutDashboard,
 } from 'lucide-react';
 import { Tooltip } from './Navbar.jsx';
+import AppLogo from './AppLogo.jsx';
 
 const ROUTE_TITLES = {
   '/dashboard': { title: 'Overview', category: 'Work' },
@@ -169,9 +170,7 @@ export default function AppHeader({
                   to="/dashboard"
                   className="hidden md:flex items-center gap-2 mr-1 group cursor-pointer"
                 >
-                  <div className="w-7 h-7 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold text-xs shadow-xs group-hover:bg-slate-800 transition">
-                    W
-                  </div>
+                  <AppLogo className="w-7 h-7 rounded-lg group-hover:scale-105 transition" />
                   <span className="text-sm font-bold text-slate-900 tracking-tight">Work Log</span>
                 </Link>
 
@@ -187,9 +186,7 @@ export default function AppHeader({
         ) : (
           /* Guest / Auth Brand */
           <Link to="/" className="flex items-center gap-2">
-            <span className="w-7 h-7 rounded-md bg-slate-900 text-white flex items-center justify-center text-xs font-bold tracking-tight">
-              W
-            </span>
+            <AppLogo className="w-7 h-7 rounded-md" />
             <span className="text-sm font-bold text-slate-900 tracking-tight">Work Log</span>
           </Link>
         )}

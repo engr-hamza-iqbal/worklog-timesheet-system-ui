@@ -4,6 +4,7 @@ import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useNotification } from '../context/NotificationContext.jsx';
 import Modal from '../components/Modal.jsx';
+import Pagination from '../components/Pagination.jsx';
 
 function StatusBadge({ status }) {
   if (status === 'SENT') {
@@ -335,39 +336,15 @@ export default function EmailLogPage() {
         )}
 
         {/* Pagination */}
-        {pagination.totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-5 py-3 text-xs text-slate-600">
-            <div>
-              Showing page {pagination.page} of {pagination.totalPages} ({pagination.total} total logs)
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                disabled={pagination.page <= 1 || loading}
-                onClick={() => {
-                  const prevPage = pagination.page - 1;
-                  setPage(prevPage);
-                  load(prevPage, filters);
-                }}
-                className="rounded border border-slate-200 bg-white px-3 py-1 font-medium hover:bg-slate-50 disabled:opacity-40"
-              >
-                Previous
-              </button>
-              <button
-                type="button"
-                disabled={pagination.page >= pagination.totalPages || loading}
-                onClick={() => {
-                  const nextPage = pagination.page + 1;
-                  setPage(nextPage);
-                  load(nextPage, filters);
-                }}
-                className="rounded border border-slate-200 bg-white px-3 py-1 font-medium hover:bg-slate-50 disabled:opacity-40"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
+        <Pagination
+          currentPage={pagination.page}
+          totalItems={pagination.total}
+          itemsPerPage={pagination.limit}
+          onPageChange={(nextPage) => {
+            setPage(nextPage);
+            load(nextPage, filters);
+          }}
+        />
       </div>
 
       {/* Send Test Email Modal (Dev Only) */}
