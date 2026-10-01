@@ -1,28 +1,85 @@
-import React, { useEffect, useState } from 'react';
-import { BarChart3, RefreshCw, X, Send, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import React, { useEffect, useState, useMemo } from 'react';
+import {
+  BarChart3,
+  RefreshCw,
+  X,
+  Send,
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+} from 'lucide-react';
 import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useNotification } from '../context/NotificationContext.jsx';
 
 function MetricTable({ title, rows = [], columns = [] }) {
+  const [sortKey, setSortKey] = useState(null);
+  const [sortOrder, setSortOrder] = useState('asc'); // 'asc' | 'desc'
+
+  const handleSort = (key) => {
+    if (sortKey === key) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortOrder('asc');
+    }
+  };
+
+  const sortedRows = useMemo(() => {
+    if (!sortKey) return rows;
+    const col = columns.find((c) => c.key === sortKey);
+    if (!col) return rows;
+    return [...rows].sort((a, b) => {
+      const valA = col.value(a);
+      const valB = col.value(b);
+      const numA = typeof valA === 'number' ? valA : parseFloat(String(valA).replace(/[^0-9.-]/g, ''));
+      const numB = typeof valB === 'number' ? valB : parseFloat(String(valB).replace(/[^0-9.-]/g, ''));
+      if (!isNaN(numA) && !isNaN(numB)) {
+        return sortOrder === 'asc' ? numA - numB : numB - numA;
+      }
+      return sortOrder === 'asc'
+        ? String(valA).localeCompare(String(valB))
+        : String(valB).localeCompare(String(valA));
+    });
+  }, [rows, columns, sortKey, sortOrder]);
+
   return (
     <section className="overflow-x-auto rounded-xl border border-slate-200/90 bg-white shadow-xs">
-      <div className="border-b border-slate-200 bg-slate-50/70 px-5 py-3.5">
+      <div className="border-b border-slate-200 bg-slate-50/70 px-5 py-3.5 flex items-center justify-between">
         <h2 className="text-sm font-bold text-slate-900">{title}</h2>
+        <span className="text-xs text-slate-400 font-medium">{rows.length} rows</span>
       </div>
-      {rows && rows.length ? (
+      {sortedRows && sortedRows.length ? (
         <table className="w-full text-left text-sm min-w-[340px]">
-          <thead className="text-xs uppercase text-slate-500">
+          <thead className="text-xs uppercase text-slate-500 bg-slate-50/40 select-none">
             <tr>
               {columns.map((column) => (
-                <th key={column.key} className="px-5 py-3">
-                  {column.label}
+                <th
+                  key={column.key}
+                  onClick={() => handleSort(column.key)}
+                  className="px-5 py-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>{column.label}</span>
+                    {sortKey === column.key ? (
+                      sortOrder === 'asc' ? (
+                        <ArrowUp size={12} className="text-indigo-600" />
+                      ) : (
+                        <ArrowDown size={12} className="text-indigo-600" />
+                      )
+                    ) : (
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-50" />
+                    )}
+                  </div>
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, index) => (
+            {sortedRows.map((row, index) => (
               <tr
                 key={row.projectId || row.clientId || row.userId || row.status || index}
                 className="border-t border-slate-100 hover:bg-slate-50/50"

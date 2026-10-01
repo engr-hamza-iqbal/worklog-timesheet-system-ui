@@ -17,6 +17,9 @@ import {
   Sparkles,
   CheckCircle2,
   XCircle,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 
 const SYSTEM_CAPABILITIES = [
@@ -35,6 +38,17 @@ export default function DashboardPage() {
   const { user, capabilities, isAdmin, refreshUser } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
   const [filterQuery, setFilterQuery] = useState('');
+  const [sortField, setSortField] = useState('name');
+  const [sortOrder, setSortOrder] = useState('asc'); // 'asc' | 'desc'
+
+  const toggleSort = (field) => {
+    if (sortField === field) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -54,14 +68,34 @@ export default function DashboardPage() {
 
   const percentageGranted = Math.round((grantedCount / SYSTEM_CAPABILITIES.length) * 100);
 
-  // Filtered capabilities list
+  // Filtered and sorted capabilities list
   const filteredCapabilities = useMemo(() => {
-    if (!filterQuery.trim()) return SYSTEM_CAPABILITIES;
-    const q = filterQuery.toLowerCase();
-    return SYSTEM_CAPABILITIES.filter(
-      (c) => c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q) || c.desc.toLowerCase().includes(q)
-    );
-  }, [filterQuery]);
+    let list = SYSTEM_CAPABILITIES;
+    if (filterQuery.trim()) {
+      const q = filterQuery.toLowerCase();
+      list = list.filter(
+        (c) => c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q) || c.desc.toLowerCase().includes(q)
+      );
+    }
+
+    return [...list].sort((a, b) => {
+      let comparison = 0;
+      if (sortField === 'name') {
+        comparison = a.name.localeCompare(b.name);
+      } else if (sortField === 'desc') {
+        comparison = a.desc.localeCompare(b.desc);
+      } else if (sortField === 'status') {
+        const aHeld = isAdmin || !!capabilities[a.code] ? 1 : 0;
+        const bHeld = isAdmin || !!capabilities[b.code] ? 1 : 0;
+        comparison = aHeld - bHeld;
+      } else if (sortField === 'scope') {
+        const aGlobal = isAdmin || capabilities[a.code]?.isGlobal ? 2 : capabilities[a.code] ? 1 : 0;
+        const bGlobal = isAdmin || capabilities[b.code]?.isGlobal ? 2 : capabilities[b.code] ? 1 : 0;
+        comparison = aGlobal - bGlobal;
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+  }, [filterQuery, sortField, sortOrder, isAdmin, capabilities]);
 
   const greetingTime = useMemo(() => {
     const hours = new Date().getHours();
@@ -77,12 +111,7 @@ export default function DashboardPage() {
         <div className="absolute right-0 top-0 -mt-6 -mr-6 w-72 h-72 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="max-w-xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-white/10 text-indigo-200 border border-white/15 backdrop-blur-md mb-3">
-              <Sparkles size={12} className="text-indigo-400" />
-              <span>{isAdmin ? 'System Administrator Portal' : 'Employee Workspace'}</span>
-            </div>
-
+          <div className="max-w-xl w-full">
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
               {greetingTime}, {user?.name?.split(' ')[0]}!
             </h1>
@@ -92,36 +121,36 @@ export default function DashboardPage() {
             </p>
 
             {/* Quick Action Navigation Buttons */}
-            <div className="mt-5 flex flex-wrap items-center gap-2.5">
+            <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-stretch sm:items-center gap-2.5 w-full">
               <Link
                 to="/timesheet"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 transition shadow-sm cursor-pointer"
+                className="inline-flex items-center justify-center sm:justify-start gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 active:bg-indigo-700 transition shadow-sm cursor-pointer w-full lg:w-auto text-center"
               >
-                <Clock size={14} />
+                <Clock size={15} className="shrink-0" />
                 <span>Log Today's Work</span>
               </Link>
               <Link
                 to="/time-off"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-white/10 text-white hover:bg-white/20 border border-white/15 transition cursor-pointer"
+                className="inline-flex items-center justify-center sm:justify-start gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-lg bg-white/10 text-white hover:bg-white/20 active:bg-white/30 border border-white/15 transition cursor-pointer w-full lg:w-auto text-center"
               >
-                <Calendar size={14} />
+                <Calendar size={15} className="shrink-0" />
                 <span>Request Time Off</span>
               </Link>
               {(isAdmin || capabilities?.REVIEW_TIME) && (
                 <Link
                   to="/review"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-white/10 text-white hover:bg-white/20 border border-white/15 transition cursor-pointer"
+                  className="inline-flex items-center justify-center sm:justify-start gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-lg bg-white/10 text-white hover:bg-white/20 active:bg-white/30 border border-white/15 transition cursor-pointer w-full lg:w-auto text-center"
                 >
-                  <ShieldCheck size={14} />
+                  <ShieldCheck size={15} className="shrink-0" />
                   <span>Review Queue</span>
                 </Link>
               )}
               {(isAdmin || capabilities?.VIEW_ANALYTICS) && (
                 <Link
                   to="/analytics"
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg bg-white/10 text-white hover:bg-white/20 border border-white/15 transition cursor-pointer"
+                  className="inline-flex items-center justify-center sm:justify-start gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-lg bg-white/10 text-white hover:bg-white/20 active:bg-white/30 border border-white/15 transition cursor-pointer w-full lg:w-auto text-center"
                 >
-                  <BarChart3 size={14} />
+                  <BarChart3 size={15} className="shrink-0" />
                   <span>Analytics</span>
                 </Link>
               )}
@@ -148,7 +177,7 @@ export default function DashboardPage() {
               <div className="text-[11px] font-medium text-slate-300">Assigned Role</div>
               <div className="mt-1 text-sm font-bold text-white flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                <span>{isAdmin ? 'Full Administrator' : 'Active Contributor'}</span>
+                <span>{isAdmin ? 'Administrator' : 'Employee'}</span>
               </div>
             </div>
           </div>
@@ -194,12 +223,60 @@ export default function DashboardPage() {
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50/80 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
+            <thead className="bg-slate-50/80 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 select-none">
               <tr>
-                <th className="py-3 px-5">Capability</th>
-                <th className="py-3 px-4 hidden sm:table-cell">Description</th>
-                <th className="py-3 px-4 hidden md:table-cell">Scope Authorization</th>
-                <th className="py-3 px-5 text-right">Status</th>
+                <th
+                  onClick={() => toggleSort('name')}
+                  className="py-3 px-5 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Capability</span>
+                    {sortField === 'name' ? (
+                      sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                    ) : (
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => toggleSort('desc')}
+                  className="py-3 px-4 hidden sm:table-cell cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Description</span>
+                    {sortField === 'desc' ? (
+                      sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                    ) : (
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => toggleSort('scope')}
+                  className="py-3 px-4 hidden md:table-cell cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Scope Authorization</span>
+                    {sortField === 'scope' ? (
+                      sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                    ) : (
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => toggleSort('status')}
+                  className="py-3 px-5 text-right cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                >
+                  <div className="flex items-center justify-end gap-1.5">
+                    <span>Status</span>
+                    {sortField === 'status' ? (
+                      sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                    ) : (
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                    )}
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
