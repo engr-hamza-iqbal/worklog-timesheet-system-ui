@@ -12,6 +12,9 @@ import {
   CheckCircle2,
   XCircle,
   AlertTriangle,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import api from "../api/client.js";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
@@ -135,15 +138,77 @@ export default function ReviewPage() {
     });
   }, [allEntries, filters]);
 
+  const [entrySortField, setEntrySortField] = useState('workDate');
+  const [entrySortOrder, setEntrySortOrder] = useState('desc'); // 'asc' | 'desc'
+
+  const toggleEntrySort = (field) => {
+    if (entrySortField === field) {
+      setEntrySortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setEntrySortField(field);
+      setEntrySortOrder(field === 'workDate' || field === 'durationMinutes' ? 'desc' : 'asc');
+    }
+    setPage(1);
+  };
+
+  const sortedEntries = useMemo(() => {
+    return [...filteredEntries].sort((a, b) => {
+      let cmp = 0;
+      if (entrySortField === 'employee') {
+        cmp = (a.user?.name || '').localeCompare(b.user?.name || '');
+      } else if (entrySortField === 'workDate') {
+        cmp = (a.workDate || '').localeCompare(b.workDate || '');
+      } else if (entrySortField === 'project') {
+        cmp = (a.project?.name || '').localeCompare(b.project?.name || '');
+      } else if (entrySortField === 'durationMinutes') {
+        cmp = (Number(a.durationMinutes) || 0) - (Number(b.durationMinutes) || 0);
+      } else if (entrySortField === 'description') {
+        cmp = (a.description || '').localeCompare(b.description || '');
+      }
+      return entrySortOrder === 'asc' ? cmp : -cmp;
+    });
+  }, [filteredEntries, entrySortField, entrySortOrder]);
+
   const paginatedEntries = useMemo(() => {
     const start = (page - 1) * ITEMS_PER_PAGE;
-    return filteredEntries.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredEntries, page]);
+    return sortedEntries.slice(start, start + ITEMS_PER_PAGE);
+  }, [sortedEntries, page]);
+
+  const [timeOffSortField, setTimeOffSortField] = useState('startDate');
+  const [timeOffSortOrder, setTimeOffSortOrder] = useState('desc'); // 'asc' | 'desc'
+
+  const toggleTimeOffSort = (field) => {
+    if (timeOffSortField === field) {
+      setTimeOffSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setTimeOffSortField(field);
+      setTimeOffSortOrder(field === 'startDate' ? 'desc' : 'asc');
+    }
+    setTimeOffPage(1);
+  };
+
+  const sortedTimeOffRequests = useMemo(() => {
+    return [...timeOffRequests].sort((a, b) => {
+      let cmp = 0;
+      if (timeOffSortField === 'employee') {
+        cmp = (a.user?.name || '').localeCompare(b.user?.name || '');
+      } else if (timeOffSortField === 'type') {
+        cmp = (a.type?.name || '').localeCompare(b.type?.name || '');
+      } else if (timeOffSortField === 'startDate') {
+        cmp = (a.startDate || '').localeCompare(b.startDate || '');
+      } else if (timeOffSortField === 'days') {
+        cmp = (a.days?.length || 1) - (b.days?.length || 1);
+      } else if (timeOffSortField === 'reason') {
+        cmp = (a.reason || '').localeCompare(b.reason || '');
+      }
+      return timeOffSortOrder === 'asc' ? cmp : -cmp;
+    });
+  }, [timeOffRequests, timeOffSortField, timeOffSortOrder]);
 
   const paginatedTimeOff = useMemo(() => {
     const start = (timeOffPage - 1) * TIME_OFF_PER_PAGE;
-    return timeOffRequests.slice(start, start + TIME_OFF_PER_PAGE);
-  }, [timeOffRequests, timeOffPage]);
+    return sortedTimeOffRequests.slice(start, start + TIME_OFF_PER_PAGE);
+  }, [sortedTimeOffRequests, timeOffPage]);
 
   const hasActiveFilters = Boolean(
     filters.userQuery || filters.projectQuery || filters.startDate || filters.endDate
@@ -465,7 +530,7 @@ export default function ReviewPage() {
       {/* Entries Table */}
       <div className="relative overflow-x-auto bg-white border border-slate-200 rounded-lg shadow-xs">
         <table className="w-full text-left text-sm min-w-[680px]">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-200">
+          <thead className="bg-slate-50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-200 select-none">
             <tr>
               <th className="p-3 w-10">
                 <input
@@ -480,11 +545,71 @@ export default function ReviewPage() {
                   className="rounded border-slate-300 cursor-pointer"
                 />
               </th>
-              <th className="p-3">Employee</th>
-              <th className="p-3">Date</th>
-              <th className="p-3">Project</th>
-              <th className="p-3">Hours</th>
-              <th className="p-3">Description</th>
+              <th
+                onClick={() => toggleEntrySort('employee')}
+                className="p-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span>Employee</span>
+                  {entrySortField === 'employee' ? (
+                    entrySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                  ) : (
+                    <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                  )}
+                </div>
+              </th>
+              <th
+                onClick={() => toggleEntrySort('workDate')}
+                className="p-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span>Date</span>
+                  {entrySortField === 'workDate' ? (
+                    entrySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                  ) : (
+                    <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                  )}
+                </div>
+              </th>
+              <th
+                onClick={() => toggleEntrySort('project')}
+                className="p-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span>Project</span>
+                  {entrySortField === 'project' ? (
+                    entrySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                  ) : (
+                    <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                  )}
+                </div>
+              </th>
+              <th
+                onClick={() => toggleEntrySort('durationMinutes')}
+                className="p-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span>Hours</span>
+                  {entrySortField === 'durationMinutes' ? (
+                    entrySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                  ) : (
+                    <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                  )}
+                </div>
+              </th>
+              <th
+                onClick={() => toggleEntrySort('description')}
+                className="p-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+              >
+                <div className="flex items-center gap-1.5">
+                  <span>Description</span>
+                  {entrySortField === 'description' ? (
+                    entrySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                  ) : (
+                    <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                  )}
+                </div>
+              </th>
               <th className="p-3">Action</th>
             </tr>
           </thead>
@@ -585,12 +710,72 @@ export default function ReviewPage() {
         <div className="bg-white rounded-lg border border-slate-200 overflow-x-auto shadow-xs">
           <table className="w-full text-left border-collapse text-xs min-w-[640px]">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
-                <th className="py-3 px-4">Employee</th>
-                <th className="py-3 px-4">Leave Type</th>
-                <th className="py-3 px-4">Dates</th>
-                <th className="py-3 px-4">Days</th>
-                <th className="py-3 px-4">Reason</th>
+              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px] select-none">
+                <th
+                  onClick={() => toggleTimeOffSort('employee')}
+                  className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Employee</span>
+                    {timeOffSortField === 'employee' ? (
+                      timeOffSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                    ) : (
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => toggleTimeOffSort('type')}
+                  className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Leave Type</span>
+                    {timeOffSortField === 'type' ? (
+                      timeOffSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                    ) : (
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => toggleTimeOffSort('startDate')}
+                  className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Dates</span>
+                    {timeOffSortField === 'startDate' ? (
+                      timeOffSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                    ) : (
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => toggleTimeOffSort('days')}
+                  className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Days</span>
+                    {timeOffSortField === 'days' ? (
+                      timeOffSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                    ) : (
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => toggleTimeOffSort('reason')}
+                  className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Reason</span>
+                    {timeOffSortField === 'reason' ? (
+                      timeOffSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                    ) : (
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                    )}
+                  </div>
+                </th>
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>

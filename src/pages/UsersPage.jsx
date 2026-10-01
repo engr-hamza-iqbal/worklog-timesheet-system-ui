@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Users, Plus, UserCheck, UserX, AlertCircle, RefreshCw,
   Search, FolderOpen, ChevronDown, ChevronUp, Loader2,
+  ArrowUpDown, ArrowUp, ArrowDown,
 } from 'lucide-react';
 import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -359,6 +360,17 @@ export default function UsersPage() {
 
   const [page, setPage] = useState(1);
   const USERS_PER_PAGE = 10;
+  const [sortField, setSortField] = useState('name');
+  const [sortOrder, setSortOrder] = useState('asc');
+
+  const toggleSort = (field) => {
+    if (sortField === field) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
 
   const filtered = users.filter(
     (u) =>
@@ -366,10 +378,36 @@ export default function UsersPage() {
       u.email.toLowerCase().includes(search.toLowerCase())
   );
 
+  const sortedFilteredUsers = useMemo(() => {
+    const list = [...filtered];
+    return list.sort((a, b) => {
+      let aVal = '';
+      let bVal = '';
+      if (sortField === 'name') {
+        aVal = (a.name || '').toLowerCase();
+        bVal = (b.name || '').toLowerCase();
+      } else if (sortField === 'accountType') {
+        aVal = (a.accountType || '').toLowerCase();
+        bVal = (b.accountType || '').toLowerCase();
+      } else if (sortField === 'isActive') {
+        aVal = a.isActive ? 1 : 0;
+        bVal = b.isActive ? 1 : 0;
+        return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
+      } else if (sortField === 'projects') {
+        aVal = (a.activeAssignments || []).length;
+        bVal = (b.activeAssignments || []).length;
+        return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
+      }
+      if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [filtered, sortField, sortOrder]);
+
   const paginatedUsers = useMemo(() => {
     const start = (page - 1) * USERS_PER_PAGE;
-    return filtered.slice(start, start + USERS_PER_PAGE);
-  }, [filtered, page]);
+    return sortedFilteredUsers.slice(start, start + USERS_PER_PAGE);
+  }, [sortedFilteredUsers, page]);
 
   if (loading && !users.length) {
     return (
@@ -446,10 +484,50 @@ export default function UsersPage() {
           <div>
             {/* Table header - desktop */}
             <div className="hidden sm:grid grid-cols-12 gap-4 px-5 py-2.5 bg-slate-50 border-b border-slate-200 text-[10px] font-medium text-slate-500 uppercase tracking-wider">
-              <div className="col-span-4">Name / Email</div>
-              <div className="col-span-2">Type</div>
-              <div className="col-span-2">Status</div>
-              <div className="col-span-2">Projects</div>
+              <div
+                onClick={() => toggleSort('name')}
+                className="col-span-4 flex items-center gap-1.5 cursor-pointer select-none hover:text-slate-800 transition"
+              >
+                <span>Name / Email</span>
+                {sortField === 'name' ? (
+                  sortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
+                ) : (
+                  <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
+                )}
+              </div>
+              <div
+                onClick={() => toggleSort('accountType')}
+                className="col-span-2 flex items-center gap-1.5 cursor-pointer select-none hover:text-slate-800 transition"
+              >
+                <span>Type</span>
+                {sortField === 'accountType' ? (
+                  sortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
+                ) : (
+                  <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
+                )}
+              </div>
+              <div
+                onClick={() => toggleSort('isActive')}
+                className="col-span-2 flex items-center gap-1.5 cursor-pointer select-none hover:text-slate-800 transition"
+              >
+                <span>Status</span>
+                {sortField === 'isActive' ? (
+                  sortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
+                ) : (
+                  <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
+                )}
+              </div>
+              <div
+                onClick={() => toggleSort('projects')}
+                className="col-span-2 flex items-center gap-1.5 cursor-pointer select-none hover:text-slate-800 transition"
+              >
+                <span>Projects</span>
+                {sortField === 'projects' ? (
+                  sortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
+                ) : (
+                  <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
+                )}
+              </div>
               {(canManageUsers || canAssign) && <div className="col-span-2 text-right">Actions</div>}
             </div>
 

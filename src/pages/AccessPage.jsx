@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Shield, XCircle, Plus, RefreshCw, AlertCircle,
   ChevronDown, ChevronUp, Clock, CheckCircle, Loader2,
+  ArrowUpDown, ArrowUp, ArrowDown,
 } from 'lucide-react';
 import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -293,6 +294,42 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
       : `${scopes.length} project${scopes.length > 1 ? 's' : ''}`;
   };
 
+  const [capSortField, setCapSortField] = useState('name');
+  const [capSortOrder, setCapSortOrder] = useState('asc'); // 'asc' | 'desc'
+
+  const toggleCapSort = (field) => {
+    if (capSortField === field) {
+      setCapSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setCapSortField(field);
+      setCapSortOrder('asc');
+    }
+  };
+
+  const sortedCapCodes = useMemo(() => {
+    return [...ALL_CAP_CODES].sort((codeA, codeB) => {
+      let cmp = 0;
+      const grantA = activeByCode[codeA];
+      const grantB = activeByCode[codeB];
+      if (capSortField === 'name') {
+        cmp = (CAP_META[codeA]?.label || '').localeCompare(CAP_META[codeB]?.label || '');
+      } else if (capSortField === 'scope') {
+        const scopeA = grantA ? getScopeLabel(grantA) : '';
+        const scopeB = grantB ? getScopeLabel(grantB) : '';
+        cmp = scopeA.localeCompare(scopeB);
+      } else if (capSortField === 'grantedBy') {
+        const gA = grantA?.grantedBy?.name || '';
+        const gB = grantB?.grantedBy?.name || '';
+        cmp = gA.localeCompare(gB);
+      } else if (capSortField === 'status') {
+        const isA = grantA ? 1 : 0;
+        const isB = grantB ? 1 : 0;
+        cmp = isA - isB;
+      }
+      return capSortOrder === 'asc' ? cmp : -cmp;
+    });
+  }, [activeByCode, capSortField, capSortOrder]);
+
   return (
     <div>
       <ErrorAlert message={error} onDismiss={() => setError('')} />
@@ -317,17 +354,65 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left min-w-[460px]">
-              <thead className="bg-slate-50 text-[10px] font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200">
+              <thead className="bg-slate-50 text-[10px] font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 select-none">
                 <tr>
-                  <th className="py-2.5 px-4">Capability</th>
-                  <th className="py-2.5 px-4">Scope</th>
-                  <th className="py-2.5 px-4 hidden sm:table-cell">Granted by</th>
+                  <th
+                    onClick={() => toggleCapSort('name')}
+                    className="py-2.5 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Capability</span>
+                      {capSortField === 'name' ? (
+                        capSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
+                      ) : (
+                        <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => toggleCapSort('scope')}
+                    className="py-2.5 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Scope</span>
+                      {capSortField === 'scope' ? (
+                        capSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
+                      ) : (
+                        <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => toggleCapSort('grantedBy')}
+                    className="py-2.5 px-4 hidden sm:table-cell cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Granted by</span>
+                      {capSortField === 'grantedBy' ? (
+                        capSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
+                      ) : (
+                        <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
+                      )}
+                    </div>
+                  </th>
                   <th className="py-2.5 px-4 hidden sm:table-cell">Expires</th>
-                  <th className="py-2.5 px-4 text-right">Status</th>
+                  <th
+                    onClick={() => toggleCapSort('status')}
+                    className="py-2.5 px-4 text-right cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  >
+                    <div className="flex items-center justify-end gap-1.5">
+                      <span>Status</span>
+                      {capSortField === 'status' ? (
+                        capSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
+                      ) : (
+                        <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
+                      )}
+                    </div>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {ALL_CAP_CODES.map((code) => {
+                {sortedCapCodes.map((code) => {
                   const grant = activeByCode[code];
                   const isGranted = !!grant;
 
@@ -457,6 +542,36 @@ function AuditLog() {
     fetchLogs(page);
   }, [page, fetchLogs]);
 
+  const [logSortField, setLogSortField] = useState('createdAt');
+  const [logSortOrder, setLogSortOrder] = useState('desc'); // 'asc' | 'desc'
+
+  const toggleLogSort = (field) => {
+    if (logSortField === field) {
+      setLogSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setLogSortField(field);
+      setLogSortOrder(field === 'createdAt' ? 'desc' : 'asc');
+    }
+  };
+
+  const sortedLogs = useMemo(() => {
+    return [...logs].sort((a, b) => {
+      let cmp = 0;
+      if (logSortField === 'action') {
+        cmp = (a.action || '').localeCompare(b.action || '');
+      } else if (logSortField === 'capability') {
+        cmp = (a.capabilityCode || '').localeCompare(b.capabilityCode || '');
+      } else if (logSortField === 'actor') {
+        cmp = (a.actor?.name || '').localeCompare(b.actor?.name || '');
+      } else if (logSortField === 'target') {
+        cmp = (a.targetUser?.name || '').localeCompare(b.targetUser?.name || '');
+      } else if (logSortField === 'createdAt') {
+        cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      }
+      return logSortOrder === 'asc' ? cmp : -cmp;
+    });
+  }, [logs, logSortField, logSortOrder]);
+
   const ACTION_COLORS = {
     GRANT:         'text-emerald-700 bg-emerald-50',
     REVOKE:        'text-red-700 bg-red-50',
@@ -481,17 +596,77 @@ function AuditLog() {
         <div>
           <div className="overflow-x-auto">
             <table className="w-full text-xs text-left min-w-[440px]">
-              <thead className="bg-slate-50 text-[10px] font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200">
+              <thead className="bg-slate-50 text-[10px] font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 select-none">
                 <tr>
-                  <th className="py-2 px-5">Action</th>
-                  <th className="py-2 px-4">Capability</th>
-                  <th className="py-2 px-4 hidden sm:table-cell">Actor</th>
-                  <th className="py-2 px-4 hidden sm:table-cell">Target</th>
-                  <th className="py-2 px-4">When</th>
+                  <th
+                    onClick={() => toggleLogSort('action')}
+                    className="py-2 px-5 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Action</span>
+                      {logSortField === 'action' ? (
+                        logSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
+                      ) : (
+                        <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => toggleLogSort('capability')}
+                    className="py-2 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Capability</span>
+                      {logSortField === 'capability' ? (
+                        logSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
+                      ) : (
+                        <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => toggleLogSort('actor')}
+                    className="py-2 px-4 hidden sm:table-cell cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Actor</span>
+                      {logSortField === 'actor' ? (
+                        logSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
+                      ) : (
+                        <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => toggleLogSort('target')}
+                    className="py-2 px-4 hidden sm:table-cell cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Target</span>
+                      {logSortField === 'target' ? (
+                        logSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
+                      ) : (
+                        <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => toggleLogSort('createdAt')}
+                    className="py-2 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>When</span>
+                      {logSortField === 'createdAt' ? (
+                        logSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
+                      ) : (
+                        <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
+                      )}
+                    </div>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {logs.map((log) => (
+                {sortedLogs.map((log) => (
                   <tr key={log.id} className="hover:bg-slate-50/50 transition">
                     <td className="py-2.5 px-5">
                       <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${ACTION_COLORS[log.action] || 'text-slate-700'}`}>

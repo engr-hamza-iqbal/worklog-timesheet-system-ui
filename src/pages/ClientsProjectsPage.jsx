@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Building2, FolderOpen, Plus, Pencil, CheckCircle, XCircle,
   ChevronRight, DollarSign, RefreshCw, AlertCircle, Users, Loader2,
+  ArrowUpDown, ArrowUp, ArrowDown,
 } from 'lucide-react';
 import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -300,10 +301,39 @@ export default function ClientsProjectsPage() {
     }
   }, [selectedClientId]);
 
+  const [projectSortField, setProjectSortField] = useState('name');
+  const [projectSortOrder, setProjectSortOrder] = useState('asc'); // 'asc' | 'desc'
+
+  const toggleProjectSort = (field) => {
+    if (projectSortField === field) {
+      setProjectSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setProjectSortField(field);
+      setProjectSortOrder(field === 'currentRate' || field === 'team' ? 'desc' : 'asc');
+    }
+    setProjectPage(1);
+  };
+
+  const sortedProjects = useMemo(() => {
+    return [...projects].sort((a, b) => {
+      let cmp = 0;
+      if (projectSortField === 'name') {
+        cmp = (a.name || '').localeCompare(b.name || '');
+      } else if (projectSortField === 'status') {
+        cmp = (a.status || '').localeCompare(b.status || '');
+      } else if (projectSortField === 'currentRate') {
+        cmp = (Number(a.currentRate) || 0) - (Number(b.currentRate) || 0);
+      } else if (projectSortField === 'team') {
+        cmp = (a.assignedEmployees?.length || 0) - (b.assignedEmployees?.length || 0);
+      }
+      return projectSortOrder === 'asc' ? cmp : -cmp;
+    });
+  }, [projects, projectSortField, projectSortOrder]);
+
   const paginatedProjects = useMemo(() => {
     const start = (projectPage - 1) * PROJECTS_PER_PAGE;
-    return projects.slice(start, start + PROJECTS_PER_PAGE);
-  }, [projects, projectPage]);
+    return sortedProjects.slice(start, start + PROJECTS_PER_PAGE);
+  }, [sortedProjects, projectPage]);
 
   const refreshPage = async () => {
     setRefreshing(true);
@@ -517,12 +547,60 @@ export default function ClientsProjectsPage() {
                 <>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs min-w-[500px]">
-                      <thead className="bg-slate-50 text-[10px] font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                      <thead className="bg-slate-50 text-[10px] font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 select-none">
                         <tr>
-                          <th className="py-2.5 px-5">Project</th>
-                          <th className="py-2.5 px-4">Status</th>
-                          <th className="py-2.5 px-4">Rate / hr</th>
-                          <th className="py-2.5 px-4">Team</th>
+                          <th
+                            onClick={() => toggleProjectSort('name')}
+                            className="py-2.5 px-5 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <span>Project</span>
+                              {projectSortField === 'name' ? (
+                                projectSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
+                              ) : (
+                                <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
+                              )}
+                            </div>
+                          </th>
+                          <th
+                            onClick={() => toggleProjectSort('status')}
+                            className="py-2.5 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <span>Status</span>
+                              {projectSortField === 'status' ? (
+                                projectSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
+                              ) : (
+                                <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
+                              )}
+                            </div>
+                          </th>
+                          <th
+                            onClick={() => toggleProjectSort('currentRate')}
+                            className="py-2.5 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <span>Rate / hr</span>
+                              {projectSortField === 'currentRate' ? (
+                                projectSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
+                              ) : (
+                                <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
+                              )}
+                            </div>
+                          </th>
+                          <th
+                            onClick={() => toggleProjectSort('team')}
+                            className="py-2.5 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <span>Team</span>
+                              {projectSortField === 'team' ? (
+                                projectSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
+                              ) : (
+                                <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
+                              )}
+                            </div>
+                          </th>
                           {canManage && <th className="py-2.5 px-4 text-right">Actions</th>}
                         </tr>
                       </thead>

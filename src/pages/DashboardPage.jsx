@@ -120,8 +120,8 @@ export default function DashboardPage() {
               Welcome back to your central hub. Track daily precision work, inspect project scopes, and navigate your authorized workspace tools.
             </p>
 
-            {/* Quick Action Navigation Buttons */}
-            <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap items-stretch sm:items-center gap-2.5 w-full">
+            {/* Quick Action Navigation Buttons (Only shown on small screens) */}
+            <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 items-stretch gap-2.5 w-full md:hidden">
               <Link
                 to="/timesheet"
                 className="inline-flex items-center justify-center sm:justify-start gap-2 px-3.5 py-2.5 text-xs font-semibold rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 active:bg-indigo-700 transition shadow-sm cursor-pointer w-full lg:w-auto text-center"

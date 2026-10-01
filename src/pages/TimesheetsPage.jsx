@@ -14,8 +14,9 @@ import {
   Loader2,
   Search,
   AlertCircle,
-  CheckCircle2,
-  X,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import api from "../api/client.js";
 import Badge from "../components/Badge.jsx";
@@ -289,8 +290,21 @@ export default function TimesheetsPage() {
     return days.flatMap((d) => d.entries);
   }, [days]);
 
+  const [historySortField, setHistorySortField] = useState('workDate');
+  const [historySortOrder, setHistorySortOrder] = useState('desc'); // 'asc' | 'desc'
+
+  const toggleHistorySort = (field) => {
+    if (historySortField === field) {
+      setHistorySortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setHistorySortField(field);
+      setHistorySortOrder(field === 'workDate' || field === 'durationHours' ? 'desc' : 'asc');
+    }
+    setHistoryPage(1);
+  };
+
   const filteredHistory = useMemo(() => {
-    return allEntriesFlat.filter((entry) => {
+    const list = allEntriesFlat.filter((entry) => {
       if (historyStatus !== "ALL" && entry.status !== historyStatus) return false;
       if (historyProject && entry.projectId !== historyProject) return false;
       if (historySearch.trim()) {
@@ -301,14 +315,28 @@ export default function TimesheetsPage() {
       }
       return true;
     });
-  }, [allEntriesFlat, historyStatus, historyProject, historySearch]);
+
+    return list.sort((a, b) => {
+      let cmp = 0;
+      if (historySortField === 'workDate') {
+        cmp = (a.workDate || '').localeCompare(b.workDate || '');
+      } else if (historySortField === 'project') {
+        cmp = (a.project?.name || '').localeCompare(b.project?.name || '');
+      } else if (historySortField === 'durationHours') {
+        cmp = (Number(a.durationHours) || 0) - (Number(b.durationHours) || 0);
+      } else if (historySortField === 'description') {
+        cmp = (a.description || '').localeCompare(b.description || '');
+      } else if (historySortField === 'status') {
+        cmp = (a.status || '').localeCompare(b.status || '');
+      }
+      return historySortOrder === 'asc' ? cmp : -cmp;
+    });
+  }, [allEntriesFlat, historyStatus, historyProject, historySearch, historySortField, historySortOrder]);
 
   const paginatedHistory = useMemo(() => {
     const start = (historyPage - 1) * ITEMS_PER_PAGE;
     return filteredHistory.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredHistory, historyPage]);
-
-  const totalHistoryPages = Math.ceil(filteredHistory.length / ITEMS_PER_PAGE) || 1;
 
   // Day navigation helper for Record Time screen
   const stepDate = (amount) => {
@@ -878,12 +906,72 @@ export default function TimesheetsPage() {
           <div className="bg-white border border-slate-200 rounded-xl overflow-x-auto shadow-xs">
             <table className="w-full text-left border-collapse text-xs min-w-[620px]">
               <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
-                  <th className="py-3 px-4">Date</th>
-                  <th className="py-3 px-4">Project</th>
-                  <th className="py-3 px-4">Hours</th>
-                  <th className="py-3 px-4">Description</th>
-                  <th className="py-3 px-4">Status</th>
+                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px] select-none">
+                  <th
+                    onClick={() => toggleHistorySort('workDate')}
+                    className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Date</span>
+                      {historySortField === 'workDate' ? (
+                        historySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                      ) : (
+                        <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => toggleHistorySort('project')}
+                    className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Project</span>
+                      {historySortField === 'project' ? (
+                        historySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                      ) : (
+                        <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => toggleHistorySort('durationHours')}
+                    className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Hours</span>
+                      {historySortField === 'durationHours' ? (
+                        historySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                      ) : (
+                        <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => toggleHistorySort('description')}
+                    className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Description</span>
+                      {historySortField === 'description' ? (
+                        historySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                      ) : (
+                        <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                      )}
+                    </div>
+                  </th>
+                  <th
+                    onClick={() => toggleHistorySort('status')}
+                    className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Status</span>
+                      {historySortField === 'status' ? (
+                        historySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                      ) : (
+                        <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                      )}
+                    </div>
+                  </th>
                   <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
               </thead>

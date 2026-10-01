@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Mail, RefreshCw, AlertCircle, CheckCircle2, XCircle, Clock, Search, Send, Plus, Loader2, Eye } from 'lucide-react';
+import React, { useEffect, useState, useMemo } from 'react';
+import { Mail, RefreshCw, AlertCircle, CheckCircle2, XCircle, Clock, Search, Send, Plus, Loader2, Eye, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useNotification } from '../context/NotificationContext.jsx';
@@ -60,6 +60,46 @@ export default function EmailLogPage() {
     emailType: '',
     search: '',
   });
+
+  // Sorting state
+  const [sortField, setSortField] = useState('attemptedAt');
+  const [sortOrder, setSortOrder] = useState('desc');
+
+  const toggleSort = (field) => {
+    if (sortField === field) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const sortedLogs = useMemo(() => {
+    return [...logs].sort((a, b) => {
+      let aVal = '';
+      let bVal = '';
+      if (sortField === 'recipient') {
+        aVal = (a.recipientUser?.name || a.recipientEmail || '').toLowerCase();
+        bVal = (b.recipientUser?.name || b.recipientEmail || '').toLowerCase();
+      } else if (sortField === 'emailType') {
+        aVal = (a.emailType || '').toLowerCase();
+        bVal = (b.emailType || '').toLowerCase();
+      } else if (sortField === 'subject') {
+        aVal = (a.subject || '').toLowerCase();
+        bVal = (b.subject || '').toLowerCase();
+      } else if (sortField === 'status') {
+        aVal = (a.status || '').toLowerCase();
+        bVal = (b.status || '').toLowerCase();
+      } else if (sortField === 'attemptedAt') {
+        aVal = new Date(a.attemptedAt || a.createdAt || 0).getTime();
+        bVal = new Date(b.attemptedAt || b.createdAt || 0).getTime();
+        return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
+      }
+      if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [logs, sortField, sortOrder]);
 
   // Test Email Modal State
   const [showTestModal, setShowTestModal] = useState(false);
@@ -279,16 +319,76 @@ export default function EmailLogPage() {
           <table className="w-full text-left text-sm min-w-[620px]">
             <thead className="bg-slate-50 text-xs uppercase text-slate-500">
               <tr>
-                <th className="px-5 py-3">Recipient</th>
-                <th className="px-5 py-3">Type</th>
-                <th className="px-5 py-3">Subject</th>
-                <th className="px-5 py-3">Status</th>
-                <th className="px-5 py-3">Attempted At</th>
+                <th
+                  onClick={() => toggleSort('recipient')}
+                  className="px-5 py-3 cursor-pointer select-none hover:bg-slate-100 hover:text-slate-800 transition"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Recipient</span>
+                    {sortField === 'recipient' ? (
+                      sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                    ) : (
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => toggleSort('emailType')}
+                  className="px-5 py-3 cursor-pointer select-none hover:bg-slate-100 hover:text-slate-800 transition"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Type</span>
+                    {sortField === 'emailType' ? (
+                      sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                    ) : (
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => toggleSort('subject')}
+                  className="px-5 py-3 cursor-pointer select-none hover:bg-slate-100 hover:text-slate-800 transition"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Subject</span>
+                    {sortField === 'subject' ? (
+                      sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                    ) : (
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => toggleSort('status')}
+                  className="px-5 py-3 cursor-pointer select-none hover:bg-slate-100 hover:text-slate-800 transition"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Status</span>
+                    {sortField === 'status' ? (
+                      sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                    ) : (
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => toggleSort('attemptedAt')}
+                  className="px-5 py-3 cursor-pointer select-none hover:bg-slate-100 hover:text-slate-800 transition"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Attempted At</span>
+                    {sortField === 'attemptedAt' ? (
+                      sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                    ) : (
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                    )}
+                  </div>
+                </th>
                 <th className="px-5 py-3 text-right">Action</th>
               </tr>
             </thead>
             <tbody>
-              {logs.map((log) => (
+              {sortedLogs.map((log) => (
                 <tr key={log.id} className="border-t border-slate-100 hover:bg-slate-50/50">
                   <td className="px-5 py-3">
                     <div className="font-medium text-slate-900">

@@ -7,6 +7,9 @@ import {
   Send,
   X,
   Loader2,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import api from "../api/client.js";
 import Badge from "../components/Badge.jsx";
@@ -98,10 +101,41 @@ export default function TimeOffPage() {
     load(filters);
   }
 
+  const [requestSortField, setRequestSortField] = useState('startDate');
+  const [requestSortOrder, setRequestSortOrder] = useState('desc'); // 'asc' | 'desc'
+
+  const toggleRequestSort = (field) => {
+    if (requestSortField === field) {
+      setRequestSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setRequestSortField(field);
+      setRequestSortOrder(field === 'startDate' ? 'desc' : 'asc');
+    }
+    setPage(1);
+  };
+
+  const sortedRequests = useMemo(() => {
+    return [...requests].sort((a, b) => {
+      let cmp = 0;
+      if (requestSortField === 'employee') {
+        cmp = (a.user?.name || user?.name || '').localeCompare(b.user?.name || user?.name || '');
+      } else if (requestSortField === 'startDate') {
+        cmp = (a.startDate || '').localeCompare(b.startDate || '');
+      } else if (requestSortField === 'type') {
+        cmp = (a.timeOffType?.name || '').localeCompare(b.timeOffType?.name || '');
+      } else if (requestSortField === 'reason') {
+        cmp = (a.reason || '').localeCompare(b.reason || '');
+      } else if (requestSortField === 'status') {
+        cmp = (a.status || '').localeCompare(b.status || '');
+      }
+      return requestSortOrder === 'asc' ? cmp : -cmp;
+    });
+  }, [requests, requestSortField, requestSortOrder, user]);
+
   const paginatedRequests = useMemo(() => {
     const start = (page - 1) * ITEMS_PER_PAGE;
-    return requests.slice(start, start + ITEMS_PER_PAGE);
-  }, [requests, page]);
+    return sortedRequests.slice(start, start + ITEMS_PER_PAGE);
+  }, [sortedRequests, page]);
 
   async function createRequest(event) {
     event.preventDefault();
@@ -356,13 +390,73 @@ export default function TimeOffPage() {
           </div>
         ) : (
           <table className="w-full text-left text-sm min-w-[580px]">
-            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+            <thead className="bg-slate-50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-200 select-none">
               <tr>
-                <th className="p-4">Employee</th>
-                <th className="p-4">Dates</th>
-                <th className="p-4">Type</th>
-                <th className="p-4">Reason</th>
-                <th className="p-4">Status</th>
+                <th
+                  onClick={() => toggleRequestSort('employee')}
+                  className="p-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Employee</span>
+                    {requestSortField === 'employee' ? (
+                      requestSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                    ) : (
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => toggleRequestSort('startDate')}
+                  className="p-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Dates</span>
+                    {requestSortField === 'startDate' ? (
+                      requestSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                    ) : (
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => toggleRequestSort('type')}
+                  className="p-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Type</span>
+                    {requestSortField === 'type' ? (
+                      requestSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                    ) : (
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => toggleRequestSort('reason')}
+                  className="p-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Reason</span>
+                    {requestSortField === 'reason' ? (
+                      requestSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                    ) : (
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                    )}
+                  </div>
+                </th>
+                <th
+                  onClick={() => toggleRequestSort('status')}
+                  className="p-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span>Status</span>
+                    {requestSortField === 'status' ? (
+                      requestSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                    ) : (
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                    )}
+                  </div>
+                </th>
                 <th className="p-4">Action</th>
               </tr>
             </thead>
