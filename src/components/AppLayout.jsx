@@ -6,13 +6,20 @@ import AppHeader from './AppHeader.jsx';
 import ConfirmDialog from './ConfirmDialog.jsx';
 
 export default function AppLayout({ children }) {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
   // Explicitly check for authentication pages (Login and Register) or Landing page
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
   const isLandingPage = location.pathname === '/';
+
+  // When navigating between pages, silently sync access capabilities in background so UI stays strictly updated
+  useEffect(() => {
+    if (isAuthenticated && !isLandingPage && !isAuthPage && refreshUser) {
+      refreshUser().catch(() => {});
+    }
+  }, [location.pathname, isAuthenticated, isLandingPage, isAuthPage, refreshUser]);
 
   // Default navbar/sidebar is EXPANDED (true), persisted to localStorage
   const [sidebarOpen, setSidebarOpen] = useState(() => {

@@ -220,7 +220,7 @@ export default function DashboardPage() {
               />
             </div>
 
-            <Tooltip text="Refresh permissions from server" side="left">
+            <Tooltip text="Refresh permissions" side="left">
               <button
                 onClick={handleRefresh}
                 disabled={refreshing}
@@ -343,11 +343,10 @@ export default function DashboardPage() {
                                   <button
                                     type="button"
                                     onClick={() => toggleScopeExpanded(cap.code)}
-                                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium border transition cursor-pointer group ${
-                                      isExpanded
+                                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium border transition cursor-pointer group ${isExpanded
                                         ? 'bg-blue-100 text-blue-800 border-blue-300'
                                         : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200'
-                                    }`}
+                                      }`}
                                     title={
                                       isExpanded
                                         ? 'Collapse scope list'

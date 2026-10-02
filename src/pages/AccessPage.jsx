@@ -30,6 +30,22 @@ const CAP_META = {
 
 const ALL_CAP_CODES = Object.keys(CAP_META);
 
+function broadcastAuthSync() {
+  try {
+    const channel = new BroadcastChannel('worklog_auth_sync');
+    channel.postMessage({ type: 'REFRESH_CAPABILITIES' });
+    channel.close();
+  } catch {
+    // BroadcastChannel unsupported
+  }
+  // Also signal local window context so current tab syncs immediately
+  try {
+    window.dispatchEvent(new Event('auth:permission-denied'));
+  } catch {
+    // ignore
+  }
+}
+
 function fmtDate(d) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -131,6 +147,7 @@ function GrantForm({ targetUser, grantedCodes, users, projects, onSuccess, onCan
         targetUserIds: scopeType === 'USER' ? targetUserIds : undefined,
         targetProjectIds: scopeType === 'PROJECT' ? targetProjectIds : undefined,
       });
+      broadcastAuthSync();
       onSuccess();
     } catch (err) {
       // Fallback: individually grant if needed
@@ -147,6 +164,7 @@ function GrantForm({ targetUser, grantedCodes, users, projects, onSuccess, onCan
             })
           )
         );
+        broadcastAuthSync();
         onSuccess();
       } catch (fallbackErr) {
         setError(fallbackErr.message || err.message || 'Failed to grant capabilities.');
@@ -450,6 +468,7 @@ function EditGrantForm({ grant, targetUser, users, projects, onSuccess, onCancel
         targetUserIds: scopeType === 'USER' ? targetUserIds : [],
       };
       await api.patch(`/api/access/grants/${grant.id}`, payload);
+      broadcastAuthSync();
       onSuccess();
     } catch (err) {
       setError(err.message || 'Failed to update capability grant.');
@@ -864,6 +883,7 @@ function BulkEditGrantsForm({ selectedGrants, targetUser, users, projects, onSuc
         payload.targetUserIds = scopeType === 'USER' ? targetUserIds : [];
       }
       await api.post('/api/access/grants/bulk-update', payload);
+      broadcastAuthSync();
       onSuccess();
     } catch (err) {
       setError(err.message || 'Failed to update capabilities.');
@@ -1288,6 +1308,7 @@ function BulkGrantTeamForm({ users, projects, currentUserId, onSuccess, onCancel
         targetUserIds: scopeType === 'USER' ? targetScopeUserIds : undefined,
         targetProjectIds: scopeType === 'PROJECT' ? targetProjectIds : undefined,
       });
+      broadcastAuthSync();
       onSuccess(selectedCapability, uIds);
     } catch (err) {
       // Fallback: individually grant if needed
@@ -1304,6 +1325,7 @@ function BulkGrantTeamForm({ users, projects, currentUserId, onSuccess, onCancel
             })
           )
         );
+        broadcastAuthSync();
         onSuccess(selectedCapability, uIds);
       } catch (fallbackErr) {
         setError(fallbackErr.message || err.message || 'Failed to grant capability.');
@@ -1594,6 +1616,7 @@ function BulkRevokeTeamForm({ users, onSuccess, onCancel }) {
         capabilityCode: selectedCapability,
         userIds: uIds,
       });
+      broadcastAuthSync();
       onSuccess(selectedCapability, uIds);
     } catch (err) {
       setError(err.message || 'Failed to revoke capability.');
@@ -1823,6 +1846,7 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
     setError('');
     try {
       await api.post(`/api/access/grants/${grantId}/revoke`);
+      broadcastAuthSync();
       setGrants((prev) =>
         prev.map((g) => (g.id === grantId ? { ...g, revokedAt: new Date().toISOString() } : g))
       );
@@ -1848,6 +1872,7 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
     setError('');
     try {
       await api.post('/api/access/grants/revoke', { grantIds: gIds });
+      broadcastAuthSync();
       const nowIso = new Date().toISOString();
       setGrants((prev) =>
         prev.map((g) => (gIds.includes(g.id) ? { ...g, revokedAt: nowIso } : g))

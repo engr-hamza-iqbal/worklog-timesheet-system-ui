@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import api from '../api/client.js';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import api, { API_BASE_URL } from '../api/client.js';
 
 const AuthContext = createContext(null);
 
@@ -92,17 +92,84 @@ export function AuthProvider({ children }) {
     }
   }
 
-  async function refreshUser() {
+  const refreshUser = useCallback(async () => {
     try {
       const res = await api.get('/api/auth/me');
       if (res.success && res.data) {
         setUser(res.data.user);
         setCapabilities(res.data.capabilities || {});
+        return res.data;
       }
     } catch (err) {
-      console.error('Failed to refresh user:', err);
+      console.error('Failed to refresh user capabilities:', err);
     }
-  }
+    return null;
+  }, []);
+
+  // Real-time permission & capability synchronization via SSE and BroadcastChannel
+  useEffect(() => {
+    if (!token || !user) return;
+
+    // 1. Cross-tab synchronization via BroadcastChannel
+    let channel;
+    try {
+      channel = new BroadcastChannel('worklog_auth_sync');
+      channel.onmessage = (event) => {
+        if (event.data?.type === 'REFRESH_CAPABILITIES') {
+          refreshUser();
+        }
+      };
+    } catch {
+      // Ignore if BroadcastChannel not supported in environment
+    }
+
+    // 2. Real-time Server-Sent Events (SSE) connection to backend
+    let eventSource;
+    try {
+      const sseUrl = `${API_BASE_URL}/api/auth/stream?token=${encodeURIComponent(token)}`;
+      eventSource = new EventSource(sseUrl);
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'CAPABILITIES_CHANGED') {
+            refreshUser();
+          }
+        } catch {
+          // Ignore ping or non-json messages
+        }
+      };
+
+      eventSource.onerror = () => {
+        // EventSource will automatically retry connecting
+      };
+    } catch (err) {
+      console.warn('SSE connection failed:', err);
+    }
+
+    // 3. Fallback: sync when tab becomes active / window focused
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        refreshUser();
+      }
+    };
+    window.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', refreshUser);
+
+    // 4. API 403 / permission-denied event listener
+    const handlePermissionDenied = () => {
+      refreshUser();
+    };
+    window.addEventListener('auth:permission-denied', handlePermissionDenied);
+
+    return () => {
+      if (channel) channel.close();
+      if (eventSource) eventSource.close();
+      window.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', refreshUser);
+      window.removeEventListener('auth:permission-denied', handlePermissionDenied);
+    };
+  }, [token, user?.id, refreshUser]);
 
   const value = {
     user,

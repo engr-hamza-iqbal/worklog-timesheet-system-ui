@@ -77,6 +77,9 @@ api.interceptors.response.use(
           );
         }
       }
+    } else if (error.response?.status === 403) {
+      // Permission denied or capability revoked - dispatch signal to re-sync capabilities in background
+      window.dispatchEvent(new Event('auth:permission-denied'));
     }
 
     const message =
