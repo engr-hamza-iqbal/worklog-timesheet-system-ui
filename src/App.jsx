@@ -94,7 +94,7 @@ export default function App() {
             <Route
               path="/review"
               element={
-                <ProtectedRoute anyCapabilities={['REVIEW_TIME', 'DECIDE_TIME_OFF']}>
+                <ProtectedRoute capability="REVIEW_TIME">
                   <ReviewPage />
                 </ProtectedRoute>
               }

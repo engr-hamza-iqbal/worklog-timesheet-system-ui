@@ -35,7 +35,7 @@ export default function AppLayout({ children }) {
     } else if (path.startsWith('/users') && !capabilities?.['MANAGE_USERS'] && !capabilities?.['ASSIGN_PROJECTS']) {
       unauthorized = true;
       featureName = 'Users & Assignments';
-    } else if (path.startsWith('/review') && !capabilities?.['REVIEW_TIME'] && !capabilities?.['DECIDE_TIME_OFF']) {
+    } else if (path.startsWith('/review') && !capabilities?.['REVIEW_TIME']) {
       unauthorized = true;
       featureName = 'Review Queue';
     } else if (path.startsWith('/reports') && !capabilities?.['VIEW_REPORTS']) {

@@ -29,7 +29,7 @@ export default function Sidebar({
   const hasClientProjectAccess = isAdmin || !!capabilities['MANAGE_CLIENTS_PROJECTS'];
   const hasUserAccess = isAdmin || !!capabilities['MANAGE_USERS'] || !!capabilities['ASSIGN_PROJECTS'];
   const hasAccessManagement = isAdmin;
-  const hasReviewAccess = isAdmin || !!capabilities['REVIEW_TIME'] || !!capabilities['DECIDE_TIME_OFF'];
+  const hasReviewAccess = isAdmin || !!capabilities['REVIEW_TIME'];
   const hasReportsAccess = isAdmin || !!capabilities['VIEW_REPORTS'];
   const hasAnalyticsAccess = isAdmin || !!capabilities['VIEW_ANALYTICS'];
 
