@@ -27,9 +27,16 @@ import { useNotification } from "../context/NotificationContext.jsx";
 export default function ReviewPage() {
   const { notify } = useNotification();
   const { isAdmin, capabilities } = useAuth();
+  const canReviewTime = isAdmin || !!capabilities['REVIEW_TIME'];
   const canDecideTimeOff = isAdmin || !!capabilities['DECIDE_TIME_OFF'];
 
-  const [activeTab, setActiveTab] = useState('timesheets');
+  const [activeTab, setActiveTab] = useState(() => (canReviewTime ? 'timesheets' : (canDecideTimeOff ? 'timeoff' : 'timesheets')));
+
+  useEffect(() => {
+    if (!canDecideTimeOff && activeTab === 'timeoff') {
+      setActiveTab('timesheets');
+    }
+  }, [canDecideTimeOff, activeTab]);
   const [allEntries, setAllEntries] = useState([]);
   const [timeOffRequests, setTimeOffRequests] = useState([]);
   const [page, setPage] = useState(1);

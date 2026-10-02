@@ -6,7 +6,7 @@ import AppHeader from './AppHeader.jsx';
 import ConfirmDialog from './ConfirmDialog.jsx';
 
 export default function AppLayout({ children }) {
-  const { isAuthenticated, logout, refreshUser } = useAuth();
+  const { isAuthenticated, logout, refreshUser, isAdmin, capabilities } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -20,6 +20,48 @@ export default function AppLayout({ children }) {
       refreshUser().catch(() => {});
     }
   }, [location.pathname, isAuthenticated, isLandingPage, isAuthPage, refreshUser]);
+
+  // If user is on an open page whose capability was revoked, automatically fall back to default tab (dashboard)
+  useEffect(() => {
+    if (!isAuthenticated || isLandingPage || isAuthPage || isAdmin) return;
+
+    const path = location.pathname;
+    let unauthorized = false;
+    let featureName = '';
+
+    if (path.startsWith('/clients') && !capabilities?.['MANAGE_CLIENTS_PROJECTS']) {
+      unauthorized = true;
+      featureName = 'Clients & Projects';
+    } else if (path.startsWith('/users') && !capabilities?.['MANAGE_USERS'] && !capabilities?.['ASSIGN_PROJECTS']) {
+      unauthorized = true;
+      featureName = 'Users & Assignments';
+    } else if (path.startsWith('/review') && !capabilities?.['REVIEW_TIME'] && !capabilities?.['DECIDE_TIME_OFF']) {
+      unauthorized = true;
+      featureName = 'Review Queue';
+    } else if (path.startsWith('/reports') && !capabilities?.['VIEW_REPORTS']) {
+      unauthorized = true;
+      featureName = 'Reports';
+    } else if (path.startsWith('/analytics') && !capabilities?.['VIEW_ANALYTICS']) {
+      unauthorized = true;
+      featureName = 'Analytics';
+    } else if (path.startsWith('/access') || path.startsWith('/emails')) {
+      unauthorized = true;
+      featureName = 'Administration';
+    }
+
+    if (unauthorized) {
+      window.dispatchEvent(
+        new CustomEvent('app:notify', {
+          detail: {
+            type: 'warn',
+            title: 'Capability Revoked',
+            message: `Your access to ${featureName} was revoked. Returned to Dashboard.`,
+          },
+        })
+      );
+      navigate('/dashboard', { replace: true });
+    }
+  }, [location.pathname, capabilities, isAdmin, isAuthenticated, isLandingPage, isAuthPage, navigate]);
 
   // Default navbar/sidebar is EXPANDED (true), persisted to localStorage
   const [sidebarOpen, setSidebarOpen] = useState(() => {
