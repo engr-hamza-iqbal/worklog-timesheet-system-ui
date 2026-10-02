@@ -104,6 +104,7 @@ function MetricTable({ title, rows = [], columns = [] }) {
 export default function ReportsPage() {
   const { isAdmin, capabilities, loading: authLoading } = useAuth();
   const canView = isAdmin || !!capabilities?.VIEW_REPORTS;
+  const canViewBilling = isAdmin || !!capabilities?.VIEW_BILLING;
   const { notify } = useNotification();
 
   const [activeTab, setActiveTab] = useState('summary'); // 'summary' | 'missing'
@@ -348,24 +349,32 @@ export default function ReportsPage() {
                       value: (row) => `${row.projectName} · ${row.clientName}`,
                     },
                     { key: 'hours', label: 'Hours', value: (row) => `${row.hours} h` },
-                    {
-                      key: 'value',
-                      label: 'Billable value',
-                      value: (row) => `$${row.billableValue}`,
-                    },
+                    ...(canViewBilling
+                      ? [
+                          {
+                            key: 'value',
+                            label: 'Billable value',
+                            value: (row) => (row.billableValue != null ? `$${row.billableValue}` : '—'),
+                          },
+                        ]
+                      : []),
                   ]}
                 />
                 <MetricTable
-                  title="Billable value by client"
+                  title={canViewBilling ? 'Billable value by client' : 'Hours by client'}
                   rows={report.byClient}
                   columns={[
                     { key: 'client', label: 'Client', value: (row) => row.clientName },
                     { key: 'hours', label: 'Hours', value: (row) => `${row.hours} h` },
-                    {
-                      key: 'value',
-                      label: 'Billable value',
-                      value: (row) => `$${row.billableValue}`,
-                    },
+                    ...(canViewBilling
+                      ? [
+                          {
+                            key: 'value',
+                            label: 'Billable value',
+                            value: (row) => (row.billableValue != null ? `$${row.billableValue}` : '—'),
+                          },
+                        ]
+                      : []),
                   ]}
                 />
                 <MetricTable

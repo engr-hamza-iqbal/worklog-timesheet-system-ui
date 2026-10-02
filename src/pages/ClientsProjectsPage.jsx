@@ -102,7 +102,7 @@ function ClientForm({ client, onSuccess, onCancel }) {
 
 // ─── Project Form ─────────────────────────────────────────────────────────────
 
-function ProjectForm({ clients, onSuccess, onCancel }) {
+function ProjectForm({ clients, canViewBilling = true, onSuccess, onCancel }) {
   const [clientId, setClientId] = useState(clients[0]?.id || '');
   const [name, setName] = useState('');
   const [rate, setRate] = useState('');
@@ -113,8 +113,8 @@ function ProjectForm({ clients, onSuccess, onCancel }) {
     e.preventDefault();
     if (!name.trim()) { setError('Project name is required.'); return; }
     if (!clientId) { setError('Please select a client.'); return; }
-    const rateNum = parseFloat(rate);
-    if (!rate || isNaN(rateNum) || rateNum < 0) {
+    const rateNum = canViewBilling ? parseFloat(rate) : 0;
+    if (canViewBilling && (!rate || isNaN(rateNum) || rateNum < 0)) {
       setError('Enter a valid billing rate (e.g. 75.00).');
       return;
     }
@@ -153,18 +153,20 @@ function ProjectForm({ clients, onSuccess, onCancel }) {
       <FormField label="Project name">
         <InputField type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="Website Redesign" required />
       </FormField>
-      <FormField label="Initial billing rate (per hour)">
-        <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
-          <input
-            type="number" min="0" step="0.01" value={rate}
-            onChange={(e) => setRate(e.target.value)}
-            placeholder="75.00"
-            className="w-full pl-7 pr-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition"
-            required
-          />
-        </div>
-      </FormField>
+      {canViewBilling && (
+        <FormField label="Initial billing rate (per hour)">
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+            <input
+              type="number" min="0" step="0.01" value={rate}
+              onChange={(e) => setRate(e.target.value)}
+              placeholder="75.00"
+              className="w-full pl-7 pr-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition"
+              required
+            />
+          </div>
+        </FormField>
+      )}
       <div className="flex gap-2 pt-1">
         <button type="button" onClick={onCancel} className="flex-1 py-2 px-3 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded transition cursor-pointer">
           Cancel
@@ -240,6 +242,7 @@ function AddRateForm({ projectId, onSuccess, onCancel }) {
 export default function ClientsProjectsPage() {
   const { isAdmin, capabilities } = useAuth();
   const canManage = isAdmin || !!capabilities['MANAGE_CLIENTS_PROJECTS'];
+  const canViewBilling = isAdmin || !!capabilities['VIEW_BILLING'];
 
   const [clients, setClients] = useState([]);
   // projects shape from service: { id, name, clientId, clientName, status, currentRate, assignedEmployees: [], totalTimeEntries }
@@ -575,19 +578,21 @@ export default function ClientsProjectsPage() {
                               )}
                             </div>
                           </th>
-                          <th
-                            onClick={() => toggleProjectSort('currentRate')}
-                            className="py-2.5 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
-                          >
-                            <div className="flex items-center gap-1.5">
-                              <span>Rate / hr</span>
-                              {projectSortField === 'currentRate' ? (
-                                projectSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
-                              ) : (
-                                <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
-                              )}
-                            </div>
-                          </th>
+                          {canViewBilling && (
+                            <th
+                              onClick={() => toggleProjectSort('currentRate')}
+                              className="py-2.5 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                            >
+                              <div className="flex items-center gap-1.5">
+                                <span>Rate / hr</span>
+                                {projectSortField === 'currentRate' ? (
+                                  projectSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
+                                ) : (
+                                  <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
+                                )}
+                              </div>
+                            </th>
+                          )}
                           <th
                             onClick={() => toggleProjectSort('team')}
                             className="py-2.5 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
@@ -617,12 +622,14 @@ export default function ClientsProjectsPage() {
                                 dot
                               />
                             </td>
-                            <td className="py-3 px-4 text-slate-700">
-                              {/* currentRate comes directly from service (not rates[]) */}
-                              {project.currentRate != null
-                                ? <span className="font-medium">${Number(project.currentRate).toFixed(2)}</span>
-                                : <span className="text-slate-400">—</span>}
-                            </td>
+                            {canViewBilling && (
+                              <td className="py-3 px-4 text-slate-700">
+                                {/* currentRate comes directly from service (not rates[]) */}
+                                {project.currentRate != null
+                                  ? <span className="font-medium">${Number(project.currentRate).toFixed(2)}</span>
+                                  : <span className="text-slate-400">—</span>}
+                              </td>
+                            )}
                             <td className="py-3 px-4">
                               {/* assignedEmployees array from service */}
                               {project.assignedEmployees && project.assignedEmployees.length > 0 ? (
@@ -637,12 +644,14 @@ export default function ClientsProjectsPage() {
                             {canManage && (
                               <td className="py-3 px-4 text-right">
                                 <div className="flex items-center gap-1.5 justify-end">
-                                  <button
-                                    onClick={() => { setRateProjectId(project.id); setModal('addRate'); }}
-                                    className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer"
-                                  >
-                                    <DollarSign className="w-3 h-3" />Rate
-                                  </button>
+                                  {canViewBilling && (
+                                    <button
+                                      onClick={() => { setRateProjectId(project.id); setModal('addRate'); }}
+                                      className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer"
+                                    >
+                                      <DollarSign className="w-3 h-3" />Rate
+                                    </button>
+                                  )}
                                   <button
                                     onClick={() => handleProjectStatusToggle(project)}
                                     className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer"
@@ -698,6 +707,7 @@ export default function ClientsProjectsPage() {
       <Modal isOpen={modal === 'newProject'} onClose={() => setModal(null)} title="New Project">
         <ProjectForm
           clients={clients.filter((c) => c.isActive)}
+          canViewBilling={canViewBilling}
           onSuccess={(_project) => {
             // Re-fetch projects so we get the full enriched shape from the service
             fetchProjects(selectedClientId);
