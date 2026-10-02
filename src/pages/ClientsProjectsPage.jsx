@@ -244,6 +244,32 @@ export default function ClientsProjectsPage() {
   const canManage = isAdmin || !!capabilities['MANAGE_CLIENTS_PROJECTS'];
   const canViewBilling = isAdmin || !!capabilities['VIEW_BILLING'];
 
+  const manageCap = capabilities?.['MANAGE_CLIENTS_PROJECTS'];
+  const isManageGlobal = isAdmin || manageCap?.isGlobal;
+  const allowedProjectIds = useMemo(() => {
+    if (isManageGlobal) return null;
+    return manageCap?.allowedProjectIds || [];
+  }, [isManageGlobal, manageCap]);
+
+  const canCreateClient = isAdmin || isManageGlobal;
+  const canManageClient = (client) => {
+    if (!canManage || !client) return false;
+    if (isManageGlobal) return true;
+    if (allowedProjectIds) {
+      return projects.some((p) => p.clientId === client.id && allowedProjectIds.includes(p.id)) ||
+             client._count?.projects > 0;
+    }
+    return false;
+  };
+  const canManageProject = (project) => {
+    if (!canManage || !project) return false;
+    if (isManageGlobal) return true;
+    if (allowedProjectIds) {
+      return allowedProjectIds.includes(project.id);
+    }
+    return false;
+  };
+
   const [clients, setClients] = useState([]);
   // projects shape from service: { id, name, clientId, clientName, status, currentRate, assignedEmployees: [], totalTimeEntries }
   const [projects, setProjects] = useState([]);
@@ -268,9 +294,13 @@ export default function ClientsProjectsPage() {
       // res = { success, data: [...], message } because interceptor returns response.data
       const list = Array.isArray(res.data) ? res.data : [];
       setClients(list);
-      // Auto-select first client if none selected
-      if (list.length > 0 && !selectedClientId) {
-        setSelectedClientId(list[0].id);
+      // Auto-select first client if none selected or previous selection no longer exists
+      if (list.length > 0) {
+        if (!selectedClientId || !list.some((c) => c.id === selectedClientId)) {
+          setSelectedClientId(list[0].id);
+        }
+      } else {
+        setSelectedClientId(null);
       }
     } catch (err) {
       setError(err.message || 'Failed to load clients.');
@@ -420,12 +450,14 @@ export default function ClientsProjectsPage() {
             <button type="button" onClick={refreshPage} disabled={refreshing} title="Refresh clients and projects" className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer disabled:opacity-50">
               <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />Refresh
             </button>
-            <button
-              onClick={() => setModal('newClient')}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 rounded transition cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />New Client
-            </button>
+            {canCreateClient && (
+              <button
+                onClick={() => setModal('newClient')}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 rounded transition cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />New Client
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -500,7 +532,7 @@ export default function ClientsProjectsPage() {
                     {projects.length} project{projects.length !== 1 ? 's' : ''}
                   </p>
                 </div>
-                {canManage && (
+                {canManageClient(selectedClient) && (
                   <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 shrink-0">
                     <button
                       onClick={() => { setEditingClient(selectedClient); setModal('editClient'); }}
@@ -643,24 +675,28 @@ export default function ClientsProjectsPage() {
                             </td>
                             {canManage && (
                               <td className="py-3 px-4 text-right">
-                                <div className="flex items-center gap-1.5 justify-end">
-                                  {canViewBilling && (
+                                {canManageProject(project) ? (
+                                  <div className="flex items-center gap-1.5 justify-end">
+                                    {canViewBilling && (
+                                      <button
+                                        onClick={() => { setRateProjectId(project.id); setModal('addRate'); }}
+                                        className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer"
+                                      >
+                                        <DollarSign className="w-3 h-3" />Rate
+                                      </button>
+                                    )}
                                     <button
-                                      onClick={() => { setRateProjectId(project.id); setModal('addRate'); }}
+                                      onClick={() => handleProjectStatusToggle(project)}
                                       className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer"
                                     >
-                                      <DollarSign className="w-3 h-3" />Rate
+                                      {project.status === 'ACTIVE'
+                                        ? <><XCircle className="w-3 h-3" />Close</>
+                                        : <><CheckCircle className="w-3 h-3" />Reopen</>}
                                     </button>
-                                  )}
-                                  <button
-                                    onClick={() => handleProjectStatusToggle(project)}
-                                    className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer"
-                                  >
-                                    {project.status === 'ACTIVE'
-                                      ? <><XCircle className="w-3 h-3" />Close</>
-                                      : <><CheckCircle className="w-3 h-3" />Reopen</>}
-                                  </button>
-                                </div>
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-400 text-[11px] italic">View only</span>
+                                )}
                               </td>
                             )}
                           </tr>

@@ -312,7 +312,7 @@ function AssignProjectsForm({ user, assignedProjectIds, onSuccess, onCancel }) {
 
 // ─── Bulk Assign Team Form (Assign Project to Multiple Employees) ─────────────
 
-function BulkAssignTeamForm({ users, onSuccess, onCancel }) {
+function BulkAssignTeamForm({ users, allowedAssignUserIds, onSuccess, onCancel }) {
   const [projects, setProjects] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [selectedUserIds, setSelectedUserIds] = useState(new Set());
@@ -354,8 +354,12 @@ function BulkAssignTeamForm({ users, onSuccess, onCancel }) {
   }, [selectedProjectId]);
 
   const activeUsers = useMemo(() => {
-    return users.filter((u) => u.isActive && u.accountType !== 'ADMIN');
-  }, [users]);
+    let list = users.filter((u) => u.isActive && u.accountType !== 'ADMIN');
+    if (allowedAssignUserIds && allowedAssignUserIds.length > 0) {
+      list = list.filter((u) => allowedAssignUserIds.includes(u.id));
+    }
+    return list;
+  }, [users, allowedAssignUserIds]);
 
   const filteredUsers = useMemo(() => {
     const q = userSearch.toLowerCase().trim();
@@ -701,6 +705,47 @@ export default function UsersPage() {
   const canManageUsers = isAdmin || !!capabilities['MANAGE_USERS'];
   const canAssign = isAdmin || !!capabilities['ASSIGN_PROJECTS'];
 
+  const assignCap = capabilities?.['ASSIGN_PROJECTS'];
+  const isAssignGlobal = isAdmin || assignCap?.isGlobal;
+  const allowedAssignUserIds = useMemo(() => {
+    if (isAssignGlobal) return null;
+    return assignCap?.allowedUserIds || [];
+  }, [isAssignGlobal, assignCap]);
+
+  const canAssignUser = useCallback((targetUser) => {
+    if (!canAssign || !targetUser) return false;
+    if (isAssignGlobal) return true;
+    if (allowedAssignUserIds && allowedAssignUserIds.length > 0) {
+      return allowedAssignUserIds.includes(targetUser.id);
+    }
+    return true;
+  }, [canAssign, isAssignGlobal, allowedAssignUserIds]);
+
+  const manageUsersCap = capabilities?.['MANAGE_USERS'];
+  const isManageUsersGlobal = isAdmin || manageUsersCap?.isGlobal;
+  const allowedManageUserIds = useMemo(() => {
+    if (isManageUsersGlobal) return null;
+    return manageUsersCap?.allowedUserIds || [];
+  }, [isManageUsersGlobal, manageUsersCap]);
+  const allowedManageProjectIds = useMemo(() => {
+    if (isManageUsersGlobal) return null;
+    return manageUsersCap?.allowedProjectIds || [];
+  }, [isManageUsersGlobal, manageUsersCap]);
+
+  const canManageSpecificUser = useCallback((targetUser) => {
+    if (!canManageUsers || !targetUser) return false;
+    if (isManageUsersGlobal) return true;
+    if (allowedManageUserIds && allowedManageUserIds.length > 0) {
+      return allowedManageUserIds.includes(targetUser.id);
+    }
+    if (allowedManageProjectIds && allowedManageProjectIds.length > 0) {
+      return (targetUser.activeAssignments || []).some((p) => allowedManageProjectIds.includes(p.id));
+    }
+    return false;
+  }, [canManageUsers, isManageUsersGlobal, allowedManageUserIds, allowedManageProjectIds]);
+
+  const canCreateUser = isAdmin || isManageUsersGlobal;
+
   // User shape from getUsers() service:
   // { id, name, email, accountType, isActive, createdAt, updatedAt, activeAssignments: [{id, name, status}], activeCapabilitiesCount }
   const [users, setUsers] = useState([]);
@@ -850,7 +895,7 @@ export default function UsersPage() {
                 <Users className="w-3.5 h-3.5" />Assign Team to Project
               </button>
             )}
-            {canManageUsers && (
+            {canCreateUser && (
               <button
                 onClick={() => setModal('createUser')}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 rounded transition cursor-pointer"
@@ -890,9 +935,9 @@ export default function UsersPage() {
           <EmptyState
             icon={<Users className="w-8 h-8" />}
             title={search ? 'No users match your search.' : 'No users found.'}
-            message={!search && canManageUsers ? 'Create your first team member.' : undefined}
+            message={!search && canCreateUser ? 'Create your first team member.' : undefined}
             action={
-              !search && canManageUsers ? (
+              !search && canCreateUser ? (
                 <button
                   onClick={() => setModal('createUser')}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 rounded transition cursor-pointer"
@@ -1033,7 +1078,7 @@ export default function UsersPage() {
 
                   {/* Actions */}
                   <div className="col-span-4 sm:col-span-2 flex items-center justify-end gap-1.5">
-                    {canManageUsers && (
+                    {canManageSpecificUser(user) && (
                       <button
                         onClick={(e) => { e.stopPropagation(); handleToggleStatus(user); }}
                         disabled={user.id === currentUser?.id || togglingUserId === user.id}
@@ -1071,7 +1116,7 @@ export default function UsersPage() {
                 {expandedId === user.id && (
                   <UserAssignments
                     user={user}
-                    canAssign={canAssign}
+                    canAssign={canAssignUser(user)}
                     onAssigned={(userId, updatedList) => {
                       if (userId && updatedList) {
                         setUsers((prev) =>
@@ -1110,6 +1155,7 @@ export default function UsersPage() {
       >
         <BulkAssignTeamForm
           users={users}
+          allowedAssignUserIds={allowedAssignUserIds}
           onSuccess={(project, userIds) => {
             setUsers((prev) =>
               prev.map((u) => {
