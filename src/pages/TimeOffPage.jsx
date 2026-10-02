@@ -24,6 +24,7 @@ const statusVariant = {
   APPROVED: "active",
   DECLINED: "revoked",
   CANCELLED: "inactive",
+  EXPIRED: "expired",
 };
 
 export default function TimeOffPage() {
@@ -330,7 +331,7 @@ export default function TimeOffPage() {
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs focus:border-slate-900 focus:outline-none"
             >
               <option value="">All statuses</option>
-              {["PENDING", "APPROVED", "DECLINED", "CANCELLED"].map((status) => (
+              {["PENDING", "APPROVED", "DECLINED", "CANCELLED", "EXPIRED"].map((status) => (
                 <option key={status}>{status}</option>
               ))}
             </select>

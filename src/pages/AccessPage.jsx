@@ -1818,17 +1818,30 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
     setExpandedScopeGrantIds(new Set());
   }, [fetchGrants]);
 
-  // Only grants that are currently active (not revoked, not expired)
+  // Active grants (not revoked, not expired)
   const now = new Date();
   const activeGrants = grants.filter(
     (g) => !g.revokedAt && (!g.expiresAt || new Date(g.expiresAt) > now)
   );
 
-  // Map capability code → grant object for easy lookup
+  // Map capability code → active grant object
   const activeByCode = {};
   for (const g of activeGrants) {
     if (g.capability?.code) {
       activeByCode[g.capability.code] = g;
+    }
+  }
+
+  // Track grants that have expired (not revoked, but expiresAt <= now)
+  const expiredByCode = {};
+  for (const g of grants) {
+    if (!g.revokedAt && g.expiresAt && new Date(g.expiresAt) <= now) {
+      const code = g.capability?.code;
+      if (code && !activeByCode[code]) {
+        if (!expiredByCode[code] || new Date(g.expiresAt) > new Date(expiredByCode[code].expiresAt)) {
+          expiredByCode[code] = g;
+        }
+      }
     }
   }
 
@@ -2024,8 +2037,8 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
   const sortedCapCodes = useMemo(() => {
     return [...ALL_CAP_CODES].sort((codeA, codeB) => {
       let cmp = 0;
-      const grantA = activeByCode[codeA];
-      const grantB = activeByCode[codeB];
+      const grantA = activeByCode[codeA] || expiredByCode[codeA];
+      const grantB = activeByCode[codeB] || expiredByCode[codeB];
       if (capSortField === 'name') {
         cmp = (CAP_META[codeA]?.label || '').localeCompare(CAP_META[codeB]?.label || '');
       } else if (capSortField === 'scope') {
@@ -2037,13 +2050,13 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
         const gB = grantB?.grantedBy?.name || '';
         cmp = gA.localeCompare(gB);
       } else if (capSortField === 'status') {
-        const isA = grantA ? 1 : 0;
-        const isB = grantB ? 1 : 0;
+        const isA = activeByCode[codeA] ? 2 : (expiredByCode[codeA] ? 1 : 0);
+        const isB = activeByCode[codeB] ? 2 : (expiredByCode[codeB] ? 1 : 0);
         cmp = isA - isB;
       }
       return capSortOrder === 'asc' ? cmp : -cmp;
     });
-  }, [activeByCode, capSortField, capSortOrder]);
+  }, [activeByCode, expiredByCode, capSortField, capSortOrder]);
 
   return (
     <div>
@@ -2111,19 +2124,23 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
                 <tr>
                   {!isSelf && (
                     <th className="py-2.5 px-3 w-8">
-                      {activeGrants.length > 0 && (
+                      {(Object.keys(activeByCode).length > 0 || Object.keys(expiredByCode).length > 0) && (
                         <input
                           type="checkbox"
-                          checked={selectedGrantIds.size > 0 && selectedGrantIds.size === activeGrants.length}
+                          checked={selectedGrantIds.size > 0 && selectedGrantIds.size === (Object.keys(activeByCode).length + Object.keys(expiredByCode).length)}
                           onChange={(e) => {
                             if (e.target.checked) {
-                              setSelectedGrantIds(new Set(activeGrants.map((g) => g.id)));
+                              const allIds = [
+                                ...Object.values(activeByCode).map((g) => g.id),
+                                ...Object.values(expiredByCode).map((g) => g.id),
+                              ];
+                              setSelectedGrantIds(new Set(allIds));
                             } else {
                               setSelectedGrantIds(new Set());
                             }
                           }}
                           className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                          title="Select all active grants"
+                          title="Select all active and expired grants"
                         />
                       )}
                     </th>
@@ -2185,14 +2202,17 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {sortedCapCodes.map((code) => {
-                  const grant = activeByCode[code];
-                  const isGranted = !!grant;
+                  const activeGrant = activeByCode[code];
+                  const expiredGrant = expiredByCode[code];
+                  const grant = activeGrant || expiredGrant;
+                  const isGranted = !!activeGrant;
+                  const isExpired = !activeGrant && !!expiredGrant;
 
                   return (
                     <tr key={code} className="hover:bg-slate-50/50 transition">
                       {!isSelf && (
                         <td className="py-3 px-3 w-8">
-                          {isGranted ? (
+                          {grant ? (
                             <input
                               type="checkbox"
                               checked={selectedGrantIds.has(grant.id)}
@@ -2220,13 +2240,17 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
                       </td>
 
                       <td className="py-3 px-4 text-slate-600 hidden sm:table-cell">
-                        {isGranted && grant.grantedBy
+                        {grant && grant.grantedBy
                           ? <span className="truncate max-w-[100px] block">{grant.grantedBy.name}</span>
                           : <span className="text-slate-300">—</span>}
                       </td>
 
                       <td className="py-3 px-4 hidden sm:table-cell">
-                        {isGranted && grant.expiresAt ? (
+                        {isExpired ? (
+                          <span className="inline-flex items-center gap-1 text-amber-700 text-[11px] font-medium" title={grant.expiresAt}>
+                            <Clock className="w-3 h-3 text-amber-600" />Expired ({fmtDate(grant.expiresAt)})
+                          </span>
+                        ) : isGranted && grant.expiresAt ? (
                           <span className="inline-flex items-center gap-1 text-amber-700 text-[11px]">
                             <Clock className="w-3 h-3" />{fmtDate(grant.expiresAt)}
                           </span>
@@ -2261,6 +2285,34 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
                                     ? <RefreshCw className="w-3 h-3 animate-spin" />
                                     : <XCircle className="w-3 h-3" />}
                                   Revoke
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        ) : isExpired ? (
+                          <div className="flex items-center gap-2 justify-end">
+                            <Badge variant="expired" label="Expired" dot />
+                            {!isSelf && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingGrant(grant)}
+                                  className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-amber-800 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded transition cursor-pointer"
+                                  title="Renew or extend expired capability"
+                                >
+                                  <RefreshCw className="w-3 h-3 text-amber-700" />
+                                  Extend
+                                </button>
+                                <button
+                                  onClick={() => handleRevoke(grant.id)}
+                                  disabled={!!revoking}
+                                  className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer disabled:opacity-50"
+                                  title="Revoke / remove expired grant"
+                                >
+                                  {revoking === grant.id
+                                    ? <RefreshCw className="w-3 h-3 animate-spin" />
+                                    : <XCircle className="w-3 h-3" />}
+                                  Clear
                                 </button>
                               </>
                             )}
