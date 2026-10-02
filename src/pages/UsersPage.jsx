@@ -995,14 +995,39 @@ export default function UsersPage() {
                   </div>
 
                   {/* Active project count */}
-                  <div className="hidden sm:flex col-span-2 items-center gap-1 text-xs text-slate-500">
+                  <div className="hidden sm:flex col-span-2 items-center text-xs text-slate-500">
                     {user.accountType === 'ADMIN' ? (
                       <span className="text-[11px] text-slate-400 italic">Global access</span>
                     ) : (
-                      <>
-                        <FolderOpen className="w-3.5 h-3.5 text-slate-400" />
-                        {(user.activeAssignments || []).length}
-                      </>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedId((prev) => (prev === user.id ? null : user.id));
+                        }}
+                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium transition cursor-pointer group ${
+                          expandedId === user.id
+                            ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                            : 'bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 border border-slate-200 hover:border-indigo-200'
+                        }`}
+                        title={
+                          (user.activeAssignments || []).length > 0
+                            ? `Assigned: ${(user.activeAssignments || []).map((p) => p.name).join(', ')} (click to expand)`
+                            : 'No projects assigned — click to manage'
+                        }
+                      >
+                        <FolderOpen
+                          className={`w-3.5 h-3.5 ${
+                            expandedId === user.id ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-600'
+                          }`}
+                        />
+                        <span>{(user.activeAssignments || []).length}</span>
+                        <ChevronDown
+                          className={`w-3 h-3 transition-transform ${
+                            expandedId === user.id ? 'rotate-180 text-indigo-600' : 'text-slate-400 group-hover:text-indigo-600'
+                          }`}
+                        />
+                      </button>
                     )}
                   </div>
 

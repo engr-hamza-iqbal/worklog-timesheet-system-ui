@@ -22,6 +22,7 @@ import {
   ArrowDown,
   FolderOpen,
   User,
+  ChevronDown,
 } from 'lucide-react';
 
 const SYSTEM_CAPABILITIES = [
@@ -42,6 +43,16 @@ export default function DashboardPage() {
   const [filterQuery, setFilterQuery] = useState('');
   const [sortField, setSortField] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc'); // 'asc' | 'desc'
+  const [expandedScopeCaps, setExpandedScopeCaps] = useState(new Set());
+
+  const toggleScopeExpanded = (code) => {
+    setExpandedScopeCaps((prev) => {
+      const next = new Set(prev);
+      if (next.has(code)) next.delete(code);
+      else next.add(code);
+      return next;
+    });
+  };
 
   const toggleSort = (field) => {
     if (sortField === field) {
@@ -314,44 +325,75 @@ export default function DashboardPage() {
                             Global Access
                           </span>
                         ) : (
-                          <div className="flex flex-wrap gap-1 max-w-xs">
-                            {grant?.allowedProjects && grant.allowedProjects.length > 0 ? (
-                              grant.allowedProjects.map((p) => (
-                                <span
-                                  key={p.id}
-                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200"
-                                  title={p.name}
-                                >
-                                  <FolderOpen size={10} className="text-slate-400 shrink-0" />
-                                  <span className="truncate max-w-[120px]">{p.name}</span>
-                                </span>
-                              ))
-                            ) : projectCount > 0 ? (
-                              <span className="text-[11px] text-slate-700 font-medium">
-                                {projectCount} project(s)
-                              </span>
-                            ) : null}
+                          <div className="py-0.5">
+                            {(() => {
+                              const isExpanded = expandedScopeCaps.has(cap.code);
+                              const hasProjects = (grant?.allowedProjects?.length || 0) > 0 || projectCount > 0;
+                              const hasUsers = (grant?.allowedUsers?.length || 0) > 0 || userCount > 0;
 
-                            {grant?.allowedUsers && grant.allowedUsers.length > 0 ? (
-                              grant.allowedUsers.map((u) => (
-                                <span
-                                  key={u.id}
-                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200"
-                                  title={u.name}
-                                >
-                                  <User size={10} className="text-slate-400 shrink-0" />
-                                  <span className="truncate max-w-[120px]">{u.name}</span>
-                                </span>
-                              ))
-                            ) : userCount > 0 ? (
-                              <span className="text-[11px] text-slate-700 font-medium">
-                                {userCount} user(s)
-                              </span>
-                            ) : null}
+                              if (!hasProjects && !hasUsers) {
+                                return <span className="text-[11px] text-slate-400 italic">No specific scope</span>;
+                              }
 
-                            {!grant?.allowedProjects?.length && !grant?.allowedUsers?.length && projectCount === 0 && userCount === 0 && (
-                              <span className="text-[11px] text-slate-400 italic">No specific scope</span>
-                            )}
+                              const projectSummary = grant?.allowedProjects?.map((p) => p.name).join(', ');
+                              const userSummary = grant?.allowedUsers?.map((u) => u.name).join(', ');
+
+                              return (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleScopeExpanded(cap.code)}
+                                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium border transition cursor-pointer group ${
+                                      isExpanded
+                                        ? 'bg-blue-100 text-blue-800 border-blue-300'
+                                        : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200'
+                                    }`}
+                                    title={
+                                      isExpanded
+                                        ? 'Collapse scope list'
+                                        : `Click to view assigned ${[projectSummary ? `projects (${projectSummary})` : null, userSummary ? `users (${userSummary})` : null].filter(Boolean).join(' and ')}`
+                                    }
+                                  >
+                                    <FolderOpen size={11} className="text-blue-600" />
+                                    <span>
+                                      {[
+                                        projectCount > 0 ? `${projectCount} project${projectCount === 1 ? '' : 's'}` : null,
+                                        userCount > 0 ? `${userCount} user${userCount === 1 ? '' : 's'}` : null,
+                                      ].filter(Boolean).join(', ')}
+                                    </span>
+                                    <ChevronDown
+                                      size={11}
+                                      className={`text-blue-500 group-hover:text-blue-700 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                                    />
+                                  </button>
+
+                                  {isExpanded && (
+                                    <div className="mt-1.5 flex flex-wrap gap-1 p-1.5 bg-slate-50 border border-slate-200 rounded max-w-xs animate-fadeIn">
+                                      {grant?.allowedProjects?.map((p) => (
+                                        <span
+                                          key={p.id}
+                                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-white text-slate-700 border border-slate-200 shadow-2xs"
+                                          title={p.name}
+                                        >
+                                          <FolderOpen size={9} className="text-slate-400 shrink-0" />
+                                          <span className="truncate max-w-[120px]">{p.name}</span>
+                                        </span>
+                                      ))}
+                                      {grant?.allowedUsers?.map((u) => (
+                                        <span
+                                          key={u.id}
+                                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-white text-slate-700 border border-slate-200 shadow-2xs"
+                                          title={u.name}
+                                        >
+                                          <User size={9} className="text-slate-400 shrink-0" />
+                                          <span className="truncate max-w-[120px]">{u.name}</span>
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </>
+                              );
+                            })()}
                           </div>
                         )
                       ) : (

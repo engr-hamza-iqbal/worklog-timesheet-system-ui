@@ -929,7 +929,17 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
   const [selectedGrantIds, setSelectedGrantIds] = useState(new Set());
   const [bulkRevokeConfirm, setBulkRevokeConfirm] = useState(false);
   const [bulkRevoking, setBulkRevoking] = useState(false);
+  const [expandedScopeGrantIds, setExpandedScopeGrantIds] = useState(new Set());
   const { notify } = useNotification();
+
+  const toggleScopeExpanded = (grantId) => {
+    setExpandedScopeGrantIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(grantId)) next.delete(grantId);
+      else next.add(grantId);
+      return next;
+    });
+  };
 
   const fetchGrants = useCallback(async () => {
     setLoading(true);
@@ -948,6 +958,7 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
   useEffect(() => {
     fetchGrants();
     setSelectedGrantIds(new Set());
+    setExpandedScopeGrantIds(new Set());
   }, [fetchGrants]);
 
   // Only grants that are currently active (not revoked, not expired)
@@ -1030,54 +1041,103 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
     }
 
     const type = scopes[0].scopeType;
+    const isExpanded = expandedScopeGrantIds.has(grant.id);
+
     if (type === 'PROJECT') {
+      const projectSummary = scopes
+        .map((s) => s.targetProject?.name || s.targetProjectId)
+        .join(', ');
+
       return (
-        <div className="flex flex-col gap-1 py-0.5">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
-              <FolderOpen size={10} />
-              {scopes.length} {scopes.length === 1 ? 'Project' : 'Projects'}
-            </span>
-            {scopes.map((s) => {
-              const pName = s.targetProject?.name || s.targetProjectId;
-              const cName = s.targetProject?.client?.name;
-              return (
-                <span
-                  key={s.id || s.targetProjectId}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200 max-w-[200px] truncate"
-                  title={cName ? `${pName} (${cName})` : pName}
-                >
-                  <FolderOpen size={10} className="text-slate-400 shrink-0" />
-                  <span className="truncate">{pName}</span>
-                </span>
-              );
-            })}
-          </div>
+        <div className="py-0.5">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleScopeExpanded(grant.id);
+            }}
+            className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium border transition cursor-pointer group ${
+              isExpanded
+                ? 'bg-blue-100 text-blue-800 border-blue-300'
+                : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200'
+            }`}
+            title={isExpanded ? 'Collapse project list' : `Click to view project names (${projectSummary})`}
+          >
+            <FolderOpen size={11} className="text-blue-600" />
+            <span>{scopes.length} {scopes.length === 1 ? 'Project' : 'Projects'}</span>
+            <ChevronDown
+              size={11}
+              className={`text-blue-500 group-hover:text-blue-700 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+            />
+          </button>
+
+          {isExpanded && (
+            <div className="mt-1.5 flex flex-wrap gap-1 p-1.5 bg-slate-50 border border-slate-200 rounded max-w-sm animate-fadeIn">
+              {scopes.map((s) => {
+                const pName = s.targetProject?.name || s.targetProjectId;
+                const cName = s.targetProject?.client?.name;
+                return (
+                  <span
+                    key={s.id || s.targetProjectId}
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-white text-slate-700 border border-slate-200 shadow-2xs"
+                    title={cName ? `${pName} (${cName})` : pName}
+                  >
+                    <FolderOpen size={9} className="text-slate-400 shrink-0" />
+                    <span className="truncate max-w-[150px]">{pName}</span>
+                    {cName && <span className="text-[9px] text-slate-400 truncate max-w-[80px]">({cName})</span>}
+                  </span>
+                );
+              })}
+            </div>
+          )}
         </div>
       );
     }
 
+    const userSummary = scopes
+      .map((s) => s.targetUser?.name || s.targetUserId)
+      .join(', ');
+
     return (
-      <div className="flex flex-col gap-1 py-0.5">
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
-            <Users size={10} />
-            {scopes.length} {scopes.length === 1 ? 'User' : 'Users'}
-          </span>
-          {scopes.map((s) => {
-            const uName = s.targetUser?.name || s.targetUserId;
-            return (
-              <span
-                key={s.id || s.targetUserId}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200 max-w-[200px] truncate"
-                title={s.targetUser?.email ? `${uName} (${s.targetUser.email})` : uName}
-              >
-                <User size={10} className="text-slate-400 shrink-0" />
-                <span className="truncate">{uName}</span>
-              </span>
-            );
-          })}
-        </div>
+      <div className="py-0.5">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleScopeExpanded(grant.id);
+          }}
+          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium border transition cursor-pointer group ${
+            isExpanded
+              ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+              : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
+          }`}
+          title={isExpanded ? 'Collapse user list' : `Click to view user names (${userSummary})`}
+        >
+          <Users size={11} className="text-emerald-600" />
+          <span>{scopes.length} {scopes.length === 1 ? 'User' : 'Users'}</span>
+          <ChevronDown
+            size={11}
+            className={`text-emerald-500 group-hover:text-emerald-700 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+          />
+        </button>
+
+        {isExpanded && (
+          <div className="mt-1.5 flex flex-wrap gap-1 p-1.5 bg-slate-50 border border-slate-200 rounded max-w-sm animate-fadeIn">
+            {scopes.map((s) => {
+              const uName = s.targetUser?.name || s.targetUserId;
+              return (
+                <span
+                  key={s.id || s.targetUserId}
+                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-white text-slate-700 border border-slate-200 shadow-2xs"
+                  title={s.targetUser?.email ? `${uName} (${s.targetUser.email})` : uName}
+                >
+                  <User size={9} className="text-slate-400 shrink-0" />
+                  <span className="truncate max-w-[150px]">{uName}</span>
+                </span>
+              );
+            })}
+          </div>
+        )}
       </div>
     );
   };
