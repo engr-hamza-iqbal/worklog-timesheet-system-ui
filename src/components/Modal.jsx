@@ -27,7 +27,7 @@ export default function Modal({ isOpen, onClose, title, size = 'md', children })
 
   if (!isOpen) return null;
 
-  const widthClass = size === 'sm' ? 'max-w-sm' : size === 'lg' ? 'max-w-2xl' : 'max-w-lg';
+  const widthClass = size === 'sm' ? 'max-w-sm' : size === 'lg' ? 'max-w-2xl' : size === 'xl' ? 'max-w-3xl' : 'max-w-lg';
 
   return (
     <div

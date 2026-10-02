@@ -12,6 +12,7 @@ import {
   Users,
   Shield,
   Mail,
+  History,
   X,
   LogOut,
   Sparkles,
@@ -196,6 +197,17 @@ export default function Sidebar({
                       <>
                         <Shield className={iconClass(isActive)} />
                         <span className="truncate">Access Management</span>
+                      </>
+                    )}
+                  </NavLink>
+                )}
+
+                {isAdmin && (
+                  <NavLink to="/audit-logs" onClick={handleItemClick} className={linkClass}>
+                    {({ isActive }) => (
+                      <>
+                        <History className={iconClass(isActive)} />
+                        <span className="truncate">Access Audit Logs</span>
                       </>
                     )}
                   </NavLink>

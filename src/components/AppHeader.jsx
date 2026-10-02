@@ -23,6 +23,8 @@ const ROUTE_TITLES = {
   '/clients': { title: 'Clients & Projects', category: 'Administration' },
   '/users': { title: 'Users & Assignments', category: 'Administration' },
   '/access': { title: 'Access Management', category: 'Administration' },
+  '/audit-logs': { title: 'Access Audit Logs', category: 'Administration' },
+  '/access-logs': { title: 'Access Audit Logs', category: 'Administration' },
   '/emails': { title: 'Email Audit Log', category: 'Administration' },
   '/unauthorized': { title: 'Not Authorised', category: 'Security' },
 };

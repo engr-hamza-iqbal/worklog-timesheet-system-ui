@@ -13,8 +13,6 @@ import {
   BarChart3,
   DollarSign,
   Search,
-  ArrowRight,
-  Sparkles,
   CheckCircle2,
   XCircle,
   ArrowUpDown,
@@ -31,7 +29,7 @@ const SYSTEM_CAPABILITIES = [
   { code: 'DECIDE_TIME_OFF', name: 'Decide Time Off', desc: 'Approve or decline employee time-off requests', icon: Calendar },
   { code: 'MANAGE_CLIENTS_PROJECTS', name: 'Manage Clients & Projects', desc: 'Create and configure clients, projects, and billing rates', icon: Briefcase },
   { code: 'ASSIGN_PROJECTS', name: 'Assign Projects', desc: 'Assign and remove employees on client projects', icon: Briefcase },
-  { code: 'MANAGE_USERS', name: 'Manage Users', desc: 'Manage user accounts and issue capability grants', icon: Users },
+  { code: 'MANAGE_USERS', name: 'Manage Users', desc: 'Create and manage user accounts', icon: Users },
   { code: 'VIEW_REPORTS', name: 'View Reports', desc: 'Access cross-project summary reports and CSV exports', icon: FileSpreadsheet },
   { code: 'VIEW_ANALYTICS', name: 'View Analytics', desc: 'View utilization rates and billable hours distribution', icon: BarChart3 },
   { code: 'VIEW_BILLING', name: 'View Billing', desc: 'Access sensitive billing rate figures and monetary totals', icon: DollarSign },
@@ -344,8 +342,8 @@ export default function DashboardPage() {
                                     type="button"
                                     onClick={() => toggleScopeExpanded(cap.code)}
                                     className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-medium border transition cursor-pointer group ${isExpanded
-                                        ? 'bg-blue-100 text-blue-800 border-blue-300'
-                                        : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200'
+                                      ? 'bg-blue-100 text-blue-800 border-blue-300'
+                                      : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200'
                                       }`}
                                     title={
                                       isExpanded

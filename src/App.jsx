@@ -17,6 +17,7 @@ import TimeOffPage from './pages/TimeOffPage.jsx';
 import ReportsPage from './pages/ReportsPage.jsx';
 import AnalyticsPage from './pages/AnalyticsPage.jsx';
 import EmailLogPage from './pages/EmailLogPage.jsx';
+import AuditLogsPage from './pages/AuditLogsPage.jsx';
 import LandingPage from './pages/LandingPage.jsx';
 import NotAuthorisedPage from './pages/NotAuthorisedPage.jsx';
 import './App.css';
@@ -134,6 +135,19 @@ export default function App() {
                   <EmailLogPage />
                 </ProtectedRoute>
               }
+            />
+
+            <Route
+              path="/audit-logs"
+              element={
+                <ProtectedRoute adminOnly>
+                  <AuditLogsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/access-logs"
+              element={<Navigate to="/audit-logs" replace />}
             />
 
             <Route

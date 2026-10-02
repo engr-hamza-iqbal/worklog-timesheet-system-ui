@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Shield, XCircle, Plus, RefreshCw, AlertCircle,
   ChevronDown, ChevronUp, Clock, CheckCircle, Loader2,
   ArrowUpDown, ArrowUp, ArrowDown, Users, Search, Check,
   FolderOpen, User, Trash2, ShieldAlert, Pencil, Calendar,
+  History,
 } from 'lucide-react';
 import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -1514,23 +1516,24 @@ function BulkGrantTeamForm({ users, projects, currentUserId, onSuccess, onCancel
 
 // ─── Bulk Revoke Capability from Team Form ────────────────────────────────────
 
-function BulkRevokeTeamForm({ users, onSuccess, onCancel }) {
+function BulkRevokeTeamForm({ users, currentUserId, onSuccess, onCancel }) {
   const [selectedCapability, setSelectedCapability] = useState('VIEW_OTHER_RECORDS');
   const [selectedUserIds, setSelectedUserIds] = useState(new Set());
   const [userSearch, setUserSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Active non-admin employees who currently hold this capability
+  // Active non-admin employees who currently hold this capability (excluding self)
   const eligibleUsers = useMemo(() => {
     return users.filter(
       (u) =>
         u.isActive &&
         u.accountType !== 'ADMIN' &&
+        (!currentUserId || u.id !== currentUserId) &&
         Array.isArray(u.activeCapabilityCodes) &&
         u.activeCapabilityCodes.includes(selectedCapability)
     );
-  }, [users, selectedCapability]);
+  }, [users, selectedCapability, currentUserId]);
 
   // When capability changes, clear selection
   useEffect(() => {
@@ -2026,6 +2029,15 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
     <div>
       <ErrorAlert message={error} onDismiss={() => setError('')} />
 
+      {isSelf && (
+        <div className="mb-3 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800 flex items-center gap-2">
+          <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0" />
+          <span>
+            <strong>Self-Action Prohibited:</strong> You cannot grant, modify, or revoke capability grants on your own account.
+          </span>
+        </div>
+      )}
+
       {/* Multiple capabilities revoke action bar */}
       {selectedGrantIds.size > 0 && !isSelf && (
         <div className="bg-red-50/90 border border-red-200 px-4 py-2.5 rounded-lg flex items-center justify-between gap-3 mt-2 animate-fadeIn">
@@ -2385,200 +2397,6 @@ function UserAccessPanel({ targetUser, users, projects, currentUserId }) {
   );
 }
 
-// ─── Audit Log ────────────────────────────────────────────────────────────────
-
-function AuditLog() {
-  const [logs, setLogs] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const LIMIT = 10;
-
-  const fetchLogs = useCallback(async (pageNumber = 1) => {
-    setLoading(true);
-    try {
-      const offset = (pageNumber - 1) * LIMIT;
-      const res = await api.get(`/api/access/audit-logs?limit=${LIMIT}&offset=${offset}`);
-      const data = res.data;
-      if (data && Array.isArray(data.logs)) {
-        setLogs(data.logs);
-        setTotal(data.total || data.logs.length);
-      } else if (Array.isArray(data)) {
-        setLogs(data);
-        setTotal(data.length);
-      }
-    } catch {
-      // Keep previous logs on error
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchLogs(page);
-  }, [page, fetchLogs]);
-
-  const [logSortField, setLogSortField] = useState('createdAt');
-  const [logSortOrder, setLogSortOrder] = useState('desc'); // 'asc' | 'desc'
-
-  const toggleLogSort = (field) => {
-    if (logSortField === field) {
-      setLogSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setLogSortField(field);
-      setLogSortOrder(field === 'createdAt' ? 'desc' : 'asc');
-    }
-  };
-
-  const sortedLogs = useMemo(() => {
-    return [...logs].sort((a, b) => {
-      let cmp = 0;
-      if (logSortField === 'action') {
-        cmp = (a.action || '').localeCompare(b.action || '');
-      } else if (logSortField === 'capability') {
-        cmp = (a.capabilityCode || '').localeCompare(b.capabilityCode || '');
-      } else if (logSortField === 'actor') {
-        cmp = (a.actor?.name || '').localeCompare(b.actor?.name || '');
-      } else if (logSortField === 'target') {
-        cmp = (a.targetUser?.name || '').localeCompare(b.targetUser?.name || '');
-      } else if (logSortField === 'createdAt') {
-        cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-      }
-      return logSortOrder === 'asc' ? cmp : -cmp;
-    });
-  }, [logs, logSortField, logSortOrder]);
-
-  const ACTION_COLORS = {
-    GRANT:         'text-emerald-700 bg-emerald-50',
-    REVOKE:        'text-red-700 bg-red-50',
-    CHANGE_SCOPE:  'text-blue-700 bg-blue-50',
-    CHANGE_EXPIRY: 'text-amber-700 bg-amber-50',
-  };
-
-  return (
-    <div className="mt-8 bg-white rounded-lg border border-slate-200 overflow-hidden">
-      <div className="px-5 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-        <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Access Audit Log</span>
-        <span className="text-[11px] text-slate-400">{total} events</span>
-      </div>
-
-      {loading && logs.length === 0 ? (
-        <div className="flex justify-center py-8">
-          <RefreshCw className="w-4 h-4 text-slate-400 animate-spin" />
-        </div>
-      ) : logs.length === 0 ? (
-        <EmptyState icon={<Shield className="w-7 h-7" />} title="No audit events yet." />
-      ) : (
-        <div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left min-w-[440px]">
-              <thead className="bg-slate-50 text-[10px] font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 select-none">
-                <tr>
-                  <th
-                    onClick={() => toggleLogSort('action')}
-                    className="py-2 px-5 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span>Action</span>
-                      {logSortField === 'action' ? (
-                        logSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
-                      ) : (
-                        <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
-                      )}
-                    </div>
-                  </th>
-                  <th
-                    onClick={() => toggleLogSort('capability')}
-                    className="py-2 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span>Capability</span>
-                      {logSortField === 'capability' ? (
-                        logSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
-                      ) : (
-                        <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
-                      )}
-                    </div>
-                  </th>
-                  <th
-                    onClick={() => toggleLogSort('actor')}
-                    className="py-2 px-4 hidden sm:table-cell cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span>Actor</span>
-                      {logSortField === 'actor' ? (
-                        logSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
-                      ) : (
-                        <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
-                      )}
-                    </div>
-                  </th>
-                  <th
-                    onClick={() => toggleLogSort('target')}
-                    className="py-2 px-4 hidden sm:table-cell cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span>Target</span>
-                      {logSortField === 'target' ? (
-                        logSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
-                      ) : (
-                        <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
-                      )}
-                    </div>
-                  </th>
-                  <th
-                    onClick={() => toggleLogSort('createdAt')}
-                    className="py-2 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span>When</span>
-                      {logSortField === 'createdAt' ? (
-                        logSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
-                      ) : (
-                        <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
-                      )}
-                    </div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {sortedLogs.map((log) => (
-                  <tr key={log.id} className="hover:bg-slate-50/50 transition">
-                    <td className="py-2.5 px-5">
-                      <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${ACTION_COLORS[log.action] || 'text-slate-700'}`}>
-                        {log.action}
-                      </span>
-                    </td>
-                    <td className="py-2.5 px-4 font-mono text-[11px] text-slate-600">
-                      {log.capabilityCode}
-                    </td>
-                    <td className="py-2.5 px-4 text-slate-600 hidden sm:table-cell">
-                      {log.actor?.name || '—'}
-                    </td>
-                    <td className="py-2.5 px-4 text-slate-600 hidden sm:table-cell">
-                      {log.targetUser?.name || '—'}
-                    </td>
-                    <td className="py-2.5 px-4 text-slate-500 whitespace-nowrap">
-                      {new Date(log.createdAt).toLocaleString('en-GB', {
-                        day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
-                      })}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <Pagination
-            currentPage={page}
-            totalItems={total}
-            itemsPerPage={LIMIT}
-            onPageChange={(nextPage) => setPage(nextPage)}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
@@ -2661,6 +2479,13 @@ export default function AccessPage() {
           </p>
         </div>
         <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+          <Link
+            to="/audit-logs"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer"
+          >
+            <History className="w-3.5 h-3.5 text-slate-500" />
+            Access Audit Logs
+          </Link>
           <button
             type="button"
             onClick={() => fetchAccessData(false)}
@@ -2797,8 +2622,6 @@ export default function AccessPage() {
               />
             </div>
           )}
-
-          <AuditLog />
         </div>
       </div>
 
@@ -2833,6 +2656,7 @@ export default function AccessPage() {
       >
         <BulkRevokeTeamForm
           users={users}
+          currentUserId={currentUser?.id}
           onSuccess={(capabilityCode, userIds) => {
             setBulkRevokeModal(false);
             fetchAccessData(false);

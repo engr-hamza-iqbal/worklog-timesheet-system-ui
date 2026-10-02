@@ -99,7 +99,7 @@ function CreateUserForm({ onSuccess, onCancel }) {
 
 // ─── Assign Projects Form (Multiple Unique Projects to Employee) ─────────────
 
-function AssignProjectsForm({ user, assignedProjectIds, onSuccess, onCancel }) {
+function AssignProjectsForm({ user, assignedProjectIds, allowedProjectIds, onSuccess, onCancel }) {
   const [allProjects, setAllProjects] = useState([]);
   const [selectedProjectIds, setSelectedProjectIds] = useState(new Set());
   const [projectSearch, setProjectSearch] = useState('');
@@ -119,8 +119,12 @@ function AssignProjectsForm({ user, assignedProjectIds, onSuccess, onCancel }) {
   }, []);
 
   const availableProjects = useMemo(() => {
-    return allProjects.filter((p) => !assignedProjectIds.has(p.id));
-  }, [allProjects, assignedProjectIds]);
+    let list = allProjects.filter((p) => !assignedProjectIds.has(p.id));
+    if (allowedProjectIds && allowedProjectIds.length > 0) {
+      list = list.filter((p) => allowedProjectIds.includes(p.id));
+    }
+    return list;
+  }, [allProjects, assignedProjectIds, allowedProjectIds]);
 
   const filteredAvailable = useMemo(() => {
     const q = projectSearch.toLowerCase().trim();
@@ -312,7 +316,7 @@ function AssignProjectsForm({ user, assignedProjectIds, onSuccess, onCancel }) {
 
 // ─── Bulk Assign Team Form (Assign Project to Multiple Employees) ─────────────
 
-function BulkAssignTeamForm({ users, allowedAssignUserIds, onSuccess, onCancel }) {
+function BulkAssignTeamForm({ users, allowedAssignUserIds, allowedProjectIds, currentUserId, onSuccess, onCancel }) {
   const [projects, setProjects] = useState([]);
   const [selectedProjectId, setSelectedProjectId] = useState('');
   const [selectedUserIds, setSelectedUserIds] = useState(new Set());
@@ -324,13 +328,16 @@ function BulkAssignTeamForm({ users, allowedAssignUserIds, onSuccess, onCancel }
   useEffect(() => {
     api.get('/api/projects?activeOnly=true')
       .then((res) => {
-        const list = Array.isArray(res.data) ? res.data : [];
+        let list = Array.isArray(res.data) ? res.data : [];
+        if (allowedProjectIds && allowedProjectIds.length > 0) {
+          list = list.filter((p) => allowedProjectIds.includes(p.id));
+        }
         setProjects(list);
         if (list.length > 0) setSelectedProjectId(list[0].id);
       })
       .catch(() => setError('Failed to load projects.'))
       .finally(() => setFetching(false));
-  }, []);
+  }, [allowedProjectIds]);
 
   const selectedProject = useMemo(() => {
     return projects.find((p) => p.id === selectedProjectId);
@@ -376,7 +383,7 @@ function BulkAssignTeamForm({ users, allowedAssignUserIds, onSuccess, onCancel }
   }, [filteredUsers, alreadyAssignedUserIds]);
 
   const toggleUser = (id) => {
-    if (alreadyAssignedUserIds.has(id)) return;
+    if (alreadyAssignedUserIds.has(id) || (currentUserId && id === currentUserId)) return;
     setSelectedUserIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -386,7 +393,7 @@ function BulkAssignTeamForm({ users, allowedAssignUserIds, onSuccess, onCancel }
   };
 
   const selectAllUnassigned = () => {
-    setSelectedUserIds(new Set(unassignedFilteredUsers.map((u) => u.id)));
+    setSelectedUserIds(new Set(unassignedFilteredUsers.filter((u) => !currentUserId || u.id !== currentUserId).map((u) => u.id)));
   };
 
   const clearSelection = () => {
@@ -498,14 +505,16 @@ function BulkAssignTeamForm({ users, allowedAssignUserIds, onSuccess, onCancel }
         <div className="max-h-64 overflow-y-auto space-y-1 border border-slate-200 rounded p-1.5 bg-slate-50/50">
           {filteredUsers.map((user) => {
             const isAlready = alreadyAssignedUserIds.has(user.id);
+            const isSelf = Boolean(currentUserId && user.id === currentUserId);
+            const isDisabled = isAlready || isSelf;
             const isSelected = selectedUserIds.has(user.id);
 
             return (
               <div
                 key={user.id}
-                onClick={() => toggleUser(user.id)}
+                onClick={() => !isDisabled && toggleUser(user.id)}
                 className={`flex items-center justify-between px-3 py-2 rounded text-xs transition select-none ${
-                  isAlready
+                  isDisabled
                     ? 'bg-slate-100/70 border border-slate-200 opacity-60 cursor-not-allowed'
                     : isSelected
                     ? 'bg-indigo-50/90 border border-indigo-200 text-indigo-950 font-medium cursor-pointer'
@@ -516,7 +525,7 @@ function BulkAssignTeamForm({ users, allowedAssignUserIds, onSuccess, onCancel }
                   <input
                     type="checkbox"
                     checked={isAlready || isSelected}
-                    disabled={isAlready}
+                    disabled={isDisabled}
                     onChange={() => {}}
                     className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 pointer-events-none"
                   />
@@ -530,7 +539,11 @@ function BulkAssignTeamForm({ users, allowedAssignUserIds, onSuccess, onCancel }
                 </div>
 
                 <div>
-                  {isAlready ? (
+                  {isSelf ? (
+                    <span className="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200" title="You cannot assign yourself to projects">
+                      Self (Prohibited)
+                    </span>
+                  ) : isAlready ? (
                     <span className="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-slate-200 text-slate-600">
                       Already Assigned
                     </span>
@@ -579,7 +592,7 @@ function BulkAssignTeamForm({ users, allowedAssignUserIds, onSuccess, onCancel }
 
 // ─── User Row (expanded assignments) ─────────────────────────────────────────
 
-function UserAssignments({ user, canAssign, onAssigned }) {
+function UserAssignments({ user, canAssign, canRemoveProject, allowedAssignProjectIds, userHasProjectInCapabilities, currentUserId, onAssigned }) {
   const [assignments, setAssignments] = useState(user.activeAssignments || []);
   const [showAssignForm, setShowAssignForm] = useState(false);
   const [removingId, setRemovingId] = useState(null);
@@ -651,7 +664,7 @@ function UserAssignments({ user, canAssign, onAssigned }) {
                 variant={project.status === 'ACTIVE' ? 'active' : 'closed'}
                 label={project.status === 'ACTIVE' ? 'Active' : 'Closed'}
               />
-              {canAssign && (
+              {canAssign && (!canRemoveProject || canRemoveProject(project, user)) ? (
                 <button
                   onClick={() => handleRemove(project.id)}
                   disabled={removingId === project.id}
@@ -662,7 +675,21 @@ function UserAssignments({ user, canAssign, onAssigned }) {
                     ? <RefreshCw className="w-3 h-3 animate-spin" />
                     : '×'}
                 </button>
-              )}
+              ) : currentUserId && user.id === currentUserId ? (
+                <span
+                  className="ml-1 text-slate-400 text-[10px] cursor-help"
+                  title="You cannot remove yourself from project assignments"
+                >
+                  🔒
+                </span>
+              ) : userHasProjectInCapabilities && userHasProjectInCapabilities(user, project.id) ? (
+                <span
+                  className="ml-1 text-slate-400 text-[10px] cursor-help"
+                  title="Cannot remove: employee holds active capabilities scoped to this project"
+                >
+                  🔒
+                </span>
+              ) : null}
             </div>
           ))}
         </div>
@@ -675,6 +702,7 @@ function UserAssignments({ user, canAssign, onAssigned }) {
           <AssignProjectsForm
             user={user}
             assignedProjectIds={new Set(assignments.map((p) => p.id))}
+            allowedProjectIds={allowedAssignProjectIds}
             onSuccess={(newlyAddedProjects) => {
               setShowAssignForm(false);
               const updated = [...assignments, ...newlyAddedProjects];
@@ -714,12 +742,14 @@ export default function UsersPage() {
 
   const canAssignUser = useCallback((targetUser) => {
     if (!canAssign || !targetUser) return false;
+    // Business Rule: Nobody may assign projects to themselves
+    if (targetUser.id === currentUser?.id) return false;
     if (isAssignGlobal) return true;
     if (allowedAssignUserIds && allowedAssignUserIds.length > 0) {
       return allowedAssignUserIds.includes(targetUser.id);
     }
     return true;
-  }, [canAssign, isAssignGlobal, allowedAssignUserIds]);
+  }, [canAssign, currentUser, isAssignGlobal, allowedAssignUserIds]);
 
   const manageUsersCap = capabilities?.['MANAGE_USERS'];
   const isManageUsersGlobal = isAdmin || manageUsersCap?.isGlobal;
@@ -732,8 +762,56 @@ export default function UsersPage() {
     return manageUsersCap?.allowedProjectIds || [];
   }, [isManageUsersGlobal, manageUsersCap]);
 
+  const allowedAssignProjectIds = useMemo(() => {
+    if (isAssignGlobal) return null;
+    if (assignCap?.allowedProjectIds && assignCap.allowedProjectIds.length > 0) {
+      return assignCap.allowedProjectIds;
+    }
+    const fallback = new Set();
+    if (allowedManageProjectIds && allowedManageProjectIds.length > 0) {
+      allowedManageProjectIds.forEach((id) => fallback.add(id));
+    }
+    const manageClientsCap = capabilities?.['MANAGE_CLIENTS_PROJECTS'];
+    if (manageClientsCap?.allowedProjectIds && manageClientsCap.allowedProjectIds.length > 0) {
+      manageClientsCap.allowedProjectIds.forEach((id) => fallback.add(id));
+    }
+    if (fallback.size > 0) {
+      return Array.from(fallback);
+    }
+    return null;
+  }, [isAssignGlobal, assignCap, allowedManageProjectIds, capabilities]);
+
+  const userHasProjectInCapabilities = useCallback((userToCheck, projectId) => {
+    if (!userToCheck) return false;
+    if (userToCheck.id === currentUser?.id && capabilities) {
+      for (const code of Object.keys(capabilities)) {
+        const cap = capabilities[code];
+        if (cap && Array.isArray(cap.allowedProjectIds) && cap.allowedProjectIds.includes(projectId)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }, [capabilities, currentUser]);
+
+  const canRemoveProject = useCallback((project, targetUser) => {
+    if (!canAssign || !project) return false;
+    // Business Rule: Nobody may remove themselves from project assignments
+    if (targetUser && targetUser.id === currentUser?.id) {
+      return false;
+    }
+    if (isAdmin) return true;
+    if (isAssignGlobal) return true;
+    if (allowedAssignProjectIds) {
+      return allowedAssignProjectIds.includes(project.id);
+    }
+    return true;
+  }, [canAssign, currentUser, isAdmin, isAssignGlobal, allowedAssignProjectIds]);
+
   const canManageSpecificUser = useCallback((targetUser) => {
     if (!canManageUsers || !targetUser) return false;
+    // Business Rule: Nobody may manage their own user status
+    if (targetUser.id === currentUser?.id) return false;
     if (isManageUsersGlobal) return true;
     if (allowedManageUserIds && allowedManageUserIds.length > 0) {
       return allowedManageUserIds.includes(targetUser.id);
@@ -742,7 +820,7 @@ export default function UsersPage() {
       return (targetUser.activeAssignments || []).some((p) => allowedManageProjectIds.includes(p.id));
     }
     return false;
-  }, [canManageUsers, isManageUsersGlobal, allowedManageUserIds, allowedManageProjectIds]);
+  }, [canManageUsers, currentUser, isManageUsersGlobal, allowedManageUserIds, allowedManageProjectIds]);
 
   const canCreateUser = isAdmin || isManageUsersGlobal;
 
@@ -1117,6 +1195,10 @@ export default function UsersPage() {
                   <UserAssignments
                     user={user}
                     canAssign={canAssignUser(user)}
+                    canRemoveProject={canRemoveProject}
+                    allowedAssignProjectIds={allowedAssignProjectIds}
+                    userHasProjectInCapabilities={userHasProjectInCapabilities}
+                    currentUserId={currentUser?.id}
                     onAssigned={(userId, updatedList) => {
                       if (userId && updatedList) {
                         setUsers((prev) =>
@@ -1156,6 +1238,8 @@ export default function UsersPage() {
         <BulkAssignTeamForm
           users={users}
           allowedAssignUserIds={allowedAssignUserIds}
+          allowedProjectIds={allowedAssignProjectIds}
+          currentUserId={currentUser?.id}
           onSuccess={(project, userIds) => {
             setUsers((prev) =>
               prev.map((u) => {
