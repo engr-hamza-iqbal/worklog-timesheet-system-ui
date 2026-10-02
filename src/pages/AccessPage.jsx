@@ -150,25 +150,7 @@ function GrantForm({ targetUser, grantedCodes, users, projects, onSuccess, onCan
       broadcastAuthSync();
       onSuccess();
     } catch (err) {
-      // Fallback: individually grant if needed
-      try {
-        await Promise.all(
-          codes.map((code) =>
-            api.post('/api/access/grants', {
-              userId: targetUser.id,
-              capabilityCode: code,
-              expiresAt: expiresAt || undefined,
-              scopeType: scopeType === 'GLOBAL' ? undefined : scopeType,
-              targetUserIds: scopeType === 'USER' ? targetUserIds : undefined,
-              targetProjectIds: scopeType === 'PROJECT' ? targetProjectIds : undefined,
-            })
-          )
-        );
-        broadcastAuthSync();
-        onSuccess();
-      } catch (fallbackErr) {
-        setError(fallbackErr.message || err.message || 'Failed to grant capabilities.');
-      }
+      setError(err.message || 'Failed to grant capabilities.');
     } finally {
       setLoading(false);
     }
@@ -1311,25 +1293,7 @@ function BulkGrantTeamForm({ users, projects, currentUserId, onSuccess, onCancel
       broadcastAuthSync();
       onSuccess(selectedCapability, uIds);
     } catch (err) {
-      // Fallback: individually grant if needed
-      try {
-        await Promise.all(
-          uIds.map((uid) =>
-            api.post('/api/access/grants', {
-              userId: uid,
-              capabilityCode: selectedCapability,
-              expiresAt: expiresAt || undefined,
-              scopeType: scopeType === 'GLOBAL' ? undefined : scopeType,
-              targetUserIds: scopeType === 'USER' ? targetScopeUserIds : undefined,
-              targetProjectIds: scopeType === 'PROJECT' ? targetProjectIds : undefined,
-            })
-          )
-        );
-        broadcastAuthSync();
-        onSuccess(selectedCapability, uIds);
-      } catch (fallbackErr) {
-        setError(fallbackErr.message || err.message || 'Failed to grant capability.');
-      }
+      setError(err.message || 'Failed to grant capability.');
     } finally {
       setLoading(false);
     }
