@@ -25,6 +25,7 @@ import Pagination from "../components/Pagination.jsx";
 import { useNotification } from "../context/NotificationContext.jsx";
 import useTableResize from "../hooks/useTableResize.js";
 import ResizableTh from "../components/ResizableTh.jsx";
+import { timeEntryFormSchema } from "../validation/timeEntrySchemas.js";
 
 function dateOnly(date) {
   return new Date(
@@ -84,6 +85,11 @@ export default function TimesheetsPage() {
   const [historyProject, setHistoryProject] = useState("");
   const [historyStatus, setHistoryStatus] = useState("ALL");
   const [historyPage, setHistoryPage] = useState(1);
+  const [historyEntries, setHistoryEntries] = useState([]);
+  const [historyTotal, setHistoryTotal] = useState(0);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historySortField, setHistorySortField] = useState('workDate');
+  const [historySortOrder, setHistorySortOrder] = useState('desc');
   const ITEMS_PER_PAGE = 10;
 
   // Resizable columns for entries table
@@ -157,6 +163,35 @@ export default function TimesheetsPage() {
     load();
   }, [weekStart.toISOString()]);
 
+  async function loadHistory() {
+    try {
+      setHistoryLoading(true);
+      const response = await api.get("/api/timesheets/history", {
+        params: {
+          page: historyPage,
+          pageSize: ITEMS_PER_PAGE,
+          search: historySearch.trim() || undefined,
+          projectId: historyProject || undefined,
+          status: historyStatus === "ALL" ? undefined : historyStatus,
+          sortBy: historySortField,
+          sortOrder: historySortOrder,
+        },
+      });
+      setHistoryEntries(response.data?.entries || []);
+      setHistoryTotal(response.data?.pagination?.total || 0);
+    } catch (err) {
+      if (err.status !== 401 && err.code !== "ACCOUNT_DEACTIVATED") {
+        notify.error(err.message || "Failed to load entry history.");
+      }
+    } finally {
+      setHistoryLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === "entries") loadHistory();
+  }, [activeTab, historyPage, historySearch, historyProject, historyStatus, historySortField, historySortOrder]);
+
   function resetForm(date = form.workDate) {
     setEditingId(null);
     setForm({
@@ -183,11 +218,17 @@ export default function TimesheetsPage() {
 
   async function saveEntry(event) {
     event.preventDefault();
+    const parsed = timeEntryFormSchema.safeParse(form);
+    if (!parsed.success) {
+      notify.error(parsed.error.issues[0]?.message || "Please correct the entry details.");
+      return;
+    }
+
     const payload = {
-      projectId: form.projectId,
-      workDate: form.workDate,
-      durationMinutes: Math.round(Number(form.durationHours) * 60),
-      description: form.description,
+      projectId: parsed.data.projectId,
+      workDate: parsed.data.workDate,
+      durationMinutes: Math.round(parsed.data.durationHours * 60),
+      description: parsed.data.description,
     };
     setConfirmation({
       title: editingId ? "Update time entry" : "Add time entry",
@@ -297,14 +338,6 @@ export default function TimesheetsPage() {
 
   const totalWeekMinutes = days.reduce((sum, d) => sum + d.totalMinutes, 0);
 
-  // All entries flattened for "My Entries" history tab
-  const allEntriesFlat = useMemo(() => {
-    return days.flatMap((d) => d.entries);
-  }, [days]);
-
-  const [historySortField, setHistorySortField] = useState('workDate');
-  const [historySortOrder, setHistorySortOrder] = useState('desc'); // 'asc' | 'desc'
-
   const toggleHistorySort = (field) => {
     if (historySortField === field) {
       setHistorySortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
@@ -315,40 +348,7 @@ export default function TimesheetsPage() {
     setHistoryPage(1);
   };
 
-  const filteredHistory = useMemo(() => {
-    const list = allEntriesFlat.filter((entry) => {
-      if (historyStatus !== "ALL" && entry.status !== historyStatus) return false;
-      if (historyProject && entry.projectId !== historyProject) return false;
-      if (historySearch.trim()) {
-        const q = historySearch.trim().toLowerCase();
-        const desc = (entry.description || "").toLowerCase();
-        const proj = (entry.project?.name || "").toLowerCase();
-        if (!desc.includes(q) && !proj.includes(q)) return false;
-      }
-      return true;
-    });
-
-    return list.sort((a, b) => {
-      let cmp = 0;
-      if (historySortField === 'workDate') {
-        cmp = (a.workDate || '').localeCompare(b.workDate || '');
-      } else if (historySortField === 'project') {
-        cmp = (a.project?.name || '').localeCompare(b.project?.name || '');
-      } else if (historySortField === 'durationHours') {
-        cmp = (Number(a.durationHours) || 0) - (Number(b.durationHours) || 0);
-      } else if (historySortField === 'description') {
-        cmp = (a.description || '').localeCompare(b.description || '');
-      } else if (historySortField === 'status') {
-        cmp = (a.status || '').localeCompare(b.status || '');
-      }
-      return historySortOrder === 'asc' ? cmp : -cmp;
-    });
-  }, [allEntriesFlat, historyStatus, historyProject, historySearch, historySortField, historySortOrder]);
-
-  const paginatedHistory = useMemo(() => {
-    const start = (historyPage - 1) * ITEMS_PER_PAGE;
-    return filteredHistory.slice(start, start + ITEMS_PER_PAGE);
-  }, [filteredHistory, historyPage]);
+  const paginatedHistory = historyEntries;
 
   // Day navigation helper for Record Time screen
   const stepDate = (amount) => {
@@ -423,7 +423,7 @@ export default function TimesheetsPage() {
           <FileText size={16} />
           <span>My Entries</span>
           <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700">
-            {allEntriesFlat.length}
+            {historyTotal}
           </span>
         </button>
       </div>
@@ -934,7 +934,7 @@ export default function TimesheetsPage() {
             </div>
 
             <div className="text-xs font-semibold text-slate-600">
-              Showing {filteredHistory.length} entries
+              {historyLoading ? "Loading entries..." : `Showing ${historyTotal} entries`}
             </div>
           </div>
 
@@ -1087,7 +1087,7 @@ export default function TimesheetsPage() {
             {/* Pagination Controls */}
             <Pagination
               currentPage={historyPage}
-              totalItems={filteredHistory.length}
+              totalItems={historyTotal}
               itemsPerPage={ITEMS_PER_PAGE}
               onPageChange={setHistoryPage}
             />

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import api, { API_BASE_URL } from '../api/client.js';
+import api from '../api/client.js';
 
 const AuthContext = createContext(null);
 
@@ -123,31 +123,7 @@ export function AuthProvider({ children }) {
       // Ignore if BroadcastChannel not supported in environment
     }
 
-    // 2. Real-time Server-Sent Events (SSE) connection to backend
-    let eventSource;
-    try {
-      const sseUrl = `${API_BASE_URL}/api/auth/stream?token=${encodeURIComponent(token)}`;
-      eventSource = new EventSource(sseUrl);
-
-      eventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === 'CAPABILITIES_CHANGED') {
-            refreshUser();
-          }
-        } catch {
-          // Ignore ping or non-json messages
-        }
-      };
-
-      eventSource.onerror = () => {
-        // EventSource will automatically retry connecting
-      };
-    } catch (err) {
-      console.warn('SSE connection failed:', err);
-    }
-
-    // 3. Fallback: sync when tab becomes active / window focused
+    // Sync when a tab becomes active or the window receives focus.
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
         refreshUser();
@@ -164,7 +140,6 @@ export function AuthProvider({ children }) {
 
     return () => {
       if (channel) channel.close();
-      if (eventSource) eventSource.close();
       window.removeEventListener('visibilitychange', handleVisibility);
       window.removeEventListener('focus', refreshUser);
       window.removeEventListener('auth:permission-denied', handlePermissionDenied);
