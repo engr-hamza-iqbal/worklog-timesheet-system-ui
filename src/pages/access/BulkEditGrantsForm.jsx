@@ -6,7 +6,7 @@ import { broadcastAuthSync, ErrorAlert } from './helpers.jsx';
 
 // ─── Bulk Edit Capabilities Form ─────────────────────────────────────────────
 
-export default function BulkEditGrantsForm({ selectedGrants, targetUser, users, projects, onSuccess, onCancel }) {
+export default function BulkEditGrantsForm({ selectedGrants = [], targetUser, users, projects, onSuccess, onCancel }) {
   const [updateExpiry, setUpdateExpiry] = useState(true);
   const [expiresAt, setExpiresAt] = useState('');
   const [isPermanent, setIsPermanent] = useState(false);
@@ -22,7 +22,8 @@ export default function BulkEditGrantsForm({ selectedGrants, targetUser, users, 
   const [error, setError] = useState('');
 
   const addDaysToExpiry = (days) => {
-    const base = expiresAt ? new Date(expiresAt) : new Date();
+    const today = new Date();
+    const base = expiresAt && new Date(expiresAt) > today ? new Date(expiresAt) : today;
     base.setDate(base.getDate() + days);
     setExpiresAt(base.toISOString().split('T')[0]);
     setIsPermanent(false);
@@ -64,6 +65,10 @@ export default function BulkEditGrantsForm({ selectedGrants, targetUser, users, 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!selectedGrants || selectedGrants.length === 0) {
+      setError('Please select at least one capability to update.');
+      return;
+    }
     if (!updateExpiry && !updateScope) {
       setError('Please choose to update expiration date, scope, or both.');
       return;

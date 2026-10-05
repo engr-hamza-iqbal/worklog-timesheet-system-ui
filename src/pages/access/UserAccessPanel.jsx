@@ -92,6 +92,11 @@ export default function UserAccessPanel({ targetUser, users, projects, currentUs
   const grantedCodes = new Set(Object.keys(activeByCode));
   const isSelf = targetUser.id === currentUserId;
 
+  const selectedGrantsList = useMemo(() => {
+    const all = [...Object.values(activeByCode), ...Object.values(expiredByCode)];
+    return all.filter((g) => selectedGrantIds.has(g.id));
+  }, [activeByCode, expiredByCode, selectedGrantIds]);
+
   // Single grant revoke
   const handleRevoke = (grantId) => {
     setRevokeConfirmation(grantId);
@@ -664,7 +669,7 @@ export default function UserAccessPanel({ targetUser, users, projects, currentUs
         size="lg"
       >
         <BulkEditGrantsForm
-          selectedGrants={activeGrants.filter((g) => selectedGrantIds.has(g.id))}
+          selectedGrants={selectedGrantsList}
           targetUser={targetUser}
           users={users}
           projects={projects}
