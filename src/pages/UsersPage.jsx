@@ -12,6 +12,8 @@ import EmptyState from '../components/EmptyState.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import Pagination from '../components/Pagination.jsx';
 import { useNotification } from '../context/NotificationContext.jsx';
+import useTableResize from '../hooks/useTableResize.js';
+import ResizableTh from '../components/ResizableTh.jsx';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -837,6 +839,15 @@ export default function UsersPage() {
   const [togglingUserId, setTogglingUserId] = useState(null);
   const [isTogglingStatus, setIsTogglingStatus] = useState(false);
 
+  // Resizable columns for users table
+  const { columnWidths, startResize } = useTableResize({
+    name: 260,
+    accountType: 130,
+    isActive: 130,
+    projects: 140,
+    actions: 140,
+  });
+
   // GET /api/users → { success, data: [...users], message }
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -1026,193 +1037,235 @@ export default function UsersPage() {
             }
           />
         ) : (
-          <div>
-            {/* Table header - desktop */}
-            <div className="hidden sm:grid grid-cols-12 gap-4 px-5 py-2.5 bg-slate-50 border-b border-slate-200 text-[10px] font-medium text-slate-500 uppercase tracking-wider">
-              <div
-                onClick={() => toggleSort('name')}
-                className="col-span-4 flex items-center gap-1.5 cursor-pointer select-none hover:text-slate-800 transition"
-              >
-                <span>Name / Email</span>
-                {sortField === 'name' ? (
-                  sortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
-                ) : (
-                  <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
-                )}
-              </div>
-              <div
-                onClick={() => toggleSort('accountType')}
-                className="col-span-2 flex items-center gap-1.5 cursor-pointer select-none hover:text-slate-800 transition"
-              >
-                <span>Type</span>
-                {sortField === 'accountType' ? (
-                  sortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
-                ) : (
-                  <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
-                )}
-              </div>
-              <div
-                onClick={() => toggleSort('isActive')}
-                className="col-span-2 flex items-center gap-1.5 cursor-pointer select-none hover:text-slate-800 transition"
-              >
-                <span>Status</span>
-                {sortField === 'isActive' ? (
-                  sortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
-                ) : (
-                  <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
-                )}
-              </div>
-              <div
-                onClick={() => toggleSort('projects')}
-                className="col-span-2 flex items-center gap-1.5 cursor-pointer select-none hover:text-slate-800 transition"
-              >
-                <span>Projects</span>
-                {sortField === 'projects' ? (
-                  sortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600" /> : <ArrowDown size={11} className="text-indigo-600" />
-                ) : (
-                  <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
-                )}
-              </div>
-              {(canManageUsers || canAssign) && <div className="col-span-2 text-right">Actions</div>}
-            </div>
-
-            {paginatedUsers.map((user) => (
-              <div key={user.id} className="border-b border-slate-100 last:border-0">
-                {/* Row */}
-                <div
-                  onClick={() => setExpandedId((prev) => prev === user.id ? null : user.id)}
-                  className="grid grid-cols-12 gap-2 sm:gap-4 px-5 py-3.5 items-center hover:bg-slate-50/60 transition cursor-pointer"
-                >
-                  {/* Name + email */}
-                  <div className="col-span-8 sm:col-span-4 min-w-0">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-xs font-semibold text-slate-600 shrink-0">
-                        {user.name.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-xs font-medium text-slate-900 truncate">{user.name}</div>
-                        <div className="text-[11px] text-slate-400 truncate">{user.email}</div>
-                        {/* Compact mobile badges */}
-                        <div className="flex sm:hidden items-center gap-1.5 mt-1 flex-wrap">
-                          <Badge
-                            variant={user.accountType === 'ADMIN' ? 'admin' : 'employee'}
-                            label={user.accountType === 'ADMIN' ? 'Admin' : 'Employee'}
-                          />
-                          <Badge variant={user.isActive ? 'active' : 'inactive'} label={user.isActive ? 'Active' : 'Inactive'} dot />
-                        </div>
-                      </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs table-fixed min-w-[700px]">
+              <thead className="bg-slate-50 border-b border-slate-200 text-[10px] font-medium text-slate-500 uppercase tracking-wider select-none">
+                <tr>
+                  <ResizableTh
+                    width={columnWidths.name}
+                    onResizeStart={(e) => startResize('name', e)}
+                    onClick={() => toggleSort('name')}
+                    className="py-2.5 px-5 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  >
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="truncate">Name / Email</span>
+                      {sortField === 'name' ? (
+                        sortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600 shrink-0" /> : <ArrowDown size={11} className="text-indigo-600 shrink-0" />
+                      ) : (
+                        <ArrowUpDown size={11} className="text-slate-400 opacity-60 shrink-0" />
+                      )}
                     </div>
-                  </div>
-
-                  {/* Type */}
-                  <div className="hidden sm:block col-span-2">
-                    <Badge
-                      variant={user.accountType === 'ADMIN' ? 'admin' : 'employee'}
-                      label={user.accountType === 'ADMIN' ? 'Admin' : 'Employee'}
-                    />
-                  </div>
-
-                  {/* Status */}
-                  <div className="hidden sm:block col-span-2">
-                    <Badge variant={user.isActive ? 'active' : 'inactive'} label={user.isActive ? 'Active' : 'Inactive'} dot />
-                  </div>
-
-                  {/* Active project count */}
-                  <div className="hidden sm:flex col-span-2 items-center text-xs text-slate-500">
-                    {user.accountType === 'ADMIN' ? (
-                      <span className="text-[11px] text-slate-400 italic">Global access</span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setExpandedId((prev) => (prev === user.id ? null : user.id));
-                        }}
-                        className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium transition cursor-pointer group ${
-                          expandedId === user.id
-                            ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
-                            : 'bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 border border-slate-200 hover:border-indigo-200'
-                        }`}
-                        title={
-                          (user.activeAssignments || []).length > 0
-                            ? `Assigned: ${(user.activeAssignments || []).map((p) => p.name).join(', ')} (click to expand)`
-                            : 'No projects assigned — click to manage'
-                        }
-                      >
-                        <FolderOpen
-                          className={`w-3.5 h-3.5 ${
-                            expandedId === user.id ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-600'
-                          }`}
-                        />
-                        <span>{(user.activeAssignments || []).length}</span>
-                        <ChevronDown
-                          className={`w-3 h-3 transition-transform ${
-                            expandedId === user.id ? 'rotate-180 text-indigo-600' : 'text-slate-400 group-hover:text-indigo-600'
-                          }`}
-                        />
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="col-span-4 sm:col-span-2 flex items-center justify-end gap-1.5">
-                    {canManageSpecificUser(user) && (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleToggleStatus(user); }}
-                        disabled={user.id === currentUser?.id || togglingUserId === user.id}
-                        title={user.id === currentUser?.id ? "Can't deactivate yourself" : ''}
-                        className="inline-flex items-center gap-1.5 px-2 py-1 text-[11px] font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        {togglingUserId === user.id ? (
-                          <>
-                            <Loader2 className="w-3 h-3 animate-spin text-slate-700" />
-                            <span className="hidden sm:inline">Processing...</span>
-                          </>
-                        ) : user.isActive ? (
-                          <>
-                            <UserX className="w-3 h-3 text-red-500" />
-                            <span className="hidden sm:inline">Deactivate</span>
-                          </>
-                        ) : (
-                          <>
-                            <UserCheck className="w-3 h-3 text-emerald-600" />
-                            <span className="hidden sm:inline">Activate</span>
-                          </>
-                        )}
-                      </button>
-                    )}
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setExpandedId((prev) => prev === user.id ? null : user.id); }}
-                      className="p-1 text-slate-400 hover:text-slate-700"
+                  </ResizableTh>
+                  <ResizableTh
+                    width={columnWidths.accountType}
+                    onResizeStart={(e) => startResize('accountType', e)}
+                    onClick={() => toggleSort('accountType')}
+                    className="py-2.5 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  >
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="truncate">Type</span>
+                      {sortField === 'accountType' ? (
+                        sortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600 shrink-0" /> : <ArrowDown size={11} className="text-indigo-600 shrink-0" />
+                      ) : (
+                        <ArrowUpDown size={11} className="text-slate-400 opacity-60 shrink-0" />
+                      )}
+                    </div>
+                  </ResizableTh>
+                  <ResizableTh
+                    width={columnWidths.isActive}
+                    onResizeStart={(e) => startResize('isActive', e)}
+                    onClick={() => toggleSort('isActive')}
+                    className="py-2.5 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  >
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="truncate">Status</span>
+                      {sortField === 'isActive' ? (
+                        sortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600 shrink-0" /> : <ArrowDown size={11} className="text-indigo-600 shrink-0" />
+                      ) : (
+                        <ArrowUpDown size={11} className="text-slate-400 opacity-60 shrink-0" />
+                      )}
+                    </div>
+                  </ResizableTh>
+                  <ResizableTh
+                    width={columnWidths.projects}
+                    onResizeStart={(e) => startResize('projects', e)}
+                    onClick={() => toggleSort('projects')}
+                    className="py-2.5 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  >
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="truncate">Projects</span>
+                      {sortField === 'projects' ? (
+                        sortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600 shrink-0" /> : <ArrowDown size={11} className="text-indigo-600 shrink-0" />
+                      ) : (
+                        <ArrowUpDown size={11} className="text-slate-400 opacity-60 shrink-0" />
+                      )}
+                    </div>
+                  </ResizableTh>
+                  {(canManageUsers || canAssign) && (
+                    <ResizableTh
+                      width={columnWidths.actions}
+                      resizable={false}
+                      className="py-2.5 px-4 text-right"
                     >
-                      {expandedId === user.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
+                      <span className="truncate">Actions</span>
+                    </ResizableTh>
+                  )}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {paginatedUsers.map((user) => (
+                  <React.Fragment key={user.id}>
+                    <tr
+                      onClick={() => setExpandedId((prev) => (prev === user.id ? null : user.id))}
+                      className="hover:bg-slate-50/60 transition cursor-pointer"
+                    >
+                      {/* Name + email */}
+                      <td className="py-3.5 px-5 truncate whitespace-nowrap overflow-hidden">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-xs font-semibold text-slate-600 shrink-0">
+                            {user.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0 truncate">
+                            <div className="text-xs font-medium text-slate-900 truncate" title={user.name}>
+                              {user.name}
+                            </div>
+                            <div className="text-[11px] text-slate-400 truncate" title={user.email}>
+                              {user.email}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
 
-                {/* Expanded assignments */}
-                {expandedId === user.id && (
-                  <UserAssignments
-                    user={user}
-                    canAssign={canAssignUser(user)}
-                    canRemoveProject={canRemoveProject}
-                    allowedAssignProjectIds={allowedAssignProjectIds}
-                    userHasProjectInCapabilities={userHasProjectInCapabilities}
-                    currentUserId={currentUser?.id}
-                    onAssigned={(userId, updatedList) => {
-                      if (userId && updatedList) {
-                        setUsers((prev) =>
-                          prev.map((u) =>
-                            u.id === userId ? { ...u, activeAssignments: updatedList } : u
-                          )
-                        );
-                      }
-                      fetchUsers();
-                    }}
-                  />
-                )}
-              </div>
-            ))}
+                      {/* Type */}
+                      <td className="py-3.5 px-4 truncate whitespace-nowrap overflow-hidden">
+                        <Badge
+                          variant={user.accountType === 'ADMIN' ? 'admin' : 'employee'}
+                          label={user.accountType === 'ADMIN' ? 'Admin' : 'Employee'}
+                        />
+                      </td>
+
+                      {/* Status */}
+                      <td className="py-3.5 px-4 truncate whitespace-nowrap overflow-hidden">
+                        <Badge
+                          variant={user.isActive ? 'active' : 'inactive'}
+                          label={user.isActive ? 'Active' : 'Inactive'}
+                          dot
+                        />
+                      </td>
+
+                      {/* Active project count */}
+                      <td className="py-3.5 px-4 truncate whitespace-nowrap overflow-hidden">
+                        {user.accountType === 'ADMIN' ? (
+                          <span className="text-[11px] text-slate-400 italic">Global access</span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setExpandedId((prev) => (prev === user.id ? null : user.id));
+                            }}
+                            className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium transition cursor-pointer group ${
+                              expandedId === user.id
+                                ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                                : 'bg-slate-100 hover:bg-indigo-50 text-slate-700 hover:text-indigo-700 border border-slate-200 hover:border-indigo-200'
+                            }`}
+                            title={
+                              (user.activeAssignments || []).length > 0
+                                ? `Assigned: ${(user.activeAssignments || []).map((p) => p.name).join(', ')} (click to expand)`
+                                : 'No projects assigned — click to manage'
+                            }
+                          >
+                            <FolderOpen
+                              className={`w-3.5 h-3.5 ${
+                                expandedId === user.id ? 'text-indigo-600' : 'text-slate-400 group-hover:text-indigo-600'
+                              }`}
+                            />
+                            <span>{(user.activeAssignments || []).length}</span>
+                            <ChevronDown
+                              className={`w-3 h-3 transition-transform ${
+                                expandedId === user.id ? 'rotate-180 text-indigo-600' : 'text-slate-400 group-hover:text-indigo-600'
+                              }`}
+                            />
+                          </button>
+                        )}
+                      </td>
+
+                      {/* Actions */}
+                      {(canManageUsers || canAssign) && (
+                        <td className="py-3.5 px-4 text-right truncate whitespace-nowrap overflow-hidden">
+                          <div className="flex items-center justify-end gap-1.5 truncate">
+                            {canManageSpecificUser(user) && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleToggleStatus(user);
+                                }}
+                                disabled={user.id === currentUser?.id || togglingUserId === user.id}
+                                title={user.id === currentUser?.id ? "Can't deactivate yourself" : ''}
+                                className="inline-flex items-center gap-1.5 px-2 py-1 text-[11px] font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                              >
+                                {togglingUserId === user.id ? (
+                                  <>
+                                    <Loader2 className="w-3 h-3 animate-spin text-slate-700" />
+                                    <span className="hidden sm:inline">Processing...</span>
+                                  </>
+                                ) : user.isActive ? (
+                                  <>
+                                    <UserX className="w-3 h-3 text-red-500" />
+                                    <span className="hidden sm:inline">Deactivate</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <UserCheck className="w-3 h-3 text-emerald-600" />
+                                    <span className="hidden sm:inline">Activate</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setExpandedId((prev) => (prev === user.id ? null : user.id));
+                              }}
+                              className="p-1 text-slate-400 hover:text-slate-700 transition"
+                              title={expandedId === user.id ? 'Collapse details' : 'Expand details'}
+                            >
+                              {expandedId === user.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                            </button>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+
+                    {/* Expanded assignments */}
+                    {expandedId === user.id && (
+                      <tr className="bg-slate-50/70 border-b border-slate-100">
+                        <td colSpan={(canManageUsers || canAssign) ? 5 : 4} className="p-0">
+                          <UserAssignments
+                            user={user}
+                            canAssign={canAssignUser(user)}
+                            canRemoveProject={canRemoveProject}
+                            allowedAssignProjectIds={allowedAssignProjectIds}
+                            userHasProjectInCapabilities={userHasProjectInCapabilities}
+                            currentUserId={currentUser?.id}
+                            onAssigned={(userId, updatedList) => {
+                              if (userId && updatedList) {
+                                setUsers((prev) =>
+                                  prev.map((u) =>
+                                    u.id === userId ? { ...u, activeAssignments: updatedList } : u
+                                  )
+                                );
+                              }
+                              fetchUsers();
+                            }}
+                          />
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
         <Pagination

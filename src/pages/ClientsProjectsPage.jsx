@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Building2, FolderOpen, Plus, Pencil, CheckCircle, XCircle,
-  ChevronRight, DollarSign, RefreshCw, AlertCircle, Users, Loader2,
+  ChevronRight, ChevronDown, ChevronUp, DollarSign, RefreshCw, AlertCircle, Users, Loader2,
   ArrowUpDown, ArrowUp, ArrowDown,
 } from 'lucide-react';
 import api from '../api/client.js';
@@ -288,13 +288,26 @@ export default function ClientsProjectsPage() {
 
   const [projectPage, setProjectPage] = useState(1);
   const PROJECTS_PER_PAGE = 10;
+  const [expandedTeamProjects, setExpandedTeamProjects] = useState(new Set());
+
+  const toggleTeamExpanded = (projectId) => {
+    setExpandedTeamProjects((prev) => {
+      const next = new Set(prev);
+      if (next.has(projectId)) {
+        next.delete(projectId);
+      } else {
+        next.add(projectId);
+      }
+      return next;
+    });
+  };
 
   // Resizable columns for projects table
   const { columnWidths, startResize } = useTableResize({
     name: 200,
     status: 120,
     currentRate: 120,
-    team: 100,
+    team: 180,
     actions: 140,
   });
 
@@ -688,14 +701,48 @@ export default function ClientsProjectsPage() {
                                   : <span className="text-slate-400">—</span>}
                               </td>
                             )}
-                            <td className="py-3 px-4 truncate whitespace-nowrap overflow-hidden">
+                            <td className={`py-3 px-4 ${expandedTeamProjects.has(project.id) ? '' : 'truncate whitespace-nowrap overflow-hidden'}`}>
                               {project.assignedEmployees && project.assignedEmployees.length > 0 ? (
-                                <span className="inline-flex items-center gap-1 text-slate-600">
-                                  <Users className="w-3 h-3 text-slate-400 shrink-0" />
-                                  <span>{project.assignedEmployees.length}</span>
-                                </span>
+                                <div className="flex flex-col gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleTeamExpanded(project.id);
+                                    }}
+                                    className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 hover:text-indigo-600 transition cursor-pointer select-none group w-fit"
+                                    title={expandedTeamProjects.has(project.id) ? "Collapse team members" : "Expand to view team members"}
+                                  >
+                                    <span className="p-1 rounded bg-slate-100 group-hover:bg-indigo-50 text-slate-500 group-hover:text-indigo-600 transition">
+                                      <Users className="w-3.5 h-3.5" />
+                                    </span>
+                                    <span className="font-semibold text-slate-800">
+                                      {project.assignedEmployees.length} member{project.assignedEmployees.length !== 1 ? 's' : ''}
+                                    </span>
+                                    {expandedTeamProjects.has(project.id) ? (
+                                      <ChevronUp className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600 transition" />
+                                    ) : (
+                                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600 transition" />
+                                    )}
+                                  </button>
+
+                                  {expandedTeamProjects.has(project.id) && (
+                                    <div className="flex flex-wrap gap-1.5 mt-1 max-w-full">
+                                      {project.assignedEmployees.map((emp) => (
+                                        <span
+                                          key={emp.id}
+                                          title={`${emp.name}${emp.email ? ` (${emp.email})` : ''}`}
+                                          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs hover:bg-slate-200/80 transition"
+                                        >
+                                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                                          <span className="truncate max-w-[150px]">{emp.name}</span>
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
                               ) : (
-                                <span className="text-slate-400">—</span>
+                                <span className="text-slate-400 text-xs italic">—</span>
                               )}
                             </td>
                             {canManage && (
