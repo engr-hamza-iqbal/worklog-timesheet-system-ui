@@ -44,7 +44,7 @@ function CreateUserForm({ onSuccess, onCancel }) {
     setError('');
     try {
       // POST /api/users → { success, data: { id, name, email, accountType, isActive, createdAt }, message }
-      const res = await api.post('/api/users', form);
+      const res = await api.post('/api/users', { ...form, accountType: 'EMPLOYEE' });
       onSuccess(res.data);
     } catch (err) {
       setError(err.message || 'Failed to create user.');
@@ -76,12 +76,11 @@ function CreateUserForm({ onSuccess, onCancel }) {
       </div>
 
       <div>
-        <label className="block text-xs font-medium text-slate-700 mb-1.5">Account type</label>
-        <select value={form.accountType} onChange={set('accountType')}
-          className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 bg-white transition">
-          <option value="EMPLOYEE">Employee</option>
-          <option value="ADMIN">Administrator</option>
-        </select>
+        <label className="block text-xs font-medium text-slate-700 mb-1.5">Role</label>
+        <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-slate-200 rounded text-xs text-slate-600">
+          <Badge variant="employee" label="Employee" />
+          <span className="text-[11px] text-slate-400">Assigned by default</span>
+        </div>
       </div>
 
       <div className="flex gap-2 pt-1">
@@ -853,7 +852,7 @@ export default function UsersPage() {
     accountType: 130,
     isActive: 130,
     projects: 140,
-    actions: 190,
+    actions: 140,
   });
 
   // GET /api/users → { success, data: [...users], message }
@@ -1202,20 +1201,6 @@ export default function UsersPage() {
                       {(canManageUsers || canAssign) && (
                         <td className="py-3.5 px-4 text-right truncate whitespace-nowrap overflow-hidden">
                           <div className="flex items-center justify-end gap-1.5 truncate">
-                            {canAssignUser(user) && user.accountType !== 'ADMIN' && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setAssigningUser(user);
-                                }}
-                                className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-indigo-700 bg-white hover:bg-indigo-50 border border-slate-200 hover:border-indigo-200 rounded transition cursor-pointer"
-                                title={`Assign projects to ${user.name}`}
-                              >
-                                <Plus className="w-3 h-3 text-indigo-600" />
-                                <span className="hidden sm:inline">Assign</span>
-                              </button>
-                            )}
                             {canManageSpecificUser(user) && (
                               <button
                                 onClick={(e) => {
