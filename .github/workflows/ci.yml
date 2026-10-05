@@ -30,5 +30,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Run Frontend Lint
+        run: npm run lint
+
       - name: Run Production Vite Build
         run: npm run build
