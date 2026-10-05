@@ -536,27 +536,21 @@ export default function TimesheetsPage() {
                 <label className="block text-xs font-medium text-slate-700 mb-1.5">
                   Project <span className="text-red-500">*</span>
                 </label>
-                <div className="relative">
-                  <select
-                    required
-                    value={form.projectId}
-                    onChange={(e) => setForm({ ...form, projectId: e.target.value })}
-                    className="w-full appearance-none border border-slate-300 rounded-lg pl-3 pr-8 py-2 text-xs bg-white focus:border-slate-900 focus:outline-none transition cursor-pointer"
-                  >
-                    <option value="">
-                      {loading ? "Loading assigned projects..." : projects.length ? "Select project" : "No assigned projects"}
+                <select
+                  required
+                  value={form.projectId}
+                  onChange={(e) => setForm({ ...form, projectId: e.target.value })}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs bg-white focus:border-slate-900 focus:outline-none transition cursor-pointer"
+                >
+                  <option value="">
+                    {loading ? "Loading assigned projects..." : projects.length ? "Select project" : "No assigned projects"}
+                  </option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.clientName || project.client?.name || "Client"} / {project.name}
                     </option>
-                    {projects.map((project) => (
-                      <option key={project.id} value={project.id}>
-                        {project.clientName || project.client?.name || "Client"} / {project.name}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown
-                    size={14}
-                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
-                  />
-                </div>
+                  ))}
+                </select>
               </div>
 
               {/* Date */}
@@ -908,27 +902,21 @@ export default function TimesheetsPage() {
               </div>
 
               {/* Project filter */}
-              <div className="relative w-full sm:w-auto">
-                <select
-                  value={historyProject}
-                  onChange={(e) => {
-                    setHistoryProject(e.target.value);
-                    setHistoryPage(1);
-                  }}
-                  className="w-full sm:w-auto appearance-none border border-slate-300 rounded-lg pl-3 pr-8 py-1.5 text-xs bg-white focus:border-slate-900 focus:outline-none transition cursor-pointer"
-                >
-                  <option value="">All Projects</option>
-                  {projects.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  size={14}
-                  className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400"
-                />
-              </div>
+              <select
+                value={historyProject}
+                onChange={(e) => {
+                  setHistoryProject(e.target.value);
+                  setHistoryPage(1);
+                }}
+                className="w-full sm:w-auto border border-slate-300 rounded-lg px-3 py-1.5 text-xs bg-white focus:border-slate-900 focus:outline-none transition cursor-pointer"
+              >
+                <option value="">All Projects</option>
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
 
               {/* Status filter buttons */}
               <div className="flex overflow-x-auto no-scrollbar rounded-lg border border-slate-200 text-xs w-full sm:w-auto shrink-0 whitespace-nowrap">
