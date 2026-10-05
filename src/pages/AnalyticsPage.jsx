@@ -37,6 +37,8 @@ import {
 } from 'recharts';
 import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import useTableResize from '../hooks/useTableResize.js';
+import ResizableTh from '../components/ResizableTh.jsx';
 
 // Curated sleek palette for charts
 const CHART_COLORS = [
@@ -88,6 +90,14 @@ export default function AnalyticsPage() {
   const [sortDirection, setSortDirection] = useState('desc'); // 'asc' | 'desc'
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
+
+  // Resizable columns for breakdown table
+  const { columnWidths, startResize } = useTableResize({
+    label: 260,
+    hours: 140,
+    share: 220,
+    badge: 140,
+  });
 
   async function load(filterValues = filters) {
     try {
@@ -940,15 +950,17 @@ export default function AnalyticsPage() {
 
             {/* Table with Clickable Headers */}
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+              <table className="w-full text-left text-xs table-fixed">
                 <thead className="bg-slate-50/80 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 select-none">
                   <tr>
-                    <th
+                    <ResizableTh
+                      width={columnWidths.label}
+                      onResizeStart={(e) => startResize('label', e)}
                       onClick={() => handleTableSort('label')}
                       className="py-3 px-5 cursor-pointer hover:bg-slate-100 hover:text-slate-900 transition"
                     >
-                      <div className="flex items-center gap-1.5">
-                        <span>
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="truncate">
                           {breakdownTab === 'employees'
                             ? 'Contributor Name'
                             : breakdownTab === 'projects'
@@ -957,83 +969,89 @@ export default function AnalyticsPage() {
                         </span>
                         {sortColumn === 'label' ? (
                           sortDirection === 'asc' ? (
-                            <ArrowUp size={12} className="text-indigo-600" />
+                            <ArrowUp size={12} className="text-indigo-600 shrink-0" />
                           ) : (
-                            <ArrowDown size={12} className="text-indigo-600" />
+                            <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                           )
                         ) : (
-                          <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                          <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
                         )}
                       </div>
-                    </th>
-                    <th
+                    </ResizableTh>
+                    <ResizableTh
+                      width={columnWidths.hours}
+                      onResizeStart={(e) => startResize('hours', e)}
                       onClick={() => handleTableSort('hours')}
                       className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-900 transition text-right sm:text-left"
                     >
-                      <div className="flex items-center justify-end sm:justify-start gap-1.5">
-                        <span>Approved Hours</span>
+                      <div className="flex items-center justify-end sm:justify-start gap-1.5 truncate">
+                        <span className="truncate">Approved Hours</span>
                         {sortColumn === 'hours' ? (
                           sortDirection === 'asc' ? (
-                            <ArrowUp size={12} className="text-indigo-600" />
+                            <ArrowUp size={12} className="text-indigo-600 shrink-0" />
                           ) : (
-                            <ArrowDown size={12} className="text-indigo-600" />
+                            <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                           )
                         ) : (
-                          <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                          <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
                         )}
                       </div>
-                    </th>
-                    <th
+                    </ResizableTh>
+                    <ResizableTh
+                      width={columnWidths.share}
+                      onResizeStart={(e) => startResize('share', e)}
                       onClick={() => handleTableSort('share')}
                       className="py-3 px-4 hidden sm:table-cell cursor-pointer hover:bg-slate-100 hover:text-slate-900 transition"
                     >
-                      <div className="flex items-center gap-1.5">
-                        <span>Share of Total Effort</span>
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="truncate">Share of Total Effort</span>
                         {sortColumn === 'share' ? (
                           sortDirection === 'asc' ? (
-                            <ArrowUp size={12} className="text-indigo-600" />
+                            <ArrowUp size={12} className="text-indigo-600 shrink-0" />
                           ) : (
-                            <ArrowDown size={12} className="text-indigo-600" />
+                            <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                           )
                         ) : (
-                          <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                          <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
                         )}
                       </div>
-                    </th>
-                    <th
+                    </ResizableTh>
+                    <ResizableTh
+                      width={columnWidths.badge}
+                      onResizeStart={(e) => startResize('badge', e)}
                       onClick={() => handleTableSort('badge')}
                       className="py-3 px-5 text-right cursor-pointer hover:bg-slate-100 hover:text-slate-900 transition"
                     >
-                      <div className="flex items-center justify-end gap-1.5">
-                        <span>Status / Tier</span>
+                      <div className="flex items-center justify-end gap-1.5 truncate">
+                        <span className="truncate">Status / Tier</span>
                         {sortColumn === 'badge' ? (
                           sortDirection === 'asc' ? (
-                            <ArrowUp size={12} className="text-indigo-600" />
+                            <ArrowUp size={12} className="text-indigo-600 shrink-0" />
                           ) : (
-                            <ArrowDown size={12} className="text-indigo-600" />
+                            <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                           )
                         ) : (
-                          <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                          <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
                         )}
                       </div>
-                    </th>
+                    </ResizableTh>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {currentTableRows.map((row) => (
                     <tr key={row.id} className="hover:bg-slate-50/70 transition">
-                      <td className="py-3.5 px-5 font-medium text-slate-900">
-                        <div className="flex items-center gap-2.5">
+                      <td className="py-3.5 px-5 font-medium text-slate-900 truncate whitespace-nowrap overflow-hidden">
+                        <div className="flex items-center gap-2.5 truncate">
                           <div className="w-6 h-6 rounded-md bg-slate-100 text-slate-600 font-bold text-[10px] flex items-center justify-center shrink-0">
                             {row.label.charAt(0).toUpperCase()}
                           </div>
-                          <span className="truncate max-w-[200px] sm:max-w-xs">{row.label}</span>
+                          <span className="truncate" title={row.label}>{row.label}</span>
                         </div>
                       </td>
-                      <td className="py-3.5 px-4 font-mono font-semibold text-slate-800 text-right sm:text-left">
+                      <td className="py-3.5 px-4 font-mono font-semibold text-slate-800 text-right sm:text-left truncate whitespace-nowrap overflow-hidden">
                         {row.hours.toFixed(2)} <span className="text-[10px] font-sans text-slate-400">h</span>
                       </td>
-                      <td className="py-3.5 px-4 hidden sm:table-cell text-slate-600">
+                      <td className="py-3.5 px-4 hidden sm:table-cell text-slate-600 truncate whitespace-nowrap overflow-hidden">
                         <div className="flex items-center gap-2.5">
                           <span className="font-mono text-xs w-11 text-right">{row.share.toFixed(1)}%</span>
                           <div className="w-24 bg-slate-100 rounded-full h-1.5 overflow-hidden">
@@ -1044,7 +1062,7 @@ export default function AnalyticsPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="py-3.5 px-5 text-right">
+                      <td className="py-3.5 px-5 text-right truncate whitespace-nowrap overflow-hidden">
                         <span
                           className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${row.badgeColor}`}
                         >

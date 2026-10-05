@@ -2,6 +2,8 @@ import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Tooltip } from '../components/Navbar.jsx';
+import useTableResize from '../hooks/useTableResize.js';
+import ResizableTh from '../components/ResizableTh.jsx';
 import {
   RefreshCw,
   Clock,
@@ -42,6 +44,14 @@ export default function DashboardPage() {
   const [sortField, setSortField] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc'); // 'asc' | 'desc'
   const [expandedScopeCaps, setExpandedScopeCaps] = useState(new Set());
+
+  // Resizable columns
+  const { columnWidths, startResize } = useTableResize({
+    name: 240,
+    desc: 260,
+    scope: 220,
+    status: 120,
+  });
 
   const toggleScopeExpanded = (code) => {
     setExpandedScopeCaps((prev) => {
@@ -233,61 +243,69 @@ export default function DashboardPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+          <table className="w-full text-left text-xs table-fixed">
             <thead className="bg-slate-50/80 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 select-none">
               <tr>
-                <th
+                <ResizableTh
+                  width={columnWidths.name}
+                  onResizeStart={(e) => startResize('name', e)}
                   onClick={() => toggleSort('name')}
                   className="py-3 px-5 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                 >
-                  <div className="flex items-center gap-1.5">
-                    <span>Capability</span>
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="truncate">Capability</span>
                     {sortField === 'name' ? (
-                      sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                      sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                     ) : (
-                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
                     )}
                   </div>
-                </th>
-                <th
+                </ResizableTh>
+                <ResizableTh
+                  width={columnWidths.desc}
+                  onResizeStart={(e) => startResize('desc', e)}
                   onClick={() => toggleSort('desc')}
                   className="py-3 px-4 hidden sm:table-cell cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                 >
-                  <div className="flex items-center gap-1.5">
-                    <span>Description</span>
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="truncate">Description</span>
                     {sortField === 'desc' ? (
-                      sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                      sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                     ) : (
-                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
                     )}
                   </div>
-                </th>
-                <th
+                </ResizableTh>
+                <ResizableTh
+                  width={columnWidths.scope}
+                  onResizeStart={(e) => startResize('scope', e)}
                   onClick={() => toggleSort('scope')}
                   className="py-3 px-4 hidden md:table-cell cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                 >
-                  <div className="flex items-center gap-1.5">
-                    <span>Scope Authorization</span>
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="truncate">Scope Authorization</span>
                     {sortField === 'scope' ? (
-                      sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                      sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                     ) : (
-                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
                     )}
                   </div>
-                </th>
-                <th
+                </ResizableTh>
+                <ResizableTh
+                  width={columnWidths.status}
+                  onResizeStart={(e) => startResize('status', e)}
                   onClick={() => toggleSort('status')}
                   className="py-3 px-5 text-right cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                 >
-                  <div className="flex items-center justify-end gap-1.5">
-                    <span>Status</span>
+                  <div className="flex items-center justify-end gap-1.5 truncate">
+                    <span className="truncate">Status</span>
                     {sortField === 'status' ? (
-                      sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                      sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                     ) : (
-                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
                     )}
                   </div>
-                </th>
+                </ResizableTh>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -301,22 +319,22 @@ export default function DashboardPage() {
 
                 return (
                   <tr key={cap.code} className="hover:bg-slate-50/70 transition">
-                    <td className="py-3.5 px-5">
-                      <div className="flex items-center gap-3">
+                    <td className="py-3.5 px-5 truncate whitespace-nowrap overflow-hidden">
+                      <div className="flex items-center gap-3 truncate">
                         <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isHeld ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-400'
                           }`}>
                           <Icon size={14} />
                         </div>
-                        <div>
-                          <div className="font-semibold text-slate-900">{cap.name}</div>
-                          <div className="font-mono text-[10px] text-slate-400">{cap.code}</div>
+                        <div className="truncate">
+                          <div className="font-semibold text-slate-900 truncate" title={cap.name}>{cap.name}</div>
+                          <div className="font-mono text-[10px] text-slate-400 truncate">{cap.code}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="py-3.5 px-4 text-slate-500 hidden sm:table-cell max-w-md">
+                    <td className="py-3.5 px-4 text-slate-500 hidden sm:table-cell truncate whitespace-nowrap overflow-hidden" title={cap.desc}>
                       {cap.desc}
                     </td>
-                    <td className="py-3.5 px-4 text-slate-600 hidden md:table-cell">
+                    <td className="py-3.5 px-4 text-slate-600 hidden md:table-cell truncate whitespace-nowrap overflow-hidden">
                       {isHeld ? (
                         isGlobal ? (
                           <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200/60">

@@ -23,6 +23,8 @@ import Badge from "../components/Badge.jsx";
 import Pagination from "../components/Pagination.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useNotification } from "../context/NotificationContext.jsx";
+import useTableResize from "../hooks/useTableResize.js";
+import ResizableTh from "../components/ResizableTh.jsx";
 
 export default function ReviewPage() {
   const { notify } = useNotification();
@@ -43,6 +45,27 @@ export default function ReviewPage() {
   const ITEMS_PER_PAGE = 10;
   const [timeOffPage, setTimeOffPage] = useState(1);
   const TIME_OFF_PER_PAGE = 10;
+
+  // Resizable columns for entries queue
+  const { columnWidths: entriesWidths, startResize: startEntriesResize } = useTableResize({
+    select: 48,
+    employee: 180,
+    workDate: 120,
+    project: 180,
+    durationMinutes: 90,
+    description: 280,
+    action: 110,
+  });
+
+  // Resizable columns for time off queue
+  const { columnWidths: timeOffWidths, startResize: startTimeOffResize } = useTableResize({
+    employee: 200,
+    type: 140,
+    startDate: 190,
+    days: 100,
+    reason: 260,
+    actions: 140,
+  });
   const [scope, setScope] = useState(null);
   const [selected, setSelected] = useState([]);
   const [filters, setFilters] = useState({
@@ -536,10 +559,14 @@ export default function ReviewPage() {
 
       {/* Entries Table */}
       <div className="relative overflow-x-auto bg-white border border-slate-200 rounded-lg shadow-xs">
-        <table className="w-full text-left text-sm min-w-[680px]">
+        <table className="w-full text-left text-sm min-w-[680px] table-fixed">
           <thead className="bg-slate-50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-200 select-none">
             <tr>
-              <th className="p-3 w-10">
+              <ResizableTh
+                width={entriesWidths.select}
+                resizable={false}
+                className="p-3"
+              >
                 <input
                   type="checkbox"
                   aria-label="Select all submitted entries on this page"
@@ -551,73 +578,89 @@ export default function ReviewPage() {
                   onChange={(e) => toggleAllEntries(e.target.checked)}
                   className="rounded border-slate-300 cursor-pointer"
                 />
-              </th>
-              <th
+              </ResizableTh>
+              <ResizableTh
+                width={entriesWidths.employee}
+                onResizeStart={(e) => startEntriesResize('employee', e)}
                 onClick={() => toggleEntrySort('employee')}
                 className="p-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
               >
-                <div className="flex items-center gap-1.5">
-                  <span>Employee</span>
+                <div className="flex items-center gap-1.5 truncate">
+                  <span className="truncate">Employee</span>
                   {entrySortField === 'employee' ? (
-                    entrySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                    entrySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                   ) : (
-                    <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                    <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
                   )}
                 </div>
-              </th>
-              <th
+              </ResizableTh>
+              <ResizableTh
+                width={entriesWidths.workDate}
+                onResizeStart={(e) => startEntriesResize('workDate', e)}
                 onClick={() => toggleEntrySort('workDate')}
                 className="p-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
               >
-                <div className="flex items-center gap-1.5">
-                  <span>Date</span>
+                <div className="flex items-center gap-1.5 truncate">
+                  <span className="truncate">Date</span>
                   {entrySortField === 'workDate' ? (
-                    entrySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                    entrySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                   ) : (
-                    <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                    <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
                   )}
                 </div>
-              </th>
-              <th
+              </ResizableTh>
+              <ResizableTh
+                width={entriesWidths.project}
+                onResizeStart={(e) => startEntriesResize('project', e)}
                 onClick={() => toggleEntrySort('project')}
                 className="p-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
               >
-                <div className="flex items-center gap-1.5">
-                  <span>Project</span>
+                <div className="flex items-center gap-1.5 truncate">
+                  <span className="truncate">Project</span>
                   {entrySortField === 'project' ? (
-                    entrySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                    entrySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                   ) : (
-                    <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                    <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
                   )}
                 </div>
-              </th>
-              <th
+              </ResizableTh>
+              <ResizableTh
+                width={entriesWidths.durationMinutes}
+                onResizeStart={(e) => startEntriesResize('durationMinutes', e)}
                 onClick={() => toggleEntrySort('durationMinutes')}
                 className="p-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
               >
-                <div className="flex items-center gap-1.5">
-                  <span>Hours</span>
+                <div className="flex items-center gap-1.5 truncate">
+                  <span className="truncate">Hours</span>
                   {entrySortField === 'durationMinutes' ? (
-                    entrySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                    entrySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                   ) : (
-                    <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                    <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
                   )}
                 </div>
-              </th>
-              <th
+              </ResizableTh>
+              <ResizableTh
+                width={entriesWidths.description}
+                onResizeStart={(e) => startEntriesResize('description', e)}
                 onClick={() => toggleEntrySort('description')}
                 className="p-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
               >
-                <div className="flex items-center gap-1.5">
-                  <span>Description</span>
+                <div className="flex items-center gap-1.5 truncate">
+                  <span className="truncate">Description</span>
                   {entrySortField === 'description' ? (
-                    entrySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                    entrySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                   ) : (
-                    <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                    <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
                   )}
                 </div>
-              </th>
-              <th className="p-3">Action</th>
+              </ResizableTh>
+              <ResizableTh
+                width={entriesWidths.action}
+                resizable={false}
+                className="p-3"
+              >
+                <span className="truncate">Action</span>
+              </ResizableTh>
             </tr>
           </thead>
           <tbody>
@@ -639,7 +682,7 @@ export default function ReviewPage() {
                   key={entry.id}
                   className="border-t border-slate-100 hover:bg-slate-50/60 align-top transition-colors"
                 >
-                  <td className="p-3">
+                  <td className="p-3 truncate whitespace-nowrap overflow-hidden">
                     <input
                       type="checkbox"
                       checked={selected.includes(entry.id)}
@@ -653,15 +696,19 @@ export default function ReviewPage() {
                       className="rounded border-slate-300 cursor-pointer"
                     />
                   </td>
-                  <td className="p-3">
-                    <div className="font-medium text-slate-900">{entry.user?.name}</div>
-                    <div className="text-xs text-slate-500">{entry.user?.email}</div>
+                  <td className="p-3 truncate whitespace-nowrap overflow-hidden">
+                    <div className="font-medium text-slate-900 truncate">{entry.user?.name}</div>
+                    <div className="text-xs text-slate-500 truncate">{entry.user?.email}</div>
                   </td>
-                  <td className="p-3 whitespace-nowrap text-slate-700">{entry.workDate}</td>
-                  <td className="p-3 text-slate-700 font-medium">{entry.project?.name}</td>
-                  <td className="p-3 text-slate-700">{entry.durationHours}</td>
-                  <td className="p-3 max-w-sm text-slate-600 break-words">{entry.description}</td>
-                  <td className="p-3 whitespace-nowrap">
+                  <td className="p-3 truncate whitespace-nowrap overflow-hidden text-slate-700">{entry.workDate}</td>
+                  <td className="p-3 truncate whitespace-nowrap overflow-hidden text-slate-700 font-medium">
+                    <div className="truncate" title={entry.project?.name}>{entry.project?.name}</div>
+                  </td>
+                  <td className="p-3 truncate whitespace-nowrap overflow-hidden text-slate-700">{entry.durationHours}</td>
+                  <td className="p-3 truncate whitespace-nowrap overflow-hidden text-slate-600">
+                    <div className="truncate" title={entry.description}>{entry.description}</div>
+                  </td>
+                  <td className="p-3 truncate whitespace-nowrap overflow-hidden">
                     <div className="flex gap-2">
                       <button
                         title="Approve entry"
@@ -715,106 +762,123 @@ export default function ReviewPage() {
       ) : (
         /* Time Off Requests Queue */
         <div className="bg-white rounded-lg border border-slate-200 overflow-x-auto shadow-xs">
-          <table className="w-full text-left border-collapse text-xs min-w-[640px]">
+          <table className="w-full text-left border-collapse text-xs min-w-[640px] table-fixed">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px] select-none">
-                <th
+                <ResizableTh
+                  width={timeOffWidths.employee}
+                  onResizeStart={(e) => startTimeOffResize('employee', e)}
                   onClick={() => toggleTimeOffSort('employee')}
                   className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                 >
-                  <div className="flex items-center gap-1.5">
-                    <span>Employee</span>
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="truncate">Employee</span>
                     {timeOffSortField === 'employee' ? (
-                      timeOffSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                      timeOffSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                     ) : (
-                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
                     )}
                   </div>
-                </th>
-                <th
+                </ResizableTh>
+                <ResizableTh
+                  width={timeOffWidths.type}
+                  onResizeStart={(e) => startTimeOffResize('type', e)}
                   onClick={() => toggleTimeOffSort('type')}
                   className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                 >
-                  <div className="flex items-center gap-1.5">
-                    <span>Leave Type</span>
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="truncate">Leave Type</span>
                     {timeOffSortField === 'type' ? (
-                      timeOffSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                      timeOffSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                     ) : (
-                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
                     )}
                   </div>
-                </th>
-                <th
+                </ResizableTh>
+                <ResizableTh
+                  width={timeOffWidths.startDate}
+                  onResizeStart={(e) => startTimeOffResize('startDate', e)}
                   onClick={() => toggleTimeOffSort('startDate')}
                   className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                 >
-                  <div className="flex items-center gap-1.5">
-                    <span>Dates</span>
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="truncate">Dates</span>
                     {timeOffSortField === 'startDate' ? (
-                      timeOffSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                      timeOffSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                     ) : (
-                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
                     )}
                   </div>
-                </th>
-                <th
+                </ResizableTh>
+                <ResizableTh
+                  width={timeOffWidths.days}
+                  onResizeStart={(e) => startTimeOffResize('days', e)}
                   onClick={() => toggleTimeOffSort('days')}
                   className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                 >
-                  <div className="flex items-center gap-1.5">
-                    <span>Days</span>
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="truncate">Days</span>
                     {timeOffSortField === 'days' ? (
-                      timeOffSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                      timeOffSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                     ) : (
-                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
                     )}
                   </div>
-                </th>
-                <th
+                </ResizableTh>
+                <ResizableTh
+                  width={timeOffWidths.reason}
+                  onResizeStart={(e) => startTimeOffResize('reason', e)}
                   onClick={() => toggleTimeOffSort('reason')}
                   className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                 >
-                  <div className="flex items-center gap-1.5">
-                    <span>Reason</span>
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="truncate">Reason</span>
                     {timeOffSortField === 'reason' ? (
-                      timeOffSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                      timeOffSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                     ) : (
-                      <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
                     )}
                   </div>
-                </th>
-                <th className="py-3 px-4 text-right">Actions</th>
+                </ResizableTh>
+                <ResizableTh
+                  width={timeOffWidths.actions}
+                  onResizeStart={(e) => startTimeOffResize('actions', e)}
+                  className="py-3 px-4 text-right"
+                  resizable={false}
+                >
+                  <span className="truncate">Actions</span>
+                </ResizableTh>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {paginatedTimeOff.length ? (
                 paginatedTimeOff.map((reqItem) => (
                   <tr key={reqItem.id} className="hover:bg-slate-50/80 transition">
-                    <td className="py-3 px-4">
-                      <div className="font-semibold text-slate-900">{reqItem.user?.name}</div>
-                      <div className="text-[11px] text-slate-500">{reqItem.user?.email}</div>
+                    <td className="py-3 px-4 truncate whitespace-nowrap overflow-hidden">
+                      <div className="font-semibold text-slate-900 truncate">{reqItem.user?.name}</div>
+                      <div className="text-[11px] text-slate-500 truncate">{reqItem.user?.email}</div>
                     </td>
-                    <td className="py-3 px-4">
-                      <span className="inline-block px-2 py-0.5 rounded font-medium text-[11px] bg-indigo-50 text-indigo-700 border border-indigo-100">
+                    <td className="py-3 px-4 truncate whitespace-nowrap overflow-hidden">
+                      <span className="inline-block px-2 py-0.5 rounded font-medium text-[11px] bg-indigo-50 text-indigo-700 border border-indigo-100 truncate">
                         {reqItem.type?.name || 'Leave'}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-slate-700 font-medium">
+                    <td className="py-3 px-4 truncate whitespace-nowrap overflow-hidden text-slate-700 font-medium">
                       {reqItem.startDate} &rarr; {reqItem.endDate}
                     </td>
-                    <td className="py-3 px-4 text-slate-600">
+                    <td className="py-3 px-4 truncate whitespace-nowrap overflow-hidden text-slate-600">
                       {reqItem.days?.length || 1} day{(reqItem.days?.length || 1) > 1 ? 's' : ''}
                     </td>
-                    <td className="py-3 px-4 text-slate-600 max-w-xs truncate" title={reqItem.reason}>
-                      {reqItem.reason || '—'}
+                    <td className="py-3 px-4 truncate whitespace-nowrap overflow-hidden text-slate-600">
+                      <div className="truncate" title={reqItem.reason}>{reqItem.reason || '—'}</div>
                     </td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3 px-4 text-right truncate whitespace-nowrap overflow-hidden">
                       {reqItem.status === 'EXPIRED' || reqItem.startDate < new Date().toISOString().split('T')[0] ? (
-                        <div className="flex items-center justify-end">
+                        <div className="flex items-center justify-end truncate">
                           <Badge variant="expired" label="Expired" dot />
                         </div>
                       ) : (
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-2 truncate">
                           <button
                             type="button"
                             onClick={() => handleApproveTimeOff(reqItem)}

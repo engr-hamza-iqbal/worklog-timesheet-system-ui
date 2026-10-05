@@ -27,6 +27,8 @@ import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import Modal from '../components/Modal.jsx';
 import Pagination from '../components/Pagination.jsx';
+import useTableResize from '../hooks/useTableResize.js';
+import ResizableTh from '../components/ResizableTh.jsx';
 
 const CAP_META = {
   VIEW_OTHER_RECORDS:      { label: 'View Other Records',         desc: 'Read work logs and timesheets of other staff members.' },
@@ -82,6 +84,17 @@ export default function AuditLogsPage() {
   // Details Modal state
   const [selectedLog, setSelectedLog] = useState(null);
   const [copiedId, setCopiedId] = useState(false);
+
+  // Resizable columns
+  const { columnWidths, startResize } = useTableResize({
+    action: 140,
+    capability: 210,
+    actor: 210,
+    targetUser: 210,
+    scope: 140,
+    createdAt: 170,
+    actions: 100,
+  });
 
   const fetchLogs = useCallback(async (isInitial = false) => {
     if (isInitial) setLoading(true);
@@ -366,80 +379,99 @@ export default function AuditLogsPage() {
         ) : (
           <div>
             <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left min-w-[700px]">
+              <table className="w-full text-xs text-left min-w-[700px] table-fixed">
                 <thead className="bg-slate-50/90 text-[11px] font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 select-none">
                   <tr>
-                    <th
+                    <ResizableTh
+                      width={columnWidths.action}
+                      onResizeStart={(e) => startResize('action', e)}
                       onClick={() => toggleSort('action')}
-                      className="py-3 px-5 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                      className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                     >
-                      <div className="flex items-center gap-1.5">
-                        <span>Action</span>
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="truncate">Action</span>
                         {sortField === 'action' ? (
-                          sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                          sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                         ) : (
-                          <ArrowUpDown size={12} className="text-slate-300" />
+                          <ArrowUpDown size={12} className="text-slate-300 shrink-0" />
                         )}
                       </div>
-                    </th>
-                    <th
+                    </ResizableTh>
+                    <ResizableTh
+                      width={columnWidths.capability}
+                      onResizeStart={(e) => startResize('capability', e)}
                       onClick={() => toggleSort('capabilityCode')}
                       className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                     >
-                      <div className="flex items-center gap-1.5">
-                        <span>Capability</span>
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="truncate">Capability</span>
                         {sortField === 'capabilityCode' ? (
-                          sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                          sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                         ) : (
-                          <ArrowUpDown size={12} className="text-slate-300" />
+                          <ArrowUpDown size={12} className="text-slate-300 shrink-0" />
                         )}
                       </div>
-                    </th>
-                    <th
+                    </ResizableTh>
+                    <ResizableTh
+                      width={columnWidths.actor}
+                      onResizeStart={(e) => startResize('actor', e)}
                       onClick={() => toggleSort('actor')}
                       className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                     >
-                      <div className="flex items-center gap-1.5">
-                        <span>Performed By (Actor)</span>
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="truncate">Performed By (Actor)</span>
                         {sortField === 'actor' ? (
-                          sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                          sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                         ) : (
-                          <ArrowUpDown size={12} className="text-slate-300" />
+                          <ArrowUpDown size={12} className="text-slate-300 shrink-0" />
                         )}
                       </div>
-                    </th>
-                    <th
+                    </ResizableTh>
+                    <ResizableTh
+                      width={columnWidths.targetUser}
+                      onResizeStart={(e) => startResize('targetUser', e)}
                       onClick={() => toggleSort('targetUser')}
                       className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                     >
-                      <div className="flex items-center gap-1.5">
-                        <span>Target Employee</span>
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="truncate">Target Employee</span>
                         {sortField === 'targetUser' ? (
-                          sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                          sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                         ) : (
-                          <ArrowUpDown size={12} className="text-slate-300" />
+                          <ArrowUpDown size={12} className="text-slate-300 shrink-0" />
                         )}
                       </div>
-                    </th>
-                    <th className="py-3 px-4">
-                      <span>Scope</span>
-                    </th>
-                    <th
+                    </ResizableTh>
+                    <ResizableTh
+                      width={columnWidths.scope}
+                      onResizeStart={(e) => startResize('scope', e)}
+                      className="py-3 px-4"
+                    >
+                      <span className="truncate">Scope</span>
+                    </ResizableTh>
+                    <ResizableTh
+                      width={columnWidths.createdAt}
+                      onResizeStart={(e) => startResize('createdAt', e)}
                       onClick={() => toggleSort('createdAt')}
                       className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                     >
-                      <div className="flex items-center gap-1.5">
-                        <span>Timestamp</span>
+                      <div className="flex items-center gap-1.5 truncate">
+                        <span className="truncate">Timestamp</span>
                         {sortField === 'createdAt' ? (
-                          sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                          sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                         ) : (
-                          <ArrowUpDown size={12} className="text-slate-300" />
+                          <ArrowUpDown size={12} className="text-slate-300 shrink-0" />
                         )}
                       </div>
-                    </th>
-                    <th className="py-3 px-5 text-right">
-                      <span>Action</span>
-                    </th>
+                    </ResizableTh>
+                    <ResizableTh
+                      width={columnWidths.actions}
+                      onResizeStart={(e) => startResize('actions', e)}
+                      className="py-3 px-4 text-right"
+                      resizable={false}
+                    >
+                      <span className="truncate">Action</span>
+                    </ResizableTh>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -457,72 +489,76 @@ export default function AuditLogsPage() {
                         onClick={() => setSelectedLog(log)}
                         className="hover:bg-slate-50/80 transition cursor-pointer group"
                       >
-                        <td className="py-3 px-5 whitespace-nowrap">
+                        <td className="py-3 px-4 truncate whitespace-nowrap overflow-hidden">
                           <span
                             className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${actionInfo.badge}`}
                           >
                             <span className={`w-1.5 h-1.5 rounded-full ${actionInfo.dot}`} />
-                            {actionInfo.label}
+                            <span className="truncate">{actionInfo.label}</span>
                           </span>
                         </td>
 
-                        <td className="py-3 px-4">
-                          <div className="font-semibold text-slate-900 group-hover:text-indigo-600 transition">
+                        <td className="py-3 px-4 truncate whitespace-nowrap overflow-hidden">
+                          <div className="font-semibold text-slate-900 group-hover:text-indigo-600 transition truncate">
                             {capMeta.label}
                           </div>
-                          <div className="font-mono text-[10px] text-slate-400 truncate max-w-[150px]">
+                          <div className="font-mono text-[10px] text-slate-400 truncate">
                             {log.capabilityCode}
                           </div>
                         </td>
 
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
+                        <td className="py-3 px-4 truncate whitespace-nowrap overflow-hidden">
+                          <div className="flex items-center gap-2 truncate">
                             <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600 shrink-0">
                               {log.actor?.name?.charAt(0)?.toUpperCase() || 'A'}
                             </div>
-                            <div className="min-w-0">
+                            <div className="min-w-0 truncate">
                               <div className="font-medium text-slate-800 truncate">{log.actor?.name || 'System Admin'}</div>
                               <div className="text-[10px] text-slate-400 truncate">{log.actor?.email || '—'}</div>
                             </div>
                           </div>
                         </td>
 
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
+                        <td className="py-3 px-4 truncate whitespace-nowrap overflow-hidden">
+                          <div className="flex items-center gap-2 truncate">
                             <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-[10px] font-bold text-indigo-700 shrink-0">
                               {log.targetUser?.name?.charAt(0)?.toUpperCase() || 'U'}
                             </div>
-                            <div className="min-w-0">
+                            <div className="min-w-0 truncate">
                               <div className="font-medium text-slate-800 truncate">{log.targetUser?.name || '—'}</div>
                               <div className="text-[10px] text-slate-400 truncate">{log.targetUser?.email || '—'}</div>
                             </div>
                           </div>
                         </td>
 
-                        <td className="py-3 px-4 whitespace-nowrap">
+                        <td className="py-3 px-4 truncate whitespace-nowrap overflow-hidden">
                           {getScopeBadge(log.details)}
                         </td>
 
-                        <td className="py-3 px-4 whitespace-nowrap text-slate-500">
-                          <div className="flex items-center gap-1 font-medium text-slate-700">
-                            <Calendar size={11} className="text-slate-400" />
-                            {new Date(log.createdAt).toLocaleDateString('en-GB', {
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric',
-                            })}
+                        <td className="py-3 px-4 truncate whitespace-nowrap overflow-hidden text-slate-500">
+                          <div className="flex items-center gap-1 font-medium text-slate-700 truncate">
+                            <Calendar size={11} className="text-slate-400 shrink-0" />
+                            <span className="truncate">
+                              {new Date(log.createdAt).toLocaleDateString('en-GB', {
+                                day: '2-digit',
+                                month: 'short',
+                                year: 'numeric',
+                              })}
+                            </span>
                           </div>
-                          <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-0.5">
-                            <Clock size={10} className="text-slate-300" />
-                            {new Date(log.createdAt).toLocaleTimeString('en-GB', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              second: '2-digit',
-                            })}
+                          <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-0.5 truncate">
+                            <Clock size={10} className="text-slate-300 shrink-0" />
+                            <span className="truncate">
+                              {new Date(log.createdAt).toLocaleTimeString('en-GB', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                second: '2-digit',
+                              })}
+                            </span>
                           </div>
                         </td>
 
-                        <td className="py-3 px-5 text-right whitespace-nowrap">
+                        <td className="py-3 px-4 text-right truncate whitespace-nowrap overflow-hidden">
                           <button
                             type="button"
                             onClick={(e) => {
@@ -531,8 +567,8 @@ export default function AuditLogsPage() {
                             }}
                             className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 rounded-md shadow-2xs transition cursor-pointer"
                           >
-                            <Eye className="w-3.5 h-3.5 text-slate-400" />
-                            Details
+                            <Eye className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <span>Details</span>
                           </button>
                         </td>
                       </tr>

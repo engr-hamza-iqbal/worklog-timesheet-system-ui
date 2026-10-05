@@ -14,10 +14,22 @@ import {
 import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useNotification } from '../context/NotificationContext.jsx';
+import useTableResize from '../hooks/useTableResize.js';
+import ResizableTh from '../components/ResizableTh.jsx';
 
 function MetricTable({ title, rows = [], columns = [] }) {
   const [sortKey, setSortKey] = useState(null);
   const [sortOrder, setSortOrder] = useState('asc'); // 'asc' | 'desc'
+
+  const initialWidths = useMemo(() => {
+    const init = {};
+    columns.forEach((col, idx) => {
+      init[col.key] = idx === 0 ? 220 : 140;
+    });
+    return init;
+  }, [columns]);
+
+  const { columnWidths, startResize } = useTableResize(initialWidths);
 
   const handleSort = (key) => {
     if (sortKey === key) {
@@ -53,41 +65,49 @@ function MetricTable({ title, rows = [], columns = [] }) {
         <span className="text-xs text-slate-400 font-medium">{rows.length} rows</span>
       </div>
       {sortedRows && sortedRows.length ? (
-        <table className="w-full text-left text-sm min-w-[340px]">
+        <table className="w-full text-left text-sm min-w-[340px] table-fixed">
           <thead className="text-xs uppercase text-slate-500 bg-slate-50/40 select-none">
             <tr>
               {columns.map((column) => (
-                <th
+                <ResizableTh
                   key={column.key}
+                  width={columnWidths[column.key]}
+                  onResizeStart={(e) => startResize(column.key, e)}
                   onClick={() => handleSort(column.key)}
                   className="px-5 py-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                 >
-                  <div className="flex items-center gap-1.5">
-                    <span>{column.label}</span>
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="truncate">{column.label}</span>
                     {sortKey === column.key ? (
                       sortOrder === 'asc' ? (
-                        <ArrowUp size={12} className="text-indigo-600" />
+                        <ArrowUp size={12} className="text-indigo-600 shrink-0" />
                       ) : (
-                        <ArrowDown size={12} className="text-indigo-600" />
+                        <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                       )
                     ) : (
-                      <ArrowUpDown size={12} className="text-slate-400 opacity-50" />
+                      <ArrowUpDown size={12} className="text-slate-400 opacity-50 shrink-0" />
                     )}
                   </div>
-                </th>
+                </ResizableTh>
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-slate-100">
             {sortedRows.map((row, index) => (
               <tr
                 key={row.projectId || row.clientId || row.userId || row.status || index}
-                className="border-t border-slate-100 hover:bg-slate-50/50"
+                className="hover:bg-slate-50/50"
               >
-                <td className="px-5 py-3 font-medium text-slate-800">{columns[0].value(row)}</td>
-                {columns.slice(1).map((column) => (
-                  <td key={column.key} className="px-5 py-3 text-slate-600">
-                    {column.value(row)}
+                {columns.map((column, idx) => (
+                  <td
+                    key={column.key}
+                    className={`px-5 py-3 truncate whitespace-nowrap overflow-hidden ${
+                      idx === 0 ? 'font-medium text-slate-800' : 'text-slate-600'
+                    }`}
+                  >
+                    <div className="truncate" title={String(column.value(row) ?? '')}>
+                      {column.value(row)}
+                    </div>
                   </td>
                 ))}
               </tr>
@@ -118,6 +138,14 @@ export default function ReportsPage() {
   const [loadingMissing, setLoadingMissing] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [chasing, setChasing] = useState(false);
+
+  // Resizable columns for missing timesheets
+  const { columnWidths: missingWidths, startResize: startMissingResize } = useTableResize({
+    select: 60,
+    employee: 220,
+    email: 260,
+    chaseStatus: 160,
+  });
 
   async function loadSummary(filterValues = filters) {
     try {
@@ -478,23 +506,49 @@ export default function ReportsPage() {
                 Checking timesheets and approved leave...
               </div>
             ) : missingData?.employees?.length ? (
-              <table className="w-full text-left text-sm min-w-[500px]">
+              <table className="w-full text-left text-sm min-w-[500px] table-fixed">
                 <thead className="bg-slate-50 text-xs uppercase text-slate-500">
                   <tr>
-                    {isAdmin && <th className="w-12 px-5 py-3">Select</th>}
-                    <th className="px-5 py-3">Employee</th>
-                    <th className="px-5 py-3">Email</th>
-                    <th className="px-5 py-3">Chase Status</th>
+                    {isAdmin && (
+                      <ResizableTh
+                        width={missingWidths.select}
+                        resizable={false}
+                        className="px-5 py-3"
+                      >
+                        <span className="truncate">Select</span>
+                      </ResizableTh>
+                    )}
+                    <ResizableTh
+                      width={missingWidths.employee}
+                      onResizeStart={(e) => startMissingResize('employee', e)}
+                      className="px-5 py-3"
+                    >
+                      <span className="truncate">Employee</span>
+                    </ResizableTh>
+                    <ResizableTh
+                      width={missingWidths.email}
+                      onResizeStart={(e) => startMissingResize('email', e)}
+                      className="px-5 py-3"
+                    >
+                      <span className="truncate">Email</span>
+                    </ResizableTh>
+                    <ResizableTh
+                      width={missingWidths.chaseStatus}
+                      onResizeStart={(e) => startMissingResize('chaseStatus', e)}
+                      className="px-5 py-3"
+                    >
+                      <span className="truncate">Chase Status</span>
+                    </ResizableTh>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-slate-100">
                   {missingData.employees.map((emp) => (
                     <tr
                       key={emp.userId}
-                      className="border-t border-slate-100 hover:bg-slate-50/50"
+                      className="hover:bg-slate-50/50"
                     >
                       {isAdmin && (
-                        <td className="px-5 py-3">
+                        <td className="px-5 py-3 truncate whitespace-nowrap overflow-hidden">
                           <input
                             type="checkbox"
                             disabled={emp.chasedToday}
@@ -504,15 +558,19 @@ export default function ReportsPage() {
                           />
                         </td>
                       )}
-                      <td className="px-5 py-3 font-medium text-slate-800">{emp.userName}</td>
-                      <td className="px-5 py-3 text-slate-600">{emp.email}</td>
-                      <td className="px-5 py-3">
+                      <td className="px-5 py-3 font-medium text-slate-800 truncate whitespace-nowrap overflow-hidden">
+                        <span className="truncate" title={emp.userName}>{emp.userName}</span>
+                      </td>
+                      <td className="px-5 py-3 text-slate-600 truncate whitespace-nowrap overflow-hidden">
+                        <span className="truncate" title={emp.email}>{emp.email}</span>
+                      </td>
+                      <td className="px-5 py-3 truncate whitespace-nowrap overflow-hidden">
                         {emp.chasedToday ? (
-                          <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
+                          <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600 truncate">
                             Reminded today
                           </span>
                         ) : (
-                          <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-amber-200">
+                          <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-amber-200 truncate">
                             Unsent
                           </span>
                         )}

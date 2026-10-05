@@ -23,6 +23,8 @@ import Badge from "../components/Badge.jsx";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import Pagination from "../components/Pagination.jsx";
 import { useNotification } from "../context/NotificationContext.jsx";
+import useTableResize from "../hooks/useTableResize.js";
+import ResizableTh from "../components/ResizableTh.jsx";
 
 function dateOnly(date) {
   return new Date(
@@ -83,6 +85,16 @@ export default function TimesheetsPage() {
   const [historyStatus, setHistoryStatus] = useState("ALL");
   const [historyPage, setHistoryPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
+
+  // Resizable columns for entries table
+  const { columnWidths, startResize } = useTableResize({
+    workDate: 120,
+    project: 180,
+    durationHours: 90,
+    description: 300,
+    status: 120,
+    actions: 120,
+  });
 
   const weekEnd = useMemo(() => addDays(weekStart, 6), [weekStart]);
   const dateRange = { startDate: iso(weekStart), endDate: iso(weekEnd) };
@@ -904,102 +916,119 @@ export default function TimesheetsPage() {
 
           {/* Historical Table */}
           <div className="bg-white border border-slate-200 rounded-xl overflow-x-auto shadow-xs">
-            <table className="w-full text-left border-collapse text-xs min-w-[620px]">
+            <table className="w-full text-left border-collapse text-xs min-w-[620px] table-fixed">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px] select-none">
-                  <th
+                  <ResizableTh
+                    width={columnWidths.workDate}
+                    onResizeStart={(e) => startResize('workDate', e)}
                     onClick={() => toggleHistorySort('workDate')}
                     className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                   >
-                    <div className="flex items-center gap-1.5">
-                      <span>Date</span>
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="truncate">Date</span>
                       {historySortField === 'workDate' ? (
-                        historySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                        historySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                       ) : (
-                        <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                        <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
                       )}
                     </div>
-                  </th>
-                  <th
+                  </ResizableTh>
+                  <ResizableTh
+                    width={columnWidths.project}
+                    onResizeStart={(e) => startResize('project', e)}
                     onClick={() => toggleHistorySort('project')}
                     className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                   >
-                    <div className="flex items-center gap-1.5">
-                      <span>Project</span>
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="truncate">Project</span>
                       {historySortField === 'project' ? (
-                        historySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                        historySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                       ) : (
-                        <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                        <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
                       )}
                     </div>
-                  </th>
-                  <th
+                  </ResizableTh>
+                  <ResizableTh
+                    width={columnWidths.durationHours}
+                    onResizeStart={(e) => startResize('durationHours', e)}
                     onClick={() => toggleHistorySort('durationHours')}
                     className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                   >
-                    <div className="flex items-center gap-1.5">
-                      <span>Hours</span>
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="truncate">Hours</span>
                       {historySortField === 'durationHours' ? (
-                        historySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                        historySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                       ) : (
-                        <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                        <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
                       )}
                     </div>
-                  </th>
-                  <th
+                  </ResizableTh>
+                  <ResizableTh
+                    width={columnWidths.description}
+                    onResizeStart={(e) => startResize('description', e)}
                     onClick={() => toggleHistorySort('description')}
                     className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                   >
-                    <div className="flex items-center gap-1.5">
-                      <span>Description</span>
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="truncate">Description</span>
                       {historySortField === 'description' ? (
-                        historySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                        historySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                       ) : (
-                        <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                        <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
                       )}
                     </div>
-                  </th>
-                  <th
+                  </ResizableTh>
+                  <ResizableTh
+                    width={columnWidths.status}
+                    onResizeStart={(e) => startResize('status', e)}
                     onClick={() => toggleHistorySort('status')}
                     className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                   >
-                    <div className="flex items-center gap-1.5">
-                      <span>Status</span>
+                    <div className="flex items-center gap-1.5 truncate">
+                      <span className="truncate">Status</span>
                       {historySortField === 'status' ? (
-                        historySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600" /> : <ArrowDown size={12} className="text-indigo-600" />
+                        historySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                       ) : (
-                        <ArrowUpDown size={12} className="text-slate-400 opacity-60" />
+                        <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
                       )}
                     </div>
-                  </th>
-                  <th className="py-3 px-4 text-right">Actions</th>
+                  </ResizableTh>
+                  <ResizableTh
+                    width={columnWidths.actions}
+                    onResizeStart={(e) => startResize('actions', e)}
+                    className="py-3 px-4 text-right"
+                    resizable={false}
+                  >
+                    <span className="truncate">Actions</span>
+                  </ResizableTh>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {paginatedHistory.length ? (
                   paginatedHistory.map((entry) => (
                     <tr key={entry.id} className="hover:bg-slate-50/70 transition">
-                      <td className="py-3 px-4 font-semibold text-slate-900 whitespace-nowrap">
+                      <td className="py-3 px-4 font-semibold text-slate-900 truncate whitespace-nowrap overflow-hidden">
                         {entry.workDate}
                       </td>
-                      <td className="py-3 px-4 font-medium text-slate-800">
-                        {entry.project?.name}
+                      <td className="py-3 px-4 font-medium text-slate-800 truncate whitespace-nowrap overflow-hidden">
+                        <span className="truncate" title={entry.project?.name}>{entry.project?.name}</span>
                       </td>
-                      <td className="py-3 px-4 font-bold text-slate-900">
+                      <td className="py-3 px-4 font-bold text-slate-900 truncate whitespace-nowrap overflow-hidden">
                         {entry.durationHours}h
                       </td>
-                      <td className="py-3 px-4 text-slate-600 max-w-md">
-                        <div>{entry.description}</div>
+                      <td className="py-3 px-4 text-slate-600 truncate whitespace-nowrap overflow-hidden">
+                        <div className="truncate" title={entry.description}>{entry.description}</div>
                         {entry.returnComment && (
-                          <div className="mt-1 text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded p-1.5">
-                            <strong>Reason returned:</strong> {entry.returnComment}
+                          <div className="mt-0.5 text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded px-1.5 py-0.5 truncate" title={`Reason returned: ${entry.returnComment}`}>
+                            <strong>Reason:</strong> {entry.returnComment}
                           </div>
                         )}
                       </td>
-                      <td className="py-3 px-4 whitespace-nowrap">
+                      <td className="py-3 px-4 truncate whitespace-nowrap overflow-hidden">
                         <Badge variant={statusVariant[entry.status]} label={entry.status} />
                       </td>
-                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                      <td className="py-3 px-4 text-right truncate whitespace-nowrap overflow-hidden">
                         {(entry.status === "DRAFT" || entry.status === "RETURNED") && (
                           <div className="inline-flex items-center gap-1.5">
                             <button
