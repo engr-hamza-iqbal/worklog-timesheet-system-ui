@@ -10,7 +10,7 @@ import RegisterPage from './pages/RegisterPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
 import ClientsProjectsPage from './pages/ClientsProjectsPage.jsx';
 import UsersPage from './pages/UsersPage.jsx';
-import AccessPage from './pages/AccessPage.jsx';
+import AccessPage from './pages/access/AccessPage.jsx';
 import TimesheetsPage from './pages/TimesheetsPage.jsx';
 import ReviewPage from './pages/ReviewPage.jsx';
 import TimeOffPage from './pages/TimeOffPage.jsx';
