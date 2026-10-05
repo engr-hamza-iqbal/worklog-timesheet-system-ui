@@ -673,6 +673,13 @@ export default function UserAccessPanel({ targetUser, users, projects, currentUs
           targetUser={targetUser}
           users={users}
           projects={projects}
+          onDeselect={(id) => {
+            setSelectedGrantIds((prev) => {
+              const next = new Set(prev);
+              next.delete(id);
+              return next;
+            });
+          }}
           onSuccess={() => {
             setBulkEditModal(false);
             setSelectedGrantIds(new Set());
