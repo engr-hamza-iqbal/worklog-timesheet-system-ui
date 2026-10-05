@@ -18,7 +18,7 @@ export function useTableResize(defaultWidths = {}, minColWidth = 50) {
 
     const clientX = e.clientX ?? (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
     const thElement = e.target.closest('th');
-    const startWidth = colWidths[colKey] || (thElement ? thElement.offsetWidth : 120);
+    const startWidth = (thElement ? thElement.offsetWidth : 0) || colWidths[colKey] || 120;
 
     resizeInfoRef.current = {
       colKey,
@@ -57,11 +57,18 @@ export function useTableResize(defaultWidths = {}, minColWidth = 50) {
     document.addEventListener('touchend', onPointerUp);
   }, [colWidths, minColWidth]);
 
+  const totalWidth = Object.values(colWidths).reduce((sum, w) => sum + (Number(w) || 0), 0);
+
   return {
     columnWidths: colWidths || {},
     colWidths: colWidths || {},
     startResize,
     setColWidths,
+    totalWidth,
+    tableStyle: {
+      width: totalWidth > 0 ? `${totalWidth}px` : '100%',
+      minWidth: '100%',
+    },
   };
 }
 

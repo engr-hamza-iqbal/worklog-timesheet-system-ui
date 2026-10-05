@@ -87,7 +87,7 @@ export default function TimesheetsPage() {
   const ITEMS_PER_PAGE = 10;
 
   // Resizable columns for entries table
-  const { columnWidths, startResize } = useTableResize({
+  const { columnWidths, startResize, tableStyle } = useTableResize({
     workDate: 120,
     project: 180,
     durationHours: 90,
@@ -637,9 +637,23 @@ export default function TimesheetsPage() {
             </div>
 
             {selectedDayData.timeOff && (
-              <div className="p-3 mx-4 mt-4 bg-sky-50 border border-sky-200 rounded-lg text-xs text-sky-800 flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-sky-600" />
-                <span>Approved Absence on this day: <strong>{selectedDayData.timeOff.type?.name}</strong></span>
+              <div className={`p-3 mx-4 mt-4 rounded-lg text-xs flex items-center gap-2 ${
+                selectedDayData.timeOff.status === 'PENDING'
+                  ? 'bg-amber-50 border border-amber-200 text-amber-800'
+                  : 'bg-sky-50 border border-sky-200 text-sky-800'
+              }`}>
+                <AlertCircle className={`w-4 h-4 shrink-0 ${
+                  selectedDayData.timeOff.status === 'PENDING' ? 'text-amber-600' : 'text-sky-600'
+                }`} />
+                <span>
+                  {selectedDayData.timeOff.status === 'PENDING' ? 'Pending Leave Request' : 'Approved Absence'} on this day:{' '}
+                  <strong>{selectedDayData.timeOff.type?.name}</strong>
+                  {selectedDayData.timeOff.status === 'PENDING' && (
+                    <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-100 text-amber-700">
+                      Awaiting review
+                    </span>
+                  )}
+                </span>
               </div>
             )}
 
@@ -798,8 +812,18 @@ export default function TimesheetsPage() {
                     </div>
 
                     {day.timeOff && (
-                      <div className="mb-3 rounded-lg border border-sky-200 bg-sky-50 px-2.5 py-1.5 text-[11px] text-sky-800">
-                        Absence: {day.timeOff.type?.name}
+                      <div className={`mb-3 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium flex items-center justify-between ${
+                        day.timeOff.status === 'PENDING'
+                          ? 'border-amber-200 bg-amber-50 text-amber-800'
+                          : 'border-sky-200 bg-sky-50 text-sky-800'
+                      }`}>
+                        <span>
+                          {day.timeOff.status === 'PENDING' ? 'Pending Leave: ' : 'Absence: '}
+                          {day.timeOff.type?.name}
+                        </span>
+                        {day.timeOff.status === 'PENDING' && (
+                          <span className="text-[10px] text-amber-600 font-normal">Pending</span>
+                        )}
                       </div>
                     )}
 
@@ -916,7 +940,7 @@ export default function TimesheetsPage() {
 
           {/* Historical Table */}
           <div className="bg-white border border-slate-200 rounded-xl overflow-x-auto shadow-xs">
-            <table className="w-full text-left border-collapse text-xs min-w-[620px] table-fixed">
+            <table className="text-left border-collapse text-xs min-w-[620px] table-fixed" style={tableStyle}>
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px] select-none">
                   <ResizableTh

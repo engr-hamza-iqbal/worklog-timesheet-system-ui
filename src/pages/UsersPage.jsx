@@ -840,7 +840,7 @@ export default function UsersPage() {
   const [isTogglingStatus, setIsTogglingStatus] = useState(false);
 
   // Resizable columns for users table
-  const { columnWidths, startResize } = useTableResize({
+  const { columnWidths, startResize, tableStyle } = useTableResize({
     name: 260,
     accountType: 130,
     isActive: 130,
@@ -1038,7 +1038,7 @@ export default function UsersPage() {
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs table-fixed min-w-[700px]">
+            <table className="text-left border-collapse text-xs table-fixed min-w-[700px]" style={tableStyle}>
               <thead className="bg-slate-50 border-b border-slate-200 text-[10px] font-medium text-slate-500 uppercase tracking-wider select-none">
                 <tr>
                   <ResizableTh

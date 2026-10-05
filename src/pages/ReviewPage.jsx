@@ -47,7 +47,7 @@ export default function ReviewPage() {
   const TIME_OFF_PER_PAGE = 10;
 
   // Resizable columns for entries queue
-  const { columnWidths: entriesWidths, startResize: startEntriesResize } = useTableResize({
+  const { columnWidths: entriesWidths, startResize: startEntriesResize, tableStyle: entriesTableStyle } = useTableResize({
     select: 48,
     employee: 180,
     workDate: 120,
@@ -58,7 +58,7 @@ export default function ReviewPage() {
   });
 
   // Resizable columns for time off queue
-  const { columnWidths: timeOffWidths, startResize: startTimeOffResize } = useTableResize({
+  const { columnWidths: timeOffWidths, startResize: startTimeOffResize, tableStyle: timeOffTableStyle } = useTableResize({
     employee: 200,
     type: 140,
     startDate: 190,
@@ -559,7 +559,7 @@ export default function ReviewPage() {
 
       {/* Entries Table */}
       <div className="relative overflow-x-auto bg-white border border-slate-200 rounded-lg shadow-xs">
-        <table className="w-full text-left text-sm min-w-[680px] table-fixed">
+        <table className="text-left text-sm min-w-[680px] table-fixed" style={entriesTableStyle}>
           <thead className="bg-slate-50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-200 select-none">
             <tr>
               <ResizableTh
@@ -733,9 +733,7 @@ export default function ReviewPage() {
                 <td colSpan="7" className="p-10 text-center text-sm text-slate-500">
                   {hasActiveFilters
                     ? "No submitted entries match the active filters."
-                    : scope
-                      ? `No submitted entries found for ${scope}.`
-                      : "No submitted entries pending review."}
+                    : "No submitted entries pending review."}
                 </td>
               </tr>
             )}
@@ -762,7 +760,7 @@ export default function ReviewPage() {
       ) : (
         /* Time Off Requests Queue */
         <div className="bg-white rounded-lg border border-slate-200 overflow-x-auto shadow-xs">
-          <table className="w-full text-left border-collapse text-xs min-w-[640px] table-fixed">
+          <table className="text-left border-collapse text-xs min-w-[640px] table-fixed" style={timeOffTableStyle}>
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px] select-none">
                 <ResizableTh

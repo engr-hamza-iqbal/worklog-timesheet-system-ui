@@ -303,7 +303,7 @@ export default function ClientsProjectsPage() {
   };
 
   // Resizable columns for projects table
-  const { columnWidths, startResize } = useTableResize({
+  const { columnWidths, startResize, tableStyle } = useTableResize({
     name: 200,
     status: 120,
     currentRate: 120,
@@ -605,7 +605,7 @@ export default function ClientsProjectsPage() {
               ) : (
                 <>
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs min-w-[500px] table-fixed">
+                    <table className="text-left text-xs min-w-[500px] table-fixed" style={tableStyle}>
                       <thead className="bg-slate-50 text-[10px] font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 select-none">
                         <tr>
                           <ResizableTh

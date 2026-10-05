@@ -25,6 +25,9 @@ export default function ResizableTh({
     ...(width ? { width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` } : {}),
   };
 
+  const isRight = align === 'right' || className.includes('text-right');
+  const isCenter = align === 'center' || className.includes('text-center');
+
   return (
     <th
       style={inlineStyle}
@@ -33,8 +36,8 @@ export default function ResizableTh({
       {...props}
     >
       <div
-        className={`w-full overflow-hidden text-ellipsis whitespace-nowrap flex items-center ${
-          align === 'right' ? 'justify-end' : align === 'center' ? 'justify-center' : 'justify-start'
+        className={`w-full overflow-hidden text-ellipsis whitespace-nowrap flex items-center pr-2 ${
+          isRight ? 'justify-end' : isCenter ? 'justify-center' : 'justify-start'
         }`}
         title={title}
       >

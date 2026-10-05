@@ -39,7 +39,7 @@ export default function TimeOffPage() {
   const ITEMS_PER_PAGE = 10;
 
   // Resizable columns
-  const { columnWidths, startResize } = useTableResize({
+  const { columnWidths, startResize, tableStyle } = useTableResize({
     employee: 180,
     startDate: 190,
     type: 130,
@@ -168,6 +168,7 @@ export default function TimeOffPage() {
         endDate: "",
         reason: "",
       }));
+      setPage(1);
       await load();
     } catch (err) {
       notify.error(err.message);
@@ -403,7 +404,7 @@ export default function TimeOffPage() {
             No time-off requests match these filters.
           </div>
         ) : (
-          <table className="w-full text-left text-sm min-w-[580px] table-fixed">
+          <table className="text-left text-sm min-w-[580px] table-fixed" style={tableStyle}>
             <thead className="bg-slate-50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-200 select-none">
               <tr>
                 <ResizableTh
