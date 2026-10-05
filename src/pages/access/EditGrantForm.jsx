@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Shield, Clock, FolderOpen, User, Search, Loader2 } from 'lucide-react';
 import api from '../../api/client.js';
 import { CAP_META } from './constants.js';
-import { broadcastAuthSync, fmtDate, ErrorAlert } from './helpers.jsx';
+import { broadcastAuthSync, fmtDate, ErrorAlert, toLocalEndOfDayIso, toLocalDateString } from './helpers.jsx';
 
 // ─── Edit Capability Grant Form ──────────────────────────────────────────────
 
@@ -10,7 +10,7 @@ export default function EditGrantForm({ grant, targetUser, users, projects, onSu
   const initialScopeType = grant.scopes && grant.scopes.length > 0 ? grant.scopes[0].scopeType : 'GLOBAL';
   const initialProjectIds = grant.scopes ? grant.scopes.filter((s) => s.scopeType === 'PROJECT').map((s) => s.targetProjectId) : [];
   const initialUserIds = grant.scopes ? grant.scopes.filter((s) => s.scopeType === 'USER').map((s) => s.targetUserId) : [];
-  const initialExpiresAt = grant.expiresAt ? new Date(grant.expiresAt).toISOString().split('T')[0] : '';
+  const initialExpiresAt = grant.expiresAt ? toLocalDateString(grant.expiresAt) : '';
 
   const [scopeType, setScopeType] = useState(initialScopeType);
   const [targetProjectIds, setTargetProjectIds] = useState(initialProjectIds);
@@ -25,9 +25,10 @@ export default function EditGrantForm({ grant, targetUser, users, projects, onSu
   const capMeta = CAP_META[grant.capability?.code] || { label: grant.capability?.code, desc: '' };
 
   const addDaysToExpiry = (days) => {
-    const base = expiresAt ? new Date(expiresAt) : new Date();
+    const today = new Date();
+    const base = expiresAt && new Date(expiresAt) > today ? new Date(expiresAt) : today;
     base.setDate(base.getDate() + days);
-    setExpiresAt(base.toISOString().split('T')[0]);
+    setExpiresAt(toLocalDateString(base));
     setIsPermanent(false);
   };
 
@@ -80,7 +81,7 @@ export default function EditGrantForm({ grant, targetUser, users, projects, onSu
     setError('');
     try {
       const payload = {
-        expiresAt: isPermanent ? null : (expiresAt ? new Date(expiresAt + 'T23:59:59.999Z').toISOString() : null),
+        expiresAt: isPermanent ? null : (expiresAt ? toLocalEndOfDayIso(expiresAt) : null),
         scopeType,
         targetProjectIds: scopeType === 'PROJECT' ? targetProjectIds : [],
         targetUserIds: scopeType === 'USER' ? targetUserIds : [],

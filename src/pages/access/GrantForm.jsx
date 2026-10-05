@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Search, Loader2 } from 'lucide-react';
 import api from '../../api/client.js';
 import { CAP_META, ALL_CAP_CODES } from './constants.js';
-import { broadcastAuthSync, ErrorAlert } from './helpers.jsx';
+import { broadcastAuthSync, ErrorAlert, toLocalEndOfDayIso } from './helpers.jsx';
 
 // ─── Grant Capabilities Form (Multiple Capabilities to User) ──────────────────
 
@@ -82,7 +82,7 @@ export default function GrantForm({ targetUser, grantedCodes, users, projects, o
       await api.post('/api/access/grants', {
         userId: targetUser.id,
         capabilityCodes: codes,
-        expiresAt: expiresAt || undefined,
+        expiresAt: expiresAt ? toLocalEndOfDayIso(expiresAt) : undefined,
         scopeType: scopeType === 'GLOBAL' ? undefined : scopeType,
         targetUserIds: scopeType === 'USER' ? targetUserIds : undefined,
         targetProjectIds: scopeType === 'PROJECT' ? targetProjectIds : undefined,

@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Shield, Clock, FolderOpen, User, Search, Loader2 } from 'lucide-react';
 import api from '../../api/client.js';
 import { CAP_META } from './constants.js';
-import { broadcastAuthSync, ErrorAlert } from './helpers.jsx';
+import { broadcastAuthSync, ErrorAlert, toLocalEndOfDayIso, toLocalDateString } from './helpers.jsx';
 
 // ─── Bulk Edit Capabilities Form ─────────────────────────────────────────────
 
@@ -25,7 +25,7 @@ export default function BulkEditGrantsForm({ selectedGrants = [], targetUser, us
     const today = new Date();
     const base = expiresAt && new Date(expiresAt) > today ? new Date(expiresAt) : today;
     base.setDate(base.getDate() + days);
-    setExpiresAt(base.toISOString().split('T')[0]);
+    setExpiresAt(toLocalDateString(base));
     setIsPermanent(false);
   };
 
@@ -93,7 +93,7 @@ export default function BulkEditGrantsForm({ selectedGrants = [], targetUser, us
         grantIds: selectedGrants.map((g) => g.id),
       };
       if (updateExpiry) {
-        payload.expiresAt = isPermanent ? null : (expiresAt ? new Date(expiresAt + 'T23:59:59.999Z').toISOString() : null);
+        payload.expiresAt = isPermanent ? null : (expiresAt ? toLocalEndOfDayIso(expiresAt) : null);
       }
       if (updateScope) {
         payload.scopeType = scopeType;

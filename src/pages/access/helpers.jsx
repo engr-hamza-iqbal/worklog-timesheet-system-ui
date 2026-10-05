@@ -22,6 +22,33 @@ export function fmtDate(d) {
   return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
+/**
+ * Convert a YYYY-MM-DD input string to an ISO timestamp representing
+ * the end of that day in the user's local timezone (23:59:59.999).
+ * Prevents UTC timezone shift from adding a day on display.
+ */
+export function toLocalEndOfDayIso(dateStr) {
+  if (!dateStr) return null;
+  if (dateStr.includes('T')) return new Date(dateStr).toISOString();
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const localDate = new Date(year, month - 1, day, 23, 59, 59, 999);
+  return localDate.toISOString();
+}
+
+/**
+ * Format a Date or ISO timestamp into YYYY-MM-DD using local timezone
+ * for <input type="date" /> values, preventing UTC shifts.
+ */
+export function toLocalDateString(dateInput) {
+  if (!dateInput) return '';
+  const d = new Date(dateInput);
+  if (isNaN(d.getTime())) return '';
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export function ErrorAlert({ message, onDismiss }) {
   if (!message) return null;
   return (
