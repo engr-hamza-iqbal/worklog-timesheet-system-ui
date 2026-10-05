@@ -18,6 +18,57 @@ export default function GrantForm({ targetUser, grantedCodes, users, projects, o
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  const [projectList, setProjectList] = useState(Array.isArray(projects) ? projects : []);
+  const [userList, setUserList] = useState(Array.isArray(users) ? users : []);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
+  React.useEffect(() => {
+    if (Array.isArray(projects) && projects.length > 0) {
+      setProjectList(projects);
+    }
+  }, [projects]);
+
+  React.useEffect(() => {
+    if (Array.isArray(users) && users.length > 0) {
+      setUserList(users);
+    }
+  }, [users]);
+
+  const fetchProjects = async () => {
+    setLoadingProjects(true);
+    try {
+      const res = await api.get('/api/projects');
+      const list = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+      setProjectList(list);
+    } catch (e) {
+      // Keep existing list on failure
+    } finally {
+      setLoadingProjects(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    setLoadingUsers(true);
+    try {
+      const res = await api.get('/api/users');
+      const list = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+      setUserList(list);
+    } catch (e) {
+      // Keep existing list on failure
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (scopeType === 'PROJECT' && projectList.length === 0) {
+      fetchProjects();
+    } else if (scopeType === 'USER' && userList.length === 0) {
+      fetchUsers();
+    }
+  }, [scopeType, projectList.length, userList.length]);
+
   const filteredAvailableCodes = useMemo(() => {
     const q = capSearch.toLowerCase().trim();
     if (!q) return availableCodes;
@@ -227,43 +278,138 @@ export default function GrantForm({ targetUser, grantedCodes, users, projects, o
 
       {/* User scope picker */}
       {scopeType === 'USER' && (
-        <div>
-          <label className="block text-xs font-medium text-slate-700 mb-1.5">Target users</label>
-          <div className="max-h-36 overflow-y-auto border border-slate-200 rounded divide-y divide-slate-100">
-            {users.filter((u) => u.id !== targetUser.id && u.isActive && u.accountType !== 'ADMIN').map((u) => (
-              <label key={u.id} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={targetUserIds.includes(u.id)}
-                  onChange={() => toggleTargetId('targetUserIds', u.id)}
-                  className="rounded border-slate-300"
-                />
-                <span className="text-xs text-slate-700">{u.name}</span>
-                <span className="text-[11px] text-slate-400 ml-auto truncate">{u.email}</span>
-              </label>
-            ))}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between text-xs">
+            <label className="font-medium text-slate-700">
+              Target users ({targetUserIds.length})
+            </label>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setTargetUserIds((userList || []).filter((u) => u.id !== targetUser.id && u.isActive).map((u) => u.id))}
+                className="text-[11px] font-medium text-indigo-600 hover:text-indigo-800 transition cursor-pointer"
+              >
+                Select all
+              </button>
+              <span className="text-slate-300">|</span>
+              <button
+                type="button"
+                onClick={() => setTargetUserIds([])}
+                className="text-[11px] font-medium text-slate-500 hover:text-slate-800 transition cursor-pointer"
+              >
+                Clear
+              </button>
+              {userList.length === 0 && !loadingUsers && (
+                <>
+                  <span className="text-slate-300">|</span>
+                  <button
+                    type="button"
+                    onClick={fetchUsers}
+                    className="text-[11px] font-medium text-indigo-600 hover:text-indigo-800 transition cursor-pointer"
+                  >
+                    Load Users
+                  </button>
+                </>
+              )}
+            </div>
           </div>
+
+          {loadingUsers ? (
+            <div className="py-4 flex items-center justify-center gap-2 text-xs text-slate-500 bg-white border border-slate-200 rounded">
+              <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
+              <span>Loading users...</span>
+            </div>
+          ) : (
+            <div className="max-h-36 overflow-y-auto border border-slate-200 rounded divide-y divide-slate-100 bg-white">
+              {(userList || []).filter((u) => u.id !== targetUser.id && u.isActive).map((u) => (
+                <label key={u.id} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={targetUserIds.includes(u.id)}
+                    onChange={() => toggleTargetId('targetUserIds', u.id)}
+                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span className="text-xs text-slate-700 flex items-center gap-1.5 min-w-0">
+                    <span className="truncate">{u.name}</span>
+                    {u.accountType === 'ADMIN' && (
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-violet-100 text-violet-700 border border-violet-200 shrink-0">
+                        Admin
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-[11px] text-slate-400 ml-auto truncate font-mono">{u.email}</span>
+                </label>
+              ))}
+              {(userList || []).filter((u) => u.id !== targetUser.id && u.isActive).length === 0 && (
+                <p className="text-xs text-slate-400 italic text-center py-3">No matching users available.</p>
+              )}
+            </div>
+          )}
         </div>
       )}
 
       {/* Project scope picker */}
       {scopeType === 'PROJECT' && (
-        <div>
-          <label className="block text-xs font-medium text-slate-700 mb-1.5">Target projects</label>
-          <div className="max-h-36 overflow-y-auto border border-slate-200 rounded divide-y divide-slate-100">
-            {projects.filter((p) => p.status === 'ACTIVE').map((p) => (
-              <label key={p.id} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={targetProjectIds.includes(p.id)}
-                  onChange={() => toggleTargetId('targetProjectIds', p.id)}
-                  className="rounded border-slate-300"
-                />
-                <span className="text-xs text-slate-700">{p.name}</span>
-                <span className="text-[11px] text-slate-400 ml-auto truncate">{p.clientName}</span>
-              </label>
-            ))}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between text-xs">
+            <label className="font-medium text-slate-700">
+              Target projects ({targetProjectIds.length})
+            </label>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setTargetProjectIds((projectList || []).filter((p) => p.status === 'ACTIVE' || !p.status).map((p) => p.id))}
+                className="text-[11px] font-medium text-indigo-600 hover:text-indigo-800 transition cursor-pointer"
+              >
+                Select all active
+              </button>
+              <span className="text-slate-300">|</span>
+              <button
+                type="button"
+                onClick={() => setTargetProjectIds([])}
+                className="text-[11px] font-medium text-slate-500 hover:text-slate-800 transition cursor-pointer"
+              >
+                Clear
+              </button>
+              {projectList.length === 0 && !loadingProjects && (
+                <>
+                  <span className="text-slate-300">|</span>
+                  <button
+                    type="button"
+                    onClick={fetchProjects}
+                    className="text-[11px] font-medium text-indigo-600 hover:text-indigo-800 transition cursor-pointer"
+                  >
+                    Load Projects
+                  </button>
+                </>
+              )}
+            </div>
           </div>
+
+          {loadingProjects ? (
+            <div className="py-4 flex items-center justify-center gap-2 text-xs text-slate-500 bg-white border border-slate-200 rounded">
+              <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
+              <span>Loading projects...</span>
+            </div>
+          ) : (
+            <div className="max-h-36 overflow-y-auto border border-slate-200 rounded divide-y divide-slate-100 bg-white">
+              {(projectList || []).filter((p) => p.status === 'ACTIVE' || !p.status).map((p) => (
+                <label key={p.id} className="flex items-center gap-2 px-3 py-2 hover:bg-slate-50 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={targetProjectIds.includes(p.id)}
+                    onChange={() => toggleTargetId('targetProjectIds', p.id)}
+                    className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  />
+                  <span className="text-xs text-slate-700 truncate">{p.name}</span>
+                  <span className="text-[11px] text-slate-400 ml-auto truncate">{p.clientName}</span>
+                </label>
+              ))}
+              {(projectList || []).filter((p) => p.status === 'ACTIVE' || !p.status).length === 0 && (
+                <p className="text-xs text-slate-400 italic text-center py-3">No active projects available.</p>
+              )}
+            </div>
+          )}
         </div>
       )}
 

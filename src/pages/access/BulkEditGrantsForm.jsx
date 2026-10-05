@@ -71,13 +71,100 @@ export default function BulkEditGrantsForm({
     });
   }, [grantsList]);
 
+  // Derive initial scope and targets from selected grants if present
+  const initialScopeType = useMemo(() => {
+    for (const g of selectedGrants) {
+      if (g.scopes && g.scopes.length > 0) {
+        return g.scopes[0].scopeType;
+      }
+    }
+    return 'GLOBAL';
+  }, [selectedGrants]);
+
+  const initialProjectIds = useMemo(() => {
+    const ids = new Set();
+    for (const g of selectedGrants) {
+      if (g.scopes) {
+        g.scopes.filter((s) => s.scopeType === 'PROJECT').forEach((s) => {
+          if (s.targetProjectId) ids.add(s.targetProjectId);
+        });
+      }
+    }
+    return Array.from(ids);
+  }, [selectedGrants]);
+
+  const initialUserIds = useMemo(() => {
+    const ids = new Set();
+    for (const g of selectedGrants) {
+      if (g.scopes) {
+        g.scopes.filter((s) => s.scopeType === 'USER').forEach((s) => {
+          if (s.targetUserId) ids.add(s.targetUserId);
+        });
+      }
+    }
+    return Array.from(ids);
+  }, [selectedGrants]);
+
   // Scope state
   const [updateScope, setUpdateScope] = useState(false);
-  const [scopeType, setScopeType] = useState('GLOBAL');
-  const [targetProjectIds, setTargetProjectIds] = useState([]);
-  const [targetUserIds, setTargetUserIds] = useState([]);
+  const [scopeType, setScopeType] = useState(initialScopeType);
+  const [targetProjectIds, setTargetProjectIds] = useState(initialProjectIds);
+  const [targetUserIds, setTargetUserIds] = useState(initialUserIds);
   const [projectSearch, setProjectSearch] = useState('');
   const [userSearch, setUserSearch] = useState('');
+
+  // Local lists with fallback auto-loading
+  const [projectList, setProjectList] = useState(Array.isArray(projects) ? projects : []);
+  const [userList, setUserList] = useState(Array.isArray(users) ? users : []);
+  const [loadingProjects, setLoadingProjects] = useState(false);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
+  useEffect(() => {
+    if (Array.isArray(projects) && projects.length > 0) {
+      setProjectList(projects);
+    }
+  }, [projects]);
+
+  useEffect(() => {
+    if (Array.isArray(users) && users.length > 0) {
+      setUserList(users);
+    }
+  }, [users]);
+
+  const fetchProjects = async () => {
+    setLoadingProjects(true);
+    try {
+      const res = await api.get('/api/projects');
+      const list = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+      setProjectList(list);
+    } catch (e) {
+      // Keep existing list on failure
+    } finally {
+      setLoadingProjects(false);
+    }
+  };
+
+  const fetchUsers = async () => {
+    setLoadingUsers(true);
+    try {
+      const res = await api.get('/api/users');
+      const list = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+      setUserList(list);
+    } catch (e) {
+      // Keep existing list on failure
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  // Load projects or users if empty when switching scope or opening scope section
+  useEffect(() => {
+    if (updateScope && scopeType === 'PROJECT' && projectList.length === 0) {
+      fetchProjects();
+    } else if (updateScope && scopeType === 'USER' && userList.length === 0) {
+      fetchUsers();
+    }
+  }, [updateScope, scopeType, projectList.length, userList.length]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -139,25 +226,26 @@ export default function BulkEditGrantsForm({
 
   const filteredProjects = useMemo(() => {
     const q = projectSearch.toLowerCase().trim();
-    const active = projects.filter((p) => p.status === 'ACTIVE');
+    const active = (projectList || []).filter((p) => p.status === 'ACTIVE' || !p.status);
     if (!q) return active;
     return active.filter(
       (p) =>
         (p.name && p.name.toLowerCase().includes(q)) ||
         (p.clientName && p.clientName.toLowerCase().includes(q))
     );
-  }, [projects, projectSearch]);
+  }, [projectList, projectSearch]);
 
   const filteredUsers = useMemo(() => {
     const q = userSearch.toLowerCase().trim();
-    const active = users.filter((u) => u.isActive && u.id !== targetUser.id);
+    // Allow selecting any active user except the targetUser themselves (including Admins)
+    const active = (userList || []).filter((u) => u.isActive && u.id !== targetUser.id);
     if (!q) return active;
     return active.filter(
       (u) =>
         (u.name && u.name.toLowerCase().includes(q)) ||
         (u.email && u.email.toLowerCase().includes(q))
     );
-  }, [users, userSearch, targetUser.id]);
+  }, [userList, userSearch, targetUser.id]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -586,6 +674,41 @@ export default function BulkEditGrantsForm({
             {/* Project scope selector */}
             {scopeType === 'PROJECT' && (
               <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium text-slate-700">
+                    Selected Projects ({targetProjectIds.length})
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setTargetProjectIds((projectList || []).filter((p) => p.status === 'ACTIVE' || !p.status).map((p) => p.id))}
+                      className="text-[11px] font-medium text-indigo-600 hover:text-indigo-800 transition cursor-pointer"
+                    >
+                      Select all active
+                    </button>
+                    <span className="text-slate-300">|</span>
+                    <button
+                      type="button"
+                      onClick={() => setTargetProjectIds([])}
+                      className="text-[11px] font-medium text-slate-500 hover:text-slate-800 transition cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                    {projectList.length === 0 && !loadingProjects && (
+                      <>
+                        <span className="text-slate-300">|</span>
+                        <button
+                          type="button"
+                          onClick={fetchProjects}
+                          className="text-[11px] font-medium text-indigo-600 hover:text-indigo-800 transition cursor-pointer"
+                        >
+                          Load Projects
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
                 <div className="relative">
                   <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
                   <input
@@ -596,41 +719,97 @@ export default function BulkEditGrantsForm({
                     className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-300 rounded focus:outline-none focus:border-slate-900 bg-white"
                   />
                 </div>
-                <div className="max-h-40 overflow-y-auto space-y-1 border border-slate-200 rounded p-2 bg-white">
-                  {filteredProjects.map((p) => {
-                    const isChecked = targetProjectIds.includes(p.id);
-                    return (
-                      <label
-                        key={p.id}
-                        className={`flex items-center gap-2 p-1.5 rounded text-xs cursor-pointer select-none transition ${
-                          isChecked ? 'bg-indigo-50/70 text-indigo-900 font-medium' : 'hover:bg-slate-50 text-slate-700'
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => toggleTargetId('targetProjectIds', p.id)}
-                          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                        />
-                        <span className="truncate">
-                          {p.name}
-                          {p.clientName && (
-                            <span className="text-[10px] text-slate-400 ml-1">({p.clientName})</span>
-                          )}
-                        </span>
-                      </label>
-                    );
-                  })}
-                  {filteredProjects.length === 0 && (
-                    <p className="text-xs text-slate-400 italic text-center py-2">No matching projects.</p>
-                  )}
-                </div>
+
+                {loadingProjects ? (
+                  <div className="py-4 flex items-center justify-center gap-2 text-xs text-slate-500 bg-white border border-slate-200 rounded">
+                    <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
+                    <span>Loading projects...</span>
+                  </div>
+                ) : (
+                  <div className="max-h-40 overflow-y-auto space-y-1 border border-slate-200 rounded p-2 bg-white">
+                    {filteredProjects.map((p) => {
+                      const isChecked = targetProjectIds.includes(p.id);
+                      return (
+                        <label
+                          key={p.id}
+                          className={`flex items-center gap-2 p-1.5 rounded text-xs cursor-pointer select-none transition ${
+                            isChecked ? 'bg-indigo-50/70 text-indigo-900 font-medium' : 'hover:bg-slate-50 text-slate-700'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => toggleTargetId('targetProjectIds', p.id)}
+                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                          />
+                          <span className="truncate">
+                            {p.name}
+                            {p.clientName && (
+                              <span className="text-[10px] text-slate-400 ml-1">({p.clientName})</span>
+                            )}
+                          </span>
+                        </label>
+                      );
+                    })}
+                    {filteredProjects.length === 0 && (
+                      <div className="text-center py-3">
+                        <p className="text-xs text-slate-400 italic">
+                          {projectList.length === 0 ? 'No projects loaded.' : 'No matching projects.'}
+                        </p>
+                        {projectList.length === 0 && (
+                          <button
+                            type="button"
+                            onClick={fetchProjects}
+                            className="mt-1 text-xs text-indigo-600 hover:text-indigo-800 underline font-medium"
+                          >
+                            Click to reload projects
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
             {/* User scope selector */}
             {scopeType === 'USER' && (
               <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-medium text-slate-700">
+                    Selected Users ({targetUserIds.length})
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setTargetUserIds(filteredUsers.map((u) => u.id))}
+                      className="text-[11px] font-medium text-indigo-600 hover:text-indigo-800 transition cursor-pointer"
+                    >
+                      Select all
+                    </button>
+                    <span className="text-slate-300">|</span>
+                    <button
+                      type="button"
+                      onClick={() => setTargetUserIds([])}
+                      className="text-[11px] font-medium text-slate-500 hover:text-slate-800 transition cursor-pointer"
+                    >
+                      Clear
+                    </button>
+                    {userList.length === 0 && !loadingUsers && (
+                      <>
+                        <span className="text-slate-300">|</span>
+                        <button
+                          type="button"
+                          onClick={fetchUsers}
+                          className="text-[11px] font-medium text-indigo-600 hover:text-indigo-800 transition cursor-pointer"
+                        >
+                          Load Users
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
                 <div className="relative">
                   <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400" />
                   <input
@@ -641,33 +820,59 @@ export default function BulkEditGrantsForm({
                     className="w-full pl-8 pr-3 py-1.5 text-xs border border-slate-300 rounded focus:outline-none focus:border-slate-900 bg-white"
                   />
                 </div>
-                <div className="max-h-40 overflow-y-auto space-y-1 border border-slate-200 rounded p-2 bg-white">
-                  {filteredUsers.map((u) => {
-                    const isChecked = targetUserIds.includes(u.id);
-                    return (
-                      <label
-                        key={u.id}
-                        className={`flex items-center gap-2 p-1.5 rounded text-xs cursor-pointer select-none transition ${
-                          isChecked ? 'bg-indigo-50/70 text-indigo-900 font-medium' : 'hover:bg-slate-50 text-slate-700'
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => toggleTargetId('targetUserIds', u.id)}
-                          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
-                        />
-                        <span className="truncate">
-                          {u.name}
-                          <span className="text-[10px] text-slate-400 ml-1 font-mono">{u.email}</span>
-                        </span>
-                      </label>
-                    );
-                  })}
-                  {filteredUsers.length === 0 && (
-                    <p className="text-xs text-slate-400 italic text-center py-2">No matching users.</p>
-                  )}
-                </div>
+
+                {loadingUsers ? (
+                  <div className="py-4 flex items-center justify-center gap-2 text-xs text-slate-500 bg-white border border-slate-200 rounded">
+                    <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
+                    <span>Loading users...</span>
+                  </div>
+                ) : (
+                  <div className="max-h-40 overflow-y-auto space-y-1 border border-slate-200 rounded p-2 bg-white">
+                    {filteredUsers.map((u) => {
+                      const isChecked = targetUserIds.includes(u.id);
+                      return (
+                        <label
+                          key={u.id}
+                          className={`flex items-center gap-2 p-1.5 rounded text-xs cursor-pointer select-none transition ${
+                            isChecked ? 'bg-indigo-50/70 text-indigo-900 font-medium' : 'hover:bg-slate-50 text-slate-700'
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => toggleTargetId('targetUserIds', u.id)}
+                            className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                          />
+                          <span className="truncate flex items-center gap-1.5">
+                            <span className="truncate">{u.name}</span>
+                            {u.accountType === 'ADMIN' && (
+                              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-violet-100 text-violet-700 border border-violet-200 shrink-0">
+                                Admin
+                              </span>
+                            )}
+                            <span className="text-[10px] text-slate-400 font-mono truncate">{u.email}</span>
+                          </span>
+                        </label>
+                      );
+                    })}
+                    {filteredUsers.length === 0 && (
+                      <div className="text-center py-3">
+                        <p className="text-xs text-slate-400 italic">
+                          {userList.length === 0 ? 'No users loaded.' : 'No matching users.'}
+                        </p>
+                        {userList.length === 0 && (
+                          <button
+                            type="button"
+                            onClick={fetchUsers}
+                            className="mt-1 text-xs text-indigo-600 hover:text-indigo-800 underline font-medium"
+                          >
+                            Click to reload users
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>

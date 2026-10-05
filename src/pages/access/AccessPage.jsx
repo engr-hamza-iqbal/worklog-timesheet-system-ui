@@ -47,8 +47,8 @@ export default function AccessPage() {
         api.get('/api/users'),
         api.get('/api/projects'),
       ]);
-      const userList = Array.isArray(usersRes.data) ? usersRes.data : [];
-      const projList = Array.isArray(projectsRes.data) ? projectsRes.data : [];
+      const userList = Array.isArray(usersRes?.data) ? usersRes.data : (Array.isArray(usersRes) ? usersRes : []);
+      const projList = Array.isArray(projectsRes?.data) ? projectsRes.data : (Array.isArray(projectsRes) ? projectsRes : []);
       setUsers(userList);
       setProjects(projList);
       setSelectedUserId((current) => current && userList.some((user) => user.id === current)
