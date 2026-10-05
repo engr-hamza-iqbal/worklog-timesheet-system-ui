@@ -25,6 +25,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useNotification } from "../context/NotificationContext.jsx";
 import useTableResize from "../hooks/useTableResize.js";
 import ResizableTh from "../components/ResizableTh.jsx";
+import { entryIdsSchema, reviewReturnSchema, timeOffDecisionSchema } from "../validation/formSchemas.js";
 
 export default function ReviewPage() {
   const { notify } = useNotification();
@@ -279,9 +280,14 @@ export default function ReviewPage() {
   }
 
   async function approveConfirmed(entryIds) {
+    const parsed = entryIdsSchema.safeParse({ entryIds });
+    if (!parsed.success) {
+      notify.warn(parsed.error.issues[0]?.message || "Select at least one entry.");
+      return;
+    }
     try {
-      setIsProcessing(`Approving ${entryIds.length} entr${entryIds.length === 1 ? "y" : "ies"}...`);
-      await api.post("/api/reviews/approve", { entryIds });
+      setIsProcessing(`Approving ${parsed.data.entryIds.length} entr${parsed.data.entryIds.length === 1 ? "y" : "ies"}...`);
+      await api.post("/api/reviews/approve", parsed.data);
       notify.success(
         `${entryIds.length} entr${entryIds.length === 1 ? "y" : "ies"} approved successfully.`
       );
@@ -323,9 +329,14 @@ export default function ReviewPage() {
   }
 
   async function returnConfirmed(entryId, returnComment) {
+    const parsed = reviewReturnSchema.safeParse({ entryId, comment: returnComment });
+    if (!parsed.success) {
+      notify.warn(parsed.error.issues[0]?.message || "Return comment is required.");
+      return;
+    }
     try {
       setIsProcessing("Returning entry for correction...");
-      await api.post("/api/reviews/return", { entryId, comment: returnComment });
+      await api.post("/api/reviews/return", parsed.data);
       setReturningId(null);
       setComment("");
       notify.success("Entry returned for correction.");
@@ -350,9 +361,11 @@ export default function ReviewPage() {
   }
 
   async function confirmApproveTimeOff(id) {
+    const parsed = timeOffDecisionSchema.safeParse({ decision: "APPROVED", comment: "" });
+    if (!parsed.success) return;
     try {
       setIsProcessing("Approving time off request...");
-      await api.post(`/api/time-off/requests/${id}/decide`, { decision: "APPROVED" });
+      await api.post(`/api/time-off/requests/${id}/decide`, parsed.data);
       notify.success("Time off request approved.");
       setConfirmation(null);
       await load();
@@ -370,12 +383,16 @@ export default function ReviewPage() {
   }
 
   async function confirmDeclineTimeOff() {
-    if (!declineTarget || declineReason.trim().length < 3) return;
+    if (!declineTarget) return;
+    const parsed = timeOffDecisionSchema.safeParse({ decision: "DECLINED", comment: declineReason });
+    if (!parsed.success) {
+      notify.warn(parsed.error.issues[0]?.message || "Decline comment is required.");
+      return;
+    }
     try {
       setIsProcessing("Declining time off request...");
       await api.post(`/api/time-off/requests/${declineTarget.id}/decide`, {
-        decision: "DECLINED",
-        comment: declineReason.trim(),
+        ...parsed.data,
       });
       notify.success("Time off request declined.");
       setDeclineTarget(null);

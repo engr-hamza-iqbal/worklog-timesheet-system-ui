@@ -4,6 +4,7 @@ import api from '../../api/client.js';
 import Badge from '../../components/Badge.jsx';
 import { CAP_META, ALL_CAP_CODES } from './constants.js';
 import { broadcastAuthSync, ErrorAlert, toLocalEndOfDayIso } from './helpers.jsx';
+import { grantSchema } from '../../validation/formSchemas.js';
 
 // ─── Bulk Grant Team Form (Assign 1 Capability to Selected / All Users) ────────
 
@@ -83,6 +84,19 @@ export default function BulkGrantTeamForm({ users, projects, currentUserId, onSu
     setLoading(true);
     setError('');
     const uIds = Array.from(selectedUserIds);
+    const parsed = grantSchema.safeParse({
+      userIds: uIds,
+      capabilityCode: selectedCapability,
+      expiresAt: expiresAt ? toLocalEndOfDayIso(expiresAt) : undefined,
+      scopeType: scopeType === 'GLOBAL' ? 'GLOBAL' : scopeType,
+      targetUserIds: scopeType === 'USER' ? targetScopeUserIds : undefined,
+      targetProjectIds: scopeType === 'PROJECT' ? targetProjectIds : undefined,
+    });
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message || 'Correct the capability grant details.');
+      setLoading(false);
+      return;
+    }
     try {
       // POST /api/access/grants with userIds
       await api.post('/api/access/grants', {

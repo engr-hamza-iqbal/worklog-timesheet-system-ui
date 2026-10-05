@@ -14,6 +14,7 @@ import Pagination from '../components/Pagination.jsx';
 import { useNotification } from '../context/NotificationContext.jsx';
 import useTableResize from '../hooks/useTableResize.js';
 import ResizableTh from '../components/ResizableTh.jsx';
+import { assignmentSchema, userAssignmentSchema, userSchema, userStatusSchema } from '../validation/formSchemas.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -39,12 +40,13 @@ function CreateUserForm({ onSuccess, onCancel }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (form.password.length < 8) { setError('Password must be at least 8 characters.'); return; }
+    const parsed = userSchema.safeParse(form);
+    if (!parsed.success) { setError(parsed.error.issues[0]?.message || 'Correct the user details.'); return; }
     setLoading(true);
     setError('');
     try {
       // POST /api/users → { success, data: { id, name, email, accountType, isActive, createdAt }, message }
-      const res = await api.post('/api/users', { ...form, accountType: 'EMPLOYEE' });
+      const res = await api.post('/api/users', { ...parsed.data, accountType: 'EMPLOYEE' });
       onSuccess(res.data);
     } catch (err) {
       setError(err.message || 'Failed to create user.');
@@ -156,9 +158,11 @@ function AssignProjectsForm({ user, assignedProjectIds, allowedProjectIds, onSuc
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (selectedProjectIds.size === 0) {
-      setError('Please select at least one project to assign.');
+    const parsed = assignmentSchema.safeParse({ projectIds: Array.from(selectedProjectIds) });
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message || 'Select at least one project to assign.');
       return;
+      const pIds = parsed.data.projectIds;
     }
     setLoading(true);
     setError('');
@@ -403,13 +407,11 @@ function BulkAssignTeamForm({ users, allowedAssignUserIds, allowedProjectIds, cu
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedProjectId) {
-      setError('Please select a project.');
+    const parsed = userAssignmentSchema.safeParse({ userIds: Array.from(selectedUserIds) });
+    if (!selectedProjectId || !parsed.success) {
+      setError(!selectedProjectId ? 'Please select a project.' : (parsed.error.issues[0]?.message || 'Select at least one employee.'));
       return;
-    }
-    if (selectedUserIds.size === 0) {
-      setError('Please select at least one employee to assign.');
-      return;
+      const uIds = parsed.data.userIds;
     }
     setLoading(true);
     setError('');
@@ -887,8 +889,10 @@ export default function UsersPage() {
     setIsTogglingStatus(true);
     setTogglingUserId(user.id);
     setError('');
+    const parsed = userStatusSchema.safeParse({ isActive: !user.isActive });
+    if (!parsed.success) return;
     try {
-      const res = await api.patch(`/api/users/${user.id}/status`, { isActive: !user.isActive });
+      const res = await api.patch(`/api/users/${user.id}/status`, parsed.data);
       const updated = res.data;
       setUsers((prev) => prev.map((u) => u.id === updated.id ? { ...u, isActive: updated.isActive } : u));
       notify.success(`User ${updated.isActive ? 'activated' : 'deactivated'} successfully.`);

@@ -3,6 +3,7 @@ import { Shield, Clock, FolderOpen, User, Search, Loader2, Calendar, Layers, X, 
 import api from '../../api/client.js';
 import { CAP_META } from './constants.js';
 import { broadcastAuthSync, fmtDate, ErrorAlert, toLocalEndOfDayIso, toLocalDateString } from './helpers.jsx';
+import { bulkGrantUpdateSchema } from '../../validation/formSchemas.js';
 
 // ─── Bulk Edit Capabilities Form ─────────────────────────────────────────────
 
@@ -292,6 +293,11 @@ export default function BulkEditGrantsForm({
       const payload = {
         grantIds: grantsList.map((g) => g.id),
       };
+      const parsed = bulkGrantUpdateSchema.safeParse(payload);
+      if (!parsed.success) {
+        setError(parsed.error.issues[0]?.message || 'Select at least one grant.');
+        return;
+      }
 
       if (updateExpiry) {
         if (expiryMode === 'same') {

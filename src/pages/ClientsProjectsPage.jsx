@@ -13,6 +13,7 @@ import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import Pagination from '../components/Pagination.jsx';
 import useTableResize from '../hooks/useTableResize.js';
 import ResizableTh from '../components/ResizableTh.jsx';
+import { clientSchema, clientStatusSchema, projectRateSchema, projectSchema, projectStatusSchema } from '../validation/formSchemas.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -56,17 +57,18 @@ function ClientForm({ client, onSuccess, onCancel }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name.trim()) { setError('Client name is required.'); return; }
+    const parsed = clientSchema.safeParse({ name });
+    if (!parsed.success) { setError(parsed.error.issues[0]?.message || 'Enter a client name.'); return; }
     setLoading(true);
     setError('');
     try {
       if (client) {
         // PUT /api/clients/:id  → { success, data: { id, name, isActive, ... }, message }
-        const res = await api.put(`/api/clients/${client.id}`, { name: name.trim() });
+        const res = await api.put(`/api/clients/${client.id}`, parsed.data);
         onSuccess(res.data);
       } else {
         // POST /api/clients → { success, data: { id, name, isActive, ... }, message }
-        const res = await api.post('/api/clients', { name: name.trim() });
+        const res = await api.post('/api/clients', parsed.data);
         onSuccess(res.data);
       }
     } catch (err) {
@@ -113,22 +115,14 @@ function ProjectForm({ clients, canViewBilling = true, onSuccess, onCancel }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name.trim()) { setError('Project name is required.'); return; }
-    if (!clientId) { setError('Please select a client.'); return; }
     const rateNum = canViewBilling ? parseFloat(rate) : 0;
-    if (canViewBilling && (!rate || isNaN(rateNum) || rateNum < 0)) {
-      setError('Enter a valid billing rate (e.g. 75.00).');
-      return;
-    }
+    const parsed = projectSchema.safeParse({ clientId, name, initialRatePerHour: rateNum });
+    if (!parsed.success) { setError(parsed.error.issues[0]?.message || 'Correct the project details.'); return; }
     setLoading(true);
     setError('');
     try {
       // POST /api/projects → { success, data: { id, name, clientId, status, ... }, message }
-      const res = await api.post('/api/projects', {
-        clientId,
-        name: name.trim(),
-        initialRatePerHour: rateNum,
-      });
+      const res = await api.post('/api/projects', parsed.data);
       onSuccess(res.data);
     } catch (err) {
       setError(err.message || 'Failed to create project.');
@@ -192,16 +186,13 @@ function AddRateForm({ projectId, onSuccess, onCancel }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const rateNum = parseFloat(rate);
-    if (!rate || isNaN(rateNum) || rateNum <= 0) { setError('Enter a valid rate greater than 0.'); return; }
+    const parsed = projectRateSchema.safeParse({ ratePerHour: rate, effectiveFrom });
+    if (!parsed.success) { setError(parsed.error.issues[0]?.message || 'Correct the rate details.'); return; }
     setLoading(true);
     setError('');
     try {
       // POST /api/projects/:id/rates → { success, data: { id, projectId, ratePerHour, effectiveFrom, ... }, message }
-      await api.post(`/api/projects/${projectId}/rates`, {
-        ratePerHour: rateNum,
-        effectiveFrom,
-      });
+      await api.post(`/api/projects/${projectId}/rates`, parsed.data);
       onSuccess();
     } catch (err) {
       setError(err.message || 'Failed to add rate.');
@@ -417,8 +408,10 @@ export default function ClientsProjectsPage() {
 
   const updateClientStatus = async (client) => {
     setConfirmation(null);
+    const parsed = clientStatusSchema.safeParse({ isActive: !client.isActive });
+    if (!parsed.success) { setError(parsed.error.issues[0]?.message || 'Invalid client status.'); return; }
     try {
-      const res = await api.put(`/api/clients/${client.id}`, { isActive: !client.isActive });
+      const res = await api.put(`/api/clients/${client.id}`, parsed.data);
       // res.data = updated client object
       setClients((prev) => prev.map((c) => c.id === res.data.id ? res.data : c));
     } catch (err) {
@@ -443,8 +436,10 @@ export default function ClientsProjectsPage() {
 
   const updateProjectStatus = async (project, newStatus) => {
     setConfirmation(null);
+    const parsed = projectStatusSchema.safeParse({ status: newStatus });
+    if (!parsed.success) { setError(parsed.error.issues[0]?.message || 'Invalid project status.'); return; }
     try {
-      await api.patch(`/api/projects/${project.id}/status`, { status: newStatus });
+      await api.patch(`/api/projects/${project.id}/status`, parsed.data);
       setProjects((prev) => prev.map((p) => p.id === project.id ? { ...p, status: newStatus } : p));
     } catch (err) {
       setError(err.message || 'Failed to update project status.');

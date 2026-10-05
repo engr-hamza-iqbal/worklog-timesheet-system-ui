@@ -3,6 +3,7 @@ import { CheckCircle, Search, Loader2 } from 'lucide-react';
 import api from '../../api/client.js';
 import { CAP_META, ALL_CAP_CODES } from './constants.js';
 import { broadcastAuthSync, ErrorAlert } from './helpers.jsx';
+import { bulkRevokeSchema } from '../../validation/formSchemas.js';
 
 // ─── Bulk Revoke Capability from Team Form ────────────────────────────────────
 
@@ -68,10 +69,14 @@ export default function BulkRevokeTeamForm({ users, currentUserId, onSuccess, on
     setError('');
 
     const uIds = Array.from(selectedUserIds);
+    const parsed = bulkRevokeSchema.safeParse({ capabilityCode: selectedCapability, userIds: uIds });
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message || 'Correct the revoke details.');
+      return;
+    }
     try {
       await api.post('/api/access/grants/revoke', {
-        capabilityCode: selectedCapability,
-        userIds: uIds,
+        ...parsed.data,
       });
       broadcastAuthSync();
       onSuccess(selectedCapability, uIds);

@@ -3,6 +3,7 @@ import { Search, Loader2 } from 'lucide-react';
 import api from '../../api/client.js';
 import { CAP_META, ALL_CAP_CODES } from './constants.js';
 import { broadcastAuthSync, ErrorAlert, toLocalEndOfDayIso } from './helpers.jsx';
+import { grantSchema } from '../../validation/formSchemas.js';
 
 // ─── Grant Capabilities Form (Multiple Capabilities to User) ──────────────────
 
@@ -128,6 +129,19 @@ export default function GrantForm({ targetUser, grantedCodes, users, projects, o
     setLoading(true);
     setError('');
     const codes = Array.from(selectedCodes);
+    const parsed = grantSchema.safeParse({
+      userId: targetUser.id,
+      capabilityCode: codes[0],
+      expiresAt: expiresAt ? toLocalEndOfDayIso(expiresAt) : undefined,
+      scopeType: scopeType === 'GLOBAL' ? 'GLOBAL' : scopeType,
+      targetUserIds: scopeType === 'USER' ? targetUserIds : undefined,
+      targetProjectIds: scopeType === 'PROJECT' ? targetProjectIds : undefined,
+    });
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message || 'Correct the capability grant details.');
+      setLoading(false);
+      return;
+    }
     try {
       // POST /api/access/grants with capabilityCodes
       await api.post('/api/access/grants', {

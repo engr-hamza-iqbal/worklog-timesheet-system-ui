@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Loader2, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import AppLogo from '../components/AppLogo.jsx';
+import { loginSchema } from '../validation/formSchemas.js';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -17,10 +18,15 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage('');
+    const parsed = loginSchema.safeParse({ email, password });
+    if (!parsed.success) {
+      setErrorMessage(parsed.error.issues[0]?.message || 'Enter your email and password.');
+      return;
+    }
     setLoading(true);
 
     try {
-      await login(email, password);
+      await login(parsed.data.email, parsed.data.password);
       navigate('/dashboard', { replace: true });
     } catch (err) {
       setErrorMessage(err.message || 'Invalid credentials. Please try again.');

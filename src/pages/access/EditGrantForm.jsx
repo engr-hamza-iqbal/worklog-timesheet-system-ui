@@ -3,6 +3,7 @@ import { Shield, Clock, FolderOpen, User, Search, Loader2 } from 'lucide-react';
 import api from '../../api/client.js';
 import { CAP_META } from './constants.js';
 import { broadcastAuthSync, fmtDate, ErrorAlert, toLocalEndOfDayIso, toLocalDateString } from './helpers.jsx';
+import { grantSchema } from '../../validation/formSchemas.js';
 
 // ─── Edit Capability Grant Form ──────────────────────────────────────────────
 
@@ -137,6 +138,15 @@ export default function EditGrantForm({ grant, targetUser, users, projects, onSu
         targetProjectIds: scopeType === 'PROJECT' ? targetProjectIds : [],
         targetUserIds: scopeType === 'USER' ? targetUserIds : [],
       };
+      const parsed = grantSchema.safeParse({
+        userId: targetUser.id,
+        capabilityCode: grant.capability?.code,
+        ...payload,
+      });
+      if (!parsed.success) {
+        setError(parsed.error.issues[0]?.message || 'Correct the capability scope details.');
+        return;
+      }
       await api.patch(`/api/access/grants/${grant.id}`, payload);
       broadcastAuthSync();
       onSuccess();

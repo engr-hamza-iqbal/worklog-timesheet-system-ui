@@ -12,6 +12,7 @@ import {
   ArrowDown,
 } from 'lucide-react';
 import api from '../api/client.js';
+import { chaseSchema } from '../validation/formSchemas.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useNotification } from '../context/NotificationContext.jsx';
 import useTableResize from '../hooks/useTableResize.js';
@@ -205,13 +206,14 @@ export default function ReportsPage() {
 
   async function handleChaseSubmit(e) {
     e.preventDefault();
-    if (!selectedUsers.length) return;
+      const parsed = chaseSchema.safeParse({ date: missingDate, userIds: selectedUsers });
+      if (!parsed.success) {
+        notify.warn(parsed.error.issues[0]?.message || 'Select at least one employee.');
+        return;
+      }
     try {
       setChasing(true);
-      const res = await api.post('/api/reports/missing-timesheets/chase', {
-        date: missingDate,
-        userIds: selectedUsers,
-      });
+        const res = await api.post('/api/reports/missing-timesheets/chase', parsed.data);
       const data = res.data || res;
       notify.success(
         `Sent ${data.sentCount} reminder(s). ${data.skippedCount ? `${data.skippedCount} skipped (already reminded today).` : ''}`

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Mail, RefreshCw, AlertCircle, CheckCircle2, XCircle, Clock, Search, Send, Plus, Loader2, Eye, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import api from '../api/client.js';
+import { emailTestSchema } from '../validation/formSchemas.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useNotification } from '../context/NotificationContext.jsx';
 import Modal from '../components/Modal.jsx';
@@ -155,10 +156,14 @@ export default function EmailLogPage() {
 
   async function handleSendTest(e) {
     e.preventDefault();
-    if (!testForm.recipientEmail) return;
+      const parsed = emailTestSchema.safeParse(testForm);
+      if (!parsed.success) {
+        notify.error(parsed.error.issues[0]?.message || 'Enter a valid test email.');
+        return;
+      }
     try {
       setSendingTest(true);
-      const res = await api.post('/api/emails/test', testForm);
+        const res = await api.post('/api/emails/test', parsed.data);
       const msg = res.message || 'Test email dispatched successfully.';
       notify.success(msg);
       setShowTestModal(false);

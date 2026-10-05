@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Loader2, Eye, EyeOff, Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import AppLogo from '../components/AppLogo.jsx';
+import { registerSchema } from '../validation/formSchemas.js';
 
 export default function RegisterPage() {
   const { register } = useAuth();
@@ -21,20 +22,16 @@ export default function RegisterPage() {
     e.preventDefault();
     setErrorMessage('');
 
-    if (password.length < 8) {
-      setErrorMessage('Password must be at least 8 characters long.');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setErrorMessage('Passwords do not match.');
+    const parsed = registerSchema.safeParse({ name, email, password, confirmPassword });
+    if (!parsed.success) {
+      setErrorMessage(parsed.error.issues[0]?.message || 'Correct the registration details.');
       return;
     }
 
     setLoading(true);
 
     try {
-      await register({ name, email, password });
+      await register({ name: parsed.data.name, email: parsed.data.email, password: parsed.data.password });
       navigate('/dashboard', { replace: true });
     } catch (err) {
       setErrorMessage(err.message || 'Registration failed.');

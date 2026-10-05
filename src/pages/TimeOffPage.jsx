@@ -20,6 +20,7 @@ import { useAuth } from "../context/AuthContext.jsx";
 import { useNotification } from "../context/NotificationContext.jsx";
 import useTableResize from "../hooks/useTableResize.js";
 import ResizableTh from "../components/ResizableTh.jsx";
+import { timeOffDecisionSchema, timeOffRequestSchema } from "../validation/formSchemas.js";
 
 const statusVariant = {
   PENDING: "pending",
@@ -153,13 +154,14 @@ export default function TimeOffPage() {
 
   async function createRequest(event) {
     event.preventDefault();
-    if (form.endDate < form.startDate) {
-      notify.warn("End date cannot be earlier than start date.");
+    const parsed = timeOffRequestSchema.safeParse(form);
+    if (!parsed.success) {
+      notify.warn(parsed.error.issues[0]?.message || "Correct the time-off request details.");
       return;
     }
     setSaving(true);
     try {
-      await api.post("/api/time-off/requests", form);
+      await api.post("/api/time-off/requests", parsed.data);
       const msg = "Time-off request submitted.";
       notify.success(msg);
       setForm((current) => ({
@@ -211,6 +213,11 @@ export default function TimeOffPage() {
   }
 
   function confirmDecision(id, decision, comment) {
+    const parsed = timeOffDecisionSchema.safeParse({ decision, comment });
+    if (!parsed.success) {
+      notify.warn(parsed.error.issues[0]?.message || "Correct the decision details.");
+      return;
+    }
     setConfirmation({
       title: decision === "APPROVED" ? "Approve time off" : "Decline time off",
       message:
@@ -223,8 +230,8 @@ export default function TimeOffPage() {
         try {
           setIsDeciding(decision === "APPROVED" ? "Approving request..." : "Declining request...");
           await api.post(`/api/time-off/requests/${id}/decide`, {
-            decision,
-            comment,
+            decision: parsed.data.decision,
+            comment: parsed.data.comment || "",
           });
           const msg = `Time-off request ${decision.toLowerCase()}.`;
           notify.success(msg);

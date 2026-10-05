@@ -26,6 +26,7 @@ import { useNotification } from "../context/NotificationContext.jsx";
 import useTableResize from "../hooks/useTableResize.js";
 import ResizableTh from "../components/ResizableTh.jsx";
 import { timeEntryFormSchema } from "../validation/timeEntrySchemas.js";
+import { entryIdsSchema } from "../validation/formSchemas.js";
 
 function dateOnly(date) {
   return new Date(
@@ -302,10 +303,15 @@ export default function TimesheetsPage() {
   }
 
   async function submitEntriesConfirmed(entryIds) {
+    const parsed = entryIdsSchema.safeParse({ entryIds });
+    if (!parsed.success) {
+      notify.warn(parsed.error.issues[0]?.message || "Select at least one entry.");
+      return;
+    }
     try {
-      setIsProcessing(`Submitting ${entryIds.length} entries...`);
-      await api.post("/api/timesheets/submit", { entryIds });
-      notify.success(`${entryIds.length} entries submitted for review.`);
+      setIsProcessing(`Submitting ${parsed.data.entryIds.length} entries...`);
+      await api.post("/api/timesheets/submit", parsed.data);
+      notify.success(`${parsed.data.entryIds.length} entries submitted for review.`);
       setConfirmation(null);
       await load();
     } catch (err) {

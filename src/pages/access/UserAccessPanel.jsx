@@ -16,6 +16,7 @@ import EditGrantForm from './EditGrantForm.jsx';
 import BulkEditGrantsForm from './BulkEditGrantsForm.jsx';
 import useTableResize from '../../hooks/useTableResize.js';
 import ResizableTh from '../../components/ResizableTh.jsx';
+import { bulkGrantUpdateSchema } from '../../validation/formSchemas.js';
 
 // ─── User Access Panel ────────────────────────────────────────────────────────
 
@@ -116,6 +117,8 @@ export default function UserAccessPanel({ targetUser, users, projects, currentUs
 
   const confirmRevoke = async () => {
     const grantId = revokeConfirmation;
+    const parsed = bulkGrantUpdateSchema.safeParse({ grantIds: [grantId] });
+    if (!parsed.success) return;
     setRevoking(grantId);
     setError('');
     try {
@@ -142,10 +145,15 @@ export default function UserAccessPanel({ targetUser, users, projects, currentUs
   // Multiple grant revoke on this user
   const confirmBulkRevoke = async () => {
     const gIds = Array.from(selectedGrantIds);
+    const parsed = bulkGrantUpdateSchema.safeParse({ grantIds: gIds });
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message || 'Select at least one grant.');
+      return;
+    }
     setBulkRevoking(true);
     setError('');
     try {
-      await api.post('/api/access/grants/revoke', { grantIds: gIds });
+      await api.post('/api/access/grants/revoke', parsed.data);
       broadcastAuthSync();
       const nowIso = new Date().toISOString();
       setGrants((prev) =>
