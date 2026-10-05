@@ -444,29 +444,31 @@ export default function ReportsPage() {
       {activeTab === 'missing' && (
         <section className="space-y-6">
           <div className="flex flex-col sm:flex-row flex-wrap sm:items-end justify-between gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-end gap-3 w-full sm:w-auto">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                loadMissing(missingDate);
+              }}
+              className="flex flex-col sm:flex-row sm:items-end gap-3 w-full sm:w-auto"
+            >
               <label className="text-xs font-medium text-slate-600 w-full sm:w-auto">
                 Working Day
                 <input
                   type="date"
                   value={missingDate}
-                  onChange={(e) => {
-                    setMissingDate(e.target.value);
-                    loadMissing(e.target.value);
-                  }}
+                  onChange={(e) => setMissingDate(e.target.value)}
                   className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
                 />
               </label>
               <button
-                type="button"
-                onClick={() => loadMissing(missingDate)}
-                disabled={loadingMissing}
-                className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto"
+                type="submit"
+                disabled={loadingMissing || !missingDate}
+                className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto font-medium"
               >
                 {loadingMissing && <Loader2 size={13} className="animate-spin shrink-0" />}
                 Check date
               </button>
-            </div>
+            </form>
 
             {isAdmin && (
               <button
