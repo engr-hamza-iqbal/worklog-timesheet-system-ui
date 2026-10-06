@@ -115,7 +115,7 @@ function ProjectForm({ clients, canViewBilling = true, onSuccess, onCancel }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const rateNum = canViewBilling ? parseFloat(rate) : 0;
+    const rateNum = canViewBilling ? parseFloat(rate) : undefined;
     const parsed = projectSchema.safeParse({ clientId, name, initialRatePerHour: rateNum });
     if (!parsed.success) { setError(parsed.error.issues[0]?.message || 'Correct the project details.'); return; }
     setLoading(true);

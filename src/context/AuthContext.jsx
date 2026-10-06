@@ -6,14 +6,13 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [capabilities, setCapabilities] = useState({});
-  const [token, setToken] = useState(() => localStorage.getItem('token'));
+  const [token, setToken] = useState('cookie');
   const [loading, setLoading] = useState(true);
 
   // Validate session on mount or token change
   useEffect(() => {
     async function loadUser() {
-      const storedToken = localStorage.getItem('token');
-      if (!storedToken) {
+      if (!token) {
         setUser(null);
         setCapabilities({});
         setLoading(false);
@@ -27,13 +26,11 @@ export function AuthProvider({ children }) {
           setCapabilities(res.data.capabilities || {});
         } else {
           // Token invalid or expired
-          localStorage.removeItem('token');
           setToken(null);
           setUser(null);
         }
       } catch (err) {
         console.error('Session verification failed:', err.message);
-        localStorage.removeItem('token');
         setToken(null);
         setUser(null);
       } finally {
@@ -56,9 +53,8 @@ export function AuthProvider({ children }) {
   async function login(email, password) {
     const res = await api.post('/api/auth/login', { email, password });
     if (res.success && res.data) {
-      const { token: newToken, user: newUser, capabilities: newCaps } = res.data;
-      localStorage.setItem('token', newToken);
-      setToken(newToken);
+      const { user: newUser, capabilities: newCaps } = res.data;
+      setToken('cookie');
       setUser(newUser);
       setCapabilities(newCaps || {});
       return res.data;
@@ -69,9 +65,8 @@ export function AuthProvider({ children }) {
   async function register(data) {
     const res = await api.post('/api/auth/register', data);
     if (res.success && res.data) {
-      const { token: newToken, user: newUser, capabilities: newCaps } = res.data;
-      localStorage.setItem('token', newToken);
-      setToken(newToken);
+      const { user: newUser, capabilities: newCaps } = res.data;
+      setToken('cookie');
       setUser(newUser);
       setCapabilities(newCaps || {});
       return res.data;
@@ -85,7 +80,6 @@ export function AuthProvider({ children }) {
     } catch (e) {
       // Ignore network errors on logout
     } finally {
-      localStorage.removeItem('token');
       setToken(null);
       setUser(null);
       setCapabilities({});

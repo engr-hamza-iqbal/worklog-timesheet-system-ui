@@ -4,8 +4,10 @@ export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:50
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest',
   },
   timeout: 60000,
 });
@@ -17,13 +19,9 @@ function wait(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-// Request Interceptor: Automatically inject JWT token
+// Browser sessions use the HttpOnly worklog_session cookie. Bearer tokens remain supported by the server for API clients.
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
     config.__retryCount = config.__retryCount || 0;
     return config;
   },
@@ -57,7 +55,6 @@ api.interceptors.response.use(
     if (isUnauthorized || isDeactivated) {
       const currentPath = window.location.pathname;
       if (currentPath !== '/login' && currentPath !== '/register' && currentPath !== '/') {
-        localStorage.removeItem('token');
         window.dispatchEvent(new Event('auth:unauthorized'));
 
         // Debounce: ensure only ONE notification is dispatched every 5 seconds

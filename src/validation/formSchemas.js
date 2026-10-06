@@ -20,7 +20,7 @@ export const clientSchema = z.object({ name: nonEmpty('Client name') });
 export const projectSchema = z.object({
   clientId: id,
   name: nonEmpty('Project name'),
-  initialRatePerHour: z.coerce.number().nonnegative('Billing rate cannot be negative.'),
+  initialRatePerHour: z.coerce.number().positive('Billing rate must be greater than zero.').optional(),
 });
 export const projectRateSchema = z.object({
   ratePerHour: z.coerce.number().positive('Rate must be greater than zero.'),
