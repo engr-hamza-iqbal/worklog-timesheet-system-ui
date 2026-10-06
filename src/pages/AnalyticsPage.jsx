@@ -284,8 +284,8 @@ export default function AnalyticsPage() {
             share > 25
               ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
               : share > 10
-              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-              : 'bg-slate-100 text-slate-600 border-slate-200',
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                : 'bg-slate-100 text-slate-600 border-slate-200',
         };
       });
     } else if (breakdownTab === 'projects') {
@@ -302,8 +302,8 @@ export default function AnalyticsPage() {
             share > 30
               ? 'bg-sky-50 text-sky-700 border-sky-200'
               : share > 10
-              ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-              : 'bg-slate-100 text-slate-600 border-slate-200',
+                ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                : 'bg-slate-100 text-slate-600 border-slate-200',
         };
       });
     } else if (breakdownTab === 'timeliness') {
@@ -319,8 +319,8 @@ export default function AnalyticsPage() {
             pct >= 90
               ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
               : pct >= 70
-              ? 'bg-amber-50 text-amber-700 border-amber-200'
-              : 'bg-rose-50 text-rose-700 border-rose-200',
+                ? 'bg-amber-50 text-amber-700 border-amber-200'
+                : 'bg-rose-50 text-rose-700 border-rose-200',
         };
       });
     } else {
@@ -337,8 +337,8 @@ export default function AnalyticsPage() {
             share > 35
               ? 'bg-amber-50 text-amber-700 border-amber-200'
               : share > 15
-              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-              : 'bg-slate-100 text-slate-600 border-slate-200',
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                : 'bg-slate-100 text-slate-600 border-slate-200',
         };
       });
     }
@@ -418,10 +418,6 @@ export default function AnalyticsPage() {
       {/* ── Page Header ── */}
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/60 mb-1.5">
-            <TrendingUp size={12} />
-            <span>Executive Business Intelligence</span>
-          </div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
             Analytics Dashboard
           </h1>
@@ -459,11 +455,10 @@ export default function AnalyticsPage() {
                 key={preset.id}
                 type="button"
                 onClick={() => setDatePreset(preset.id)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition whitespace-nowrap cursor-pointer shrink-0 ${
-                  activePreset === preset.id
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition whitespace-nowrap cursor-pointer shrink-0 ${activePreset === preset.id
                     ? 'bg-slate-900 text-white shadow-xs'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
+                  }`}
               >
                 {preset.label}
               </button>
@@ -676,11 +671,10 @@ export default function AnalyticsPage() {
                     <button
                       type="button"
                       onClick={() => setClientChartMode('donut')}
-                      className={`px-2 py-0.5 rounded-md font-medium transition cursor-pointer flex items-center gap-1 ${
-                        clientChartMode === 'donut'
+                      className={`px-2 py-0.5 rounded-md font-medium transition cursor-pointer flex items-center gap-1 ${clientChartMode === 'donut'
                           ? 'bg-white text-slate-900 shadow-xs'
                           : 'text-slate-500 hover:text-slate-800'
-                      }`}
+                        }`}
                     >
                       <PieIcon size={12} />
                       <span className="hidden sm:inline">Donut</span>
@@ -688,11 +682,10 @@ export default function AnalyticsPage() {
                     <button
                       type="button"
                       onClick={() => setClientChartMode('bar')}
-                      className={`px-2 py-0.5 rounded-md font-medium transition cursor-pointer flex items-center gap-1 ${
-                        clientChartMode === 'bar'
+                      className={`px-2 py-0.5 rounded-md font-medium transition cursor-pointer flex items-center gap-1 ${clientChartMode === 'bar'
                           ? 'bg-white text-slate-900 shadow-xs'
                           : 'text-slate-500 hover:text-slate-800'
-                      }`}
+                        }`}
                     >
                       <BarChart2 size={12} />
                       <span className="hidden sm:inline">Bars</span>
@@ -966,11 +959,10 @@ export default function AnalyticsPage() {
                   <h2 className="text-sm font-semibold text-slate-900">Submission Timeliness</h2>
                   <p className="text-[11px] text-slate-500">How promptly work logs are submitted after execution</p>
                 </div>
-                <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded border ${
-                  (analytics.submissionTimeliness?.overall?.onTimePercentage ?? 100) >= 80
+                <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded border ${(analytics.submissionTimeliness?.overall?.onTimePercentage ?? 100) >= 80
                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                     : 'bg-amber-50 text-amber-700 border-amber-200'
-                }`}>
+                  }`}>
                   {analytics.submissionTimeliness?.overall?.onTimePercentage ?? 100}% on-time
                 </span>
               </div>
@@ -1035,44 +1027,40 @@ export default function AnalyticsPage() {
                   <button
                     type="button"
                     onClick={() => handleTabChange('employees')}
-                    className={`px-3 py-1 rounded-md font-semibold transition cursor-pointer ${
-                      breakdownTab === 'employees'
+                    className={`px-3 py-1 rounded-md font-semibold transition cursor-pointer ${breakdownTab === 'employees'
                         ? 'bg-white text-slate-900 shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
-                    }`}
+                      }`}
                   >
                     Team ({analytics?.employees?.length || 0})
                   </button>
                   <button
                     type="button"
                     onClick={() => handleTabChange('projects')}
-                    className={`px-3 py-1 rounded-md font-semibold transition cursor-pointer ${
-                      breakdownTab === 'projects'
+                    className={`px-3 py-1 rounded-md font-semibold transition cursor-pointer ${breakdownTab === 'projects'
                         ? 'bg-white text-slate-900 shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
-                    }`}
+                      }`}
                   >
                     Projects ({analytics?.projects?.length || 0})
                   </button>
                   <button
                     type="button"
                     onClick={() => handleTabChange('clients')}
-                    className={`px-3 py-1 rounded-md font-semibold transition cursor-pointer ${
-                      breakdownTab === 'clients'
+                    className={`px-3 py-1 rounded-md font-semibold transition cursor-pointer ${breakdownTab === 'clients'
                         ? 'bg-white text-slate-900 shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
-                    }`}
+                      }`}
                   >
                     Clients ({analytics?.clients?.length || 0})
                   </button>
                   <button
                     type="button"
                     onClick={() => handleTabChange('timeliness')}
-                    className={`px-3 py-1 rounded-md font-semibold transition cursor-pointer ${
-                      breakdownTab === 'timeliness'
+                    className={`px-3 py-1 rounded-md font-semibold transition cursor-pointer ${breakdownTab === 'timeliness'
                         ? 'bg-white text-slate-900 shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
-                    }`}
+                      }`}
                   >
                     Timeliness ({analytics?.submissionTimeliness?.byPerson?.length || 0})
                   </button>
@@ -1110,10 +1098,10 @@ export default function AnalyticsPage() {
                           {breakdownTab === 'employees'
                             ? 'Contributor Name'
                             : breakdownTab === 'projects'
-                            ? 'Project Initiative'
-                            : breakdownTab === 'timeliness'
-                            ? 'Team Member'
-                            : 'Client Organization'}
+                              ? 'Project Initiative'
+                              : breakdownTab === 'timeliness'
+                                ? 'Team Member'
+                                : 'Client Organization'}
                         </span>
                         {sortColumn === 'label' ? (
                           sortDirection === 'asc' ? (
@@ -1273,11 +1261,10 @@ export default function AnalyticsPage() {
                       key={pg}
                       type="button"
                       onClick={() => setCurrentPage(pg)}
-                      className={`w-7 h-7 rounded-md text-xs font-semibold transition cursor-pointer ${
-                        currentPage === pg
+                      className={`w-7 h-7 rounded-md text-xs font-semibold transition cursor-pointer ${currentPage === pg
                           ? 'bg-slate-900 text-white shadow-xs'
                           : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
-                      }`}
+                        }`}
                     >
                       {pg}
                     </button>

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   CalendarDays,
@@ -23,6 +23,7 @@ import api from "../api/client.js";
 import Badge from "../components/Badge.jsx";
 import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import Pagination from "../components/Pagination.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
 import { useNotification } from "../context/NotificationContext.jsx";
 import useTableResize from "../hooks/useTableResize.js";
 import ResizableTh from "../components/ResizableTh.jsx";
@@ -62,6 +63,7 @@ const statusVariant = {
 const QUICK_HOURS = ["0.25", "0.5", "0.75", "1.0", "1.5", "2.0", "4.0", "8.0"];
 
 export default function TimesheetsPage() {
+  const { user, isAdmin } = useAuth();
   const { notify } = useNotification();
   const [searchParams, setSearchParams] = useSearchParams();
   const activeTab = searchParams.get("tab") || "record"; // 'record' | 'week' | 'entries'
@@ -90,9 +92,54 @@ export default function TimesheetsPage() {
   const [historyEntries, setHistoryEntries] = useState([]);
   const [historyTotal, setHistoryTotal] = useState(0);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [isFiltering, setIsFiltering] = useState(false);
+  const [isSilentFetching, setIsSilentFetching] = useState(false);
   const [historySortField, setHistorySortField] = useState('workDate');
   const [historySortOrder, setHistorySortOrder] = useState('desc');
   const ITEMS_PER_PAGE = 10;
+
+  const allKnownEntriesRef = useRef(new Map());
+  const silentFetchTimerRef = useRef(null);
+
+  const cacheEntries = (list) => {
+    if (!Array.isArray(list)) return;
+    for (const item of list) {
+      if (item && item.id) {
+        allKnownEntriesRef.current.set(item.id, item);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (Array.isArray(days)) {
+      cacheEntries(days.flatMap((d) => d.entries || []));
+    }
+  }, [days]);
+
+  useEffect(() => {
+    if (Array.isArray(historyEntries)) {
+      cacheEntries(historyEntries);
+    }
+  }, [historyEntries]);
+
+  useEffect(() => {
+    return () => {
+      if (silentFetchTimerRef.current) clearTimeout(silentFetchTimerRef.current);
+    };
+  }, []);
+
+  const allDropdownProjects = useMemo(() => {
+    const map = new Map();
+    (projects || []).forEach((p) => {
+      if (p?.id) map.set(p.id, p);
+    });
+    (historyEntries || []).forEach((e) => {
+      if (e?.project?.id && !map.has(e.project.id)) {
+        map.set(e.project.id, e.project);
+      }
+    });
+    return Array.from(map.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }, [projects, historyEntries]);
 
   // Resizable columns for entries table
   const { columnWidths, startResize, tableStyle } = useTableResize({
@@ -122,11 +169,9 @@ export default function TimesheetsPage() {
       setLoading(true);
       const [entriesResult, projectsResult] = await Promise.allSettled([
         api.get("/api/timesheets", { params: dateRange }),
-        projects.length
-          ? Promise.resolve({ data: projects })
-          : api.get("/api/projects", {
-              params: { activeOnly: true, assignedToMe: true },
-            }),
+        api.get("/api/projects", {
+          params: { activeOnly: true, ...(isAdmin ? {} : { assignedToMe: true }) },
+        }),
       ]);
       if (entriesResult.status === "fulfilled") {
         setDays(entriesResult.value.data?.days || []);
@@ -163,36 +208,165 @@ export default function TimesheetsPage() {
 
   useEffect(() => {
     load();
-  }, [weekStart.toISOString()]);
+  }, [weekStart.toISOString(), isAdmin]);
 
-  async function loadHistory() {
+  const filterKnownEntries = ({
+    status = historyStatus,
+    project = historyProject,
+    search = historySearch,
+  } = {}) => {
+    const all = Array.from(allKnownEntriesRef.current.values());
+    return all.filter((entry) => {
+      if (status !== "ALL" && entry.status !== status) return false;
+      if (project && entry.projectId !== project && entry.project?.id !== project) return false;
+      if (search && search.trim()) {
+        const q = search.trim().toLowerCase();
+        const desc = (entry.description || "").toLowerCase();
+        const proj = (entry.project?.name || "").toLowerCase();
+        if (!desc.includes(q) && !proj.includes(q)) return false;
+      }
+      return true;
+    }).sort((a, b) => {
+      let cmp = 0;
+      if (historySortField === 'workDate') {
+        cmp = (a.workDate || '').localeCompare(b.workDate || '');
+      } else if (historySortField === 'project') {
+        cmp = (a.project?.name || '').localeCompare(b.project?.name || '');
+      } else if (historySortField === 'durationHours') {
+        cmp = (Number(a.durationHours) || 0) - (Number(b.durationHours) || 0);
+      } else if (historySortField === 'description') {
+        cmp = (a.description || '').localeCompare(b.description || '');
+      } else if (historySortField === 'status') {
+        cmp = (a.status || '').localeCompare(b.status || '');
+      }
+      return historySortOrder === 'asc' ? cmp : -cmp;
+    });
+  };
+
+  async function fetchHistory({
+    page = historyPage,
+    search = historySearch,
+    projectId = historyProject,
+    status = historyStatus,
+    sortBy = historySortField,
+    sortOrder = historySortOrder,
+    silent = false,
+  } = {}) {
     try {
-      setHistoryLoading(true);
+      if (!silent) setHistoryLoading(true);
+      setIsSilentFetching(true);
       const response = await api.get("/api/timesheets/history", {
         params: {
-          page: historyPage,
+          page,
           pageSize: ITEMS_PER_PAGE,
-          search: historySearch.trim() || undefined,
-          projectId: historyProject || undefined,
-          status: historyStatus === "ALL" ? undefined : historyStatus,
-          sortBy: historySortField,
-          sortOrder: historySortOrder,
+          search: search.trim() || undefined,
+          projectId: projectId || undefined,
+          status: status === "ALL" ? undefined : status,
+          sortBy,
+          sortOrder,
         },
       });
-      setHistoryEntries(response.data?.entries || []);
-      setHistoryTotal(response.data?.pagination?.total || 0);
+      const entries = response.data?.entries || [];
+      const total = response.data?.pagination?.total || 0;
+      cacheEntries(entries);
+      setHistoryEntries(entries);
+      setHistoryTotal(total);
     } catch (err) {
       if (err.status !== 401 && err.code !== "ACCOUNT_DEACTIVATED") {
         notify.error(err.message || "Failed to load entry history.");
       }
     } finally {
       setHistoryLoading(false);
+      setIsSilentFetching(false);
+      setIsFiltering(false);
     }
   }
 
   useEffect(() => {
-    if (activeTab === "entries") loadHistory();
-  }, [activeTab, historyPage, historySearch, historyProject, historyStatus, historySortField, historySortOrder]);
+    if (activeTab === "entries") {
+      fetchHistory({ silent: historyEntries.length > 0 });
+      if (projects.length === 0) {
+        api.get("/api/projects", {
+          params: { activeOnly: true, ...(isAdmin ? {} : { assignedToMe: true }) },
+        }).then((res) => {
+          const nextProjects = Array.isArray(res.data) ? res.data : res.data?.projects || [];
+          if (nextProjects.length) setProjects(nextProjects);
+        }).catch(() => {});
+      }
+    }
+  }, [activeTab, isAdmin]);
+
+  const handleFilterStatusChange = (st) => {
+    if (historyStatus === st || isFiltering) return;
+    setHistoryStatus(st);
+    setHistoryPage(1);
+    setIsFiltering(true);
+
+    // 1. FAST: Immediately filter from already loaded table data
+    const local = filterKnownEntries({ status: st, project: historyProject, search: historySearch });
+    setHistoryEntries(local.slice(0, ITEMS_PER_PAGE));
+    setHistoryTotal(local.length);
+
+    // 2. SILENT FETCH: In the background after some time, fetch fresh server data
+    if (silentFetchTimerRef.current) clearTimeout(silentFetchTimerRef.current);
+    silentFetchTimerRef.current = setTimeout(() => {
+      fetchHistory({
+        status: st,
+        projectId: historyProject,
+        search: historySearch,
+        page: 1,
+        silent: true,
+      });
+    }, 250);
+  };
+
+  const handleFilterProjectChange = (projId) => {
+    if (historyProject === projId || isFiltering) return;
+    setHistoryProject(projId);
+    setHistoryPage(1);
+    setIsFiltering(true);
+
+    const local = filterKnownEntries({ status: historyStatus, project: projId, search: historySearch });
+    setHistoryEntries(local.slice(0, ITEMS_PER_PAGE));
+    setHistoryTotal(local.length);
+
+    if (silentFetchTimerRef.current) clearTimeout(silentFetchTimerRef.current);
+    silentFetchTimerRef.current = setTimeout(() => {
+      fetchHistory({
+        status: historyStatus,
+        projectId: projId,
+        search: historySearch,
+        page: 1,
+        silent: true,
+      });
+    }, 250);
+  };
+
+  const handleFilterSearchChange = (query) => {
+    setHistorySearch(query);
+    setHistoryPage(1);
+    setIsFiltering(true);
+
+    const local = filterKnownEntries({ status: historyStatus, project: historyProject, search: query });
+    setHistoryEntries(local.slice(0, ITEMS_PER_PAGE));
+    setHistoryTotal(local.length);
+
+    if (silentFetchTimerRef.current) clearTimeout(silentFetchTimerRef.current);
+    silentFetchTimerRef.current = setTimeout(() => {
+      fetchHistory({
+        status: historyStatus,
+        projectId: historyProject,
+        search: query,
+        page: 1,
+        silent: true,
+      });
+    }, 350);
+  };
+
+  const handleHistoryPageChange = (p) => {
+    setHistoryPage(p);
+    fetchHistory({ page: p, silent: false });
+  };
 
   function resetForm(date = form.workDate) {
     setEditingId(null);
@@ -346,13 +520,24 @@ export default function TimesheetsPage() {
   const totalWeekMinutes = days.reduce((sum, d) => sum + d.totalMinutes, 0);
 
   const toggleHistorySort = (field) => {
+    let nextOrder = 'asc';
     if (historySortField === field) {
-      setHistorySortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+      nextOrder = historySortOrder === 'asc' ? 'desc' : 'asc';
     } else {
-      setHistorySortField(field);
-      setHistorySortOrder(field === 'workDate' || field === 'durationHours' ? 'desc' : 'asc');
+      nextOrder = field === 'workDate' || field === 'durationHours' ? 'desc' : 'asc';
     }
+    setHistorySortField(field);
+    setHistorySortOrder(nextOrder);
     setHistoryPage(1);
+
+    const local = filterKnownEntries({ sortBy: field, sortOrder: nextOrder });
+    setHistoryEntries(local.slice(0, ITEMS_PER_PAGE));
+    fetchHistory({
+      sortBy: field,
+      sortOrder: nextOrder,
+      page: 1,
+      silent: true,
+    });
   };
 
   const paginatedHistory = historyEntries;
@@ -543,9 +728,9 @@ export default function TimesheetsPage() {
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs bg-white focus:border-slate-900 focus:outline-none transition cursor-pointer"
                 >
                   <option value="">
-                    {loading ? "Loading assigned projects..." : projects.length ? "Select project" : "No assigned projects"}
+                    {loading ? "Loading assigned projects..." : (allDropdownProjects.length || projects.length) ? "Select project" : "No assigned projects"}
                   </option>
-                  {projects.map((project) => (
+                  {(allDropdownProjects.length ? allDropdownProjects : projects).map((project) => (
                     <option key={project.id} value={project.id}>
                       {project.clientName || project.client?.name || "Client"} / {project.name}
                     </option>
@@ -892,11 +1077,11 @@ export default function TimesheetsPage() {
                   type="text"
                   placeholder="Search description or project..."
                   value={historySearch}
-                  onChange={(e) => {
-                    setHistorySearch(e.target.value);
-                    setHistoryPage(1);
-                  }}
-                  className="w-full border border-slate-300 rounded-lg pl-8 pr-3 py-1.5 text-xs focus:border-slate-900 focus:outline-none transition"
+                  disabled={isFiltering}
+                  onChange={(e) => handleFilterSearchChange(e.target.value)}
+                  className={`w-full border border-slate-300 rounded-lg pl-8 pr-3 py-1.5 text-xs focus:border-slate-900 focus:outline-none transition ${
+                    isFiltering ? "opacity-60 cursor-not-allowed bg-slate-50" : ""
+                  }`}
                 />
                 <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
               </div>
@@ -904,14 +1089,14 @@ export default function TimesheetsPage() {
               {/* Project filter */}
               <select
                 value={historyProject}
-                onChange={(e) => {
-                  setHistoryProject(e.target.value);
-                  setHistoryPage(1);
-                }}
-                className="w-full sm:w-auto border border-slate-300 rounded-lg px-3 py-1.5 text-xs bg-white focus:border-slate-900 focus:outline-none transition cursor-pointer"
+                disabled={isFiltering}
+                onChange={(e) => handleFilterProjectChange(e.target.value)}
+                className={`w-full sm:w-auto border border-slate-300 rounded-lg px-3 py-1.5 text-xs bg-white focus:border-slate-900 focus:outline-none transition ${
+                  isFiltering ? "opacity-60 cursor-not-allowed bg-slate-50" : "cursor-pointer"
+                }`}
               >
                 <option value="">All Projects</option>
-                {projects.map((p) => (
+                {allDropdownProjects.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
                   </option>
@@ -920,28 +1105,39 @@ export default function TimesheetsPage() {
 
               {/* Status filter buttons */}
               <div className="flex overflow-x-auto no-scrollbar rounded-lg border border-slate-200 text-xs w-full sm:w-auto shrink-0 whitespace-nowrap">
-                {["ALL", "DRAFT", "SUBMITTED", "APPROVED", "RETURNED"].map((st) => (
-                  <button
-                    key={st}
-                    type="button"
-                    onClick={() => {
-                      setHistoryStatus(st);
-                      setHistoryPage(1);
-                    }}
-                    className={`px-2.5 py-1 transition cursor-pointer font-medium ${
-                      historyStatus === st
-                        ? "bg-slate-900 text-white"
-                        : "bg-white text-slate-600 hover:bg-slate-50"
-                    }`}
-                  >
-                    {st === "ALL" ? "All" : st.charAt(0) + st.slice(1).toLowerCase()}
-                  </button>
-                ))}
+                {["ALL", "DRAFT", "SUBMITTED", "APPROVED", "RETURNED"].map((st) => {
+                  const isActive = historyStatus === st;
+                  const isOtherDisabled = isFiltering && !isActive;
+                  return (
+                    <button
+                      key={st}
+                      type="button"
+                      disabled={isOtherDisabled}
+                      onClick={() => handleFilterStatusChange(st)}
+                      className={`px-2.5 py-1 transition font-medium ${
+                        isActive
+                          ? "bg-slate-900 text-white cursor-default"
+                          : isOtherDisabled
+                          ? "bg-white text-slate-300 opacity-40 cursor-not-allowed border-slate-100"
+                          : "bg-white text-slate-600 hover:bg-slate-50 cursor-pointer"
+                      }`}
+                    >
+                      {st === "ALL" ? "All" : st.charAt(0) + st.slice(1).toLowerCase()}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            <div className="text-xs font-semibold text-slate-600">
-              {historyLoading ? "Loading entries..." : `Showing ${historyTotal} entries`}
+            <div className="text-xs font-semibold text-slate-600 flex items-center gap-2">
+              {isSilentFetching && (
+                <Loader2 size={13} className="animate-spin text-slate-400" />
+              )}
+              {historyLoading && !isSilentFetching
+                ? "Loading entries..."
+                : isSilentFetching
+                ? "Updating..."
+                : `Showing ${historyTotal} entries`}
             </div>
           </div>
 
@@ -1096,7 +1292,7 @@ export default function TimesheetsPage() {
               currentPage={historyPage}
               totalItems={historyTotal}
               itemsPerPage={ITEMS_PER_PAGE}
-              onPageChange={setHistoryPage}
+              onPageChange={handleHistoryPageChange}
             />
           </div>
         </div>
