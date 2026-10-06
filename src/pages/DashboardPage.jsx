@@ -243,17 +243,15 @@ export default function DashboardPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs table-fixed">
+          <table className="w-full text-left text-xs border-collapse">
             <thead className="bg-slate-50/80 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 select-none">
               <tr>
                 <ResizableTh
-                  width={columnWidths.name}
-                  onResizeStart={(e) => startResize('name', e)}
                   onClick={() => toggleSort('name')}
                   className="py-3 px-5 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                 >
-                  <div className="flex items-center gap-1.5 truncate">
-                    <span className="truncate">Capability</span>
+                  <div className="flex items-center gap-1.5">
+                    <span>Capability</span>
                     {sortField === 'name' ? (
                       sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                     ) : (
@@ -262,13 +260,11 @@ export default function DashboardPage() {
                   </div>
                 </ResizableTh>
                 <ResizableTh
-                  width={columnWidths.desc}
-                  onResizeStart={(e) => startResize('desc', e)}
                   onClick={() => toggleSort('desc')}
                   className="py-3 px-4 hidden sm:table-cell cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                 >
-                  <div className="flex items-center gap-1.5 truncate">
-                    <span className="truncate">Description</span>
+                  <div className="flex items-center gap-1.5">
+                    <span>Description</span>
                     {sortField === 'desc' ? (
                       sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                     ) : (
@@ -277,13 +273,11 @@ export default function DashboardPage() {
                   </div>
                 </ResizableTh>
                 <ResizableTh
-                  width={columnWidths.scope}
-                  onResizeStart={(e) => startResize('scope', e)}
                   onClick={() => toggleSort('scope')}
                   className="py-3 px-4 hidden md:table-cell cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                 >
-                  <div className="flex items-center gap-1.5 truncate">
-                    <span className="truncate">Scope Authorization</span>
+                  <div className="flex items-center gap-1.5">
+                    <span>Scope Authorization</span>
                     {sortField === 'scope' ? (
                       sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                     ) : (
@@ -292,13 +286,11 @@ export default function DashboardPage() {
                   </div>
                 </ResizableTh>
                 <ResizableTh
-                  width={columnWidths.status}
-                  onResizeStart={(e) => startResize('status', e)}
                   onClick={() => toggleSort('status')}
                   className="py-3 px-5 text-right cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                 >
-                  <div className="flex items-center justify-end gap-1.5 truncate">
-                    <span className="truncate">Status</span>
+                  <div className="flex items-center justify-end gap-1.5">
+                    <span>Status</span>
                     {sortField === 'status' ? (
                       sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                     ) : (
@@ -319,22 +311,22 @@ export default function DashboardPage() {
 
                 return (
                   <tr key={cap.code} className="hover:bg-slate-50/70 transition">
-                    <td className="py-3.5 px-5 truncate whitespace-nowrap overflow-hidden">
-                      <div className="flex items-center gap-3 truncate">
+                    <td className="py-3.5 px-5 whitespace-nowrap">
+                      <div className="flex items-center gap-3">
                         <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isHeld ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-400'
                           }`}>
                           <Icon size={14} />
                         </div>
-                        <div className="truncate">
-                          <div className="font-semibold text-slate-900 truncate" title={cap.name}>{cap.name}</div>
-                          <div className="font-mono text-[10px] text-slate-400 truncate">{cap.code}</div>
+                        <div>
+                          <div className="font-semibold text-slate-900" title={cap.name}>{cap.name}</div>
+                          <div className="font-mono text-[10px] text-slate-400">{cap.code}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="py-3.5 px-4 text-slate-500 hidden sm:table-cell truncate whitespace-nowrap overflow-hidden" title={cap.desc}>
+                    <td className="py-3.5 px-4 text-slate-500 hidden sm:table-cell text-xs" title={cap.desc}>
                       {cap.desc}
                     </td>
-                    <td className="py-3.5 px-4 text-slate-600 hidden md:table-cell truncate whitespace-nowrap overflow-hidden">
+                    <td className="py-3.5 px-4 text-slate-600 hidden md:table-cell">
                       {isHeld ? (
                         isGlobal ? (
                           <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200/60">

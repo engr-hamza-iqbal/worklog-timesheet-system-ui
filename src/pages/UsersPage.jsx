@@ -1049,17 +1049,15 @@ export default function UsersPage() {
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="text-left border-collapse text-xs table-fixed min-w-[700px]" style={tableStyle}>
+            <table className="w-full text-left border-collapse text-xs">
               <thead className="bg-slate-50 border-b border-slate-200 text-[10px] font-medium text-slate-500 uppercase tracking-wider select-none">
                 <tr>
                   <ResizableTh
-                    width={columnWidths.name}
-                    onResizeStart={(e) => startResize('name', e)}
                     onClick={() => toggleSort('name')}
                     className="py-2.5 px-5 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                   >
-                    <div className="flex items-center gap-1.5 truncate">
-                      <span className="truncate">Name / Email</span>
+                    <div className="flex items-center gap-1.5">
+                      <span>Name / Email</span>
                       {sortField === 'name' ? (
                         sortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600 shrink-0" /> : <ArrowDown size={11} className="text-indigo-600 shrink-0" />
                       ) : (
@@ -1068,13 +1066,11 @@ export default function UsersPage() {
                     </div>
                   </ResizableTh>
                   <ResizableTh
-                    width={columnWidths.accountType}
-                    onResizeStart={(e) => startResize('accountType', e)}
                     onClick={() => toggleSort('accountType')}
                     className="py-2.5 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                   >
-                    <div className="flex items-center gap-1.5 truncate">
-                      <span className="truncate">Type</span>
+                    <div className="flex items-center gap-1.5">
+                      <span>Type</span>
                       {sortField === 'accountType' ? (
                         sortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600 shrink-0" /> : <ArrowDown size={11} className="text-indigo-600 shrink-0" />
                       ) : (
@@ -1083,13 +1079,11 @@ export default function UsersPage() {
                     </div>
                   </ResizableTh>
                   <ResizableTh
-                    width={columnWidths.isActive}
-                    onResizeStart={(e) => startResize('isActive', e)}
                     onClick={() => toggleSort('isActive')}
                     className="py-2.5 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                   >
-                    <div className="flex items-center gap-1.5 truncate">
-                      <span className="truncate">Status</span>
+                    <div className="flex items-center gap-1.5">
+                      <span>Status</span>
                       {sortField === 'isActive' ? (
                         sortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600 shrink-0" /> : <ArrowDown size={11} className="text-indigo-600 shrink-0" />
                       ) : (
@@ -1098,13 +1092,11 @@ export default function UsersPage() {
                     </div>
                   </ResizableTh>
                   <ResizableTh
-                    width={columnWidths.projects}
-                    onResizeStart={(e) => startResize('projects', e)}
                     onClick={() => toggleSort('projects')}
                     className="py-2.5 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                   >
-                    <div className="flex items-center gap-1.5 truncate">
-                      <span className="truncate">Projects</span>
+                    <div className="flex items-center gap-1.5">
+                      <span>Projects</span>
                       {sortField === 'projects' ? (
                         sortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600 shrink-0" /> : <ArrowDown size={11} className="text-indigo-600 shrink-0" />
                       ) : (
@@ -1114,11 +1106,9 @@ export default function UsersPage() {
                   </ResizableTh>
                   {(canManageUsers || canAssign) && (
                     <ResizableTh
-                      width={columnWidths.actions}
-                      resizable={false}
                       className="py-2.5 px-4 text-right"
                     >
-                      <span className="truncate">Actions</span>
+                      <span>Actions</span>
                     </ResizableTh>
                   )}
                 </tr>
@@ -1131,16 +1121,16 @@ export default function UsersPage() {
                       className="hover:bg-slate-50/60 transition cursor-pointer"
                     >
                       {/* Name + email */}
-                      <td className="py-3.5 px-5 truncate whitespace-nowrap overflow-hidden">
-                        <div className="flex items-center gap-2.5 min-w-0">
+                      <td className="py-3.5 px-5 whitespace-nowrap">
+                        <div className="flex items-center gap-2.5">
                           <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center text-xs font-semibold text-slate-600 shrink-0">
                             {user.name.charAt(0).toUpperCase()}
                           </div>
-                          <div className="min-w-0 truncate">
-                            <div className="text-xs font-medium text-slate-900 truncate" title={user.name}>
+                          <div>
+                            <div className="text-xs font-medium text-slate-900" title={user.name}>
                               {user.name}
                             </div>
-                            <div className="text-[11px] text-slate-400 truncate" title={user.email}>
+                            <div className="text-[11px] text-slate-400" title={user.email}>
                               {user.email}
                             </div>
                           </div>
@@ -1148,7 +1138,7 @@ export default function UsersPage() {
                       </td>
 
                       {/* Type */}
-                      <td className="py-3.5 px-4 truncate whitespace-nowrap overflow-hidden">
+                      <td className="py-3.5 px-4 whitespace-nowrap">
                         <Badge
                           variant={user.accountType === 'ADMIN' ? 'admin' : 'employee'}
                           label={user.accountType === 'ADMIN' ? 'Admin' : 'Employee'}
@@ -1156,7 +1146,7 @@ export default function UsersPage() {
                       </td>
 
                       {/* Status */}
-                      <td className="py-3.5 px-4 truncate whitespace-nowrap overflow-hidden">
+                      <td className="py-3.5 px-4 whitespace-nowrap">
                         <Badge
                           variant={user.isActive ? 'active' : 'inactive'}
                           label={user.isActive ? 'Active' : 'Inactive'}
@@ -1165,7 +1155,7 @@ export default function UsersPage() {
                       </td>
 
                       {/* Active project count */}
-                      <td className="py-3.5 px-4 truncate whitespace-nowrap overflow-hidden">
+                      <td className="py-3.5 px-4 whitespace-nowrap">
                         {user.accountType === 'ADMIN' ? (
                           <span className="text-[11px] text-slate-400 italic">Global access</span>
                         ) : (
@@ -1203,8 +1193,8 @@ export default function UsersPage() {
 
                       {/* Actions */}
                       {(canManageUsers || canAssign) && (
-                        <td className="py-3.5 px-4 text-right truncate whitespace-nowrap overflow-hidden">
-                          <div className="flex items-center justify-end gap-1.5 truncate">
+                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
                             {canManageSpecificUser(user) && (
                               <button
                                 onClick={(e) => {

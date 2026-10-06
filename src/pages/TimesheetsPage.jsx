@@ -1174,17 +1174,15 @@ export default function TimesheetsPage() {
                 <span>Updating entries...</span>
               </div>
             )}
-            <table className="text-left border-collapse text-xs min-w-[620px] table-fixed" style={tableStyle}>
+            <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px] select-none">
                   <ResizableTh
-                    width={columnWidths.workDate}
-                    onResizeStart={(e) => startResize('workDate', e)}
                     onClick={() => toggleHistorySort('workDate')}
                     className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                   >
-                    <div className="flex items-center gap-1.5 truncate">
-                      <span className="truncate">Date</span>
+                    <div className="flex items-center gap-1.5">
+                      <span>Date</span>
                       {historySortField === 'workDate' ? (
                         historySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                       ) : (
@@ -1193,13 +1191,11 @@ export default function TimesheetsPage() {
                     </div>
                   </ResizableTh>
                   <ResizableTh
-                    width={columnWidths.project}
-                    onResizeStart={(e) => startResize('project', e)}
                     onClick={() => toggleHistorySort('project')}
                     className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                   >
-                    <div className="flex items-center gap-1.5 truncate">
-                      <span className="truncate">Project</span>
+                    <div className="flex items-center gap-1.5">
+                      <span>Project</span>
                       {historySortField === 'project' ? (
                         historySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                       ) : (
@@ -1208,13 +1204,11 @@ export default function TimesheetsPage() {
                     </div>
                   </ResizableTh>
                   <ResizableTh
-                    width={columnWidths.durationHours}
-                    onResizeStart={(e) => startResize('durationHours', e)}
                     onClick={() => toggleHistorySort('durationHours')}
                     className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                   >
-                    <div className="flex items-center gap-1.5 truncate">
-                      <span className="truncate">Hours</span>
+                    <div className="flex items-center gap-1.5">
+                      <span>Hours</span>
                       {historySortField === 'durationHours' ? (
                         historySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                       ) : (
@@ -1223,13 +1217,11 @@ export default function TimesheetsPage() {
                     </div>
                   </ResizableTh>
                   <ResizableTh
-                    width={columnWidths.description}
-                    onResizeStart={(e) => startResize('description', e)}
                     onClick={() => toggleHistorySort('description')}
                     className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                   >
-                    <div className="flex items-center gap-1.5 truncate">
-                      <span className="truncate">Description</span>
+                    <div className="flex items-center gap-1.5">
+                      <span>Description</span>
                       {historySortField === 'description' ? (
                         historySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                       ) : (
@@ -1238,13 +1230,11 @@ export default function TimesheetsPage() {
                     </div>
                   </ResizableTh>
                   <ResizableTh
-                    width={columnWidths.status}
-                    onResizeStart={(e) => startResize('status', e)}
                     onClick={() => toggleHistorySort('status')}
                     className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                   >
-                    <div className="flex items-center gap-1.5 truncate">
-                      <span className="truncate">Status</span>
+                    <div className="flex items-center gap-1.5">
+                      <span>Status</span>
                       {historySortField === 'status' ? (
                         historySortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                       ) : (
@@ -1253,12 +1243,10 @@ export default function TimesheetsPage() {
                     </div>
                   </ResizableTh>
                   <ResizableTh
-                    width={columnWidths.actions}
-                    onResizeStart={(e) => startResize('actions', e)}
                     className="py-3 px-4 text-right"
                     resizable={false}
                   >
-                    <span className="truncate">Actions</span>
+                    <span>Actions</span>
                   </ResizableTh>
                 </tr>
               </thead>
@@ -1275,24 +1263,24 @@ export default function TimesheetsPage() {
                 ) : paginatedHistory.length ? (
                   paginatedHistory.map((entry) => (
                     <tr key={entry.id} className="hover:bg-slate-50/70 transition">
-                      <td className="py-3 px-4 font-semibold text-slate-900 truncate whitespace-nowrap overflow-hidden">
+                      <td className="py-3 px-4 font-semibold text-slate-900 whitespace-nowrap">
                         {entry.workDate}
                       </td>
-                      <td className="py-3 px-4 font-medium text-slate-800 truncate whitespace-nowrap overflow-hidden">
-                        <span className="truncate" title={entry.project?.name}>{entry.project?.name}</span>
+                      <td className="py-3 px-4 font-medium text-slate-800">
+                        <span>{entry.project?.name}</span>
                       </td>
-                      <td className="py-3 px-4 font-bold text-slate-900 truncate whitespace-nowrap overflow-hidden">
+                      <td className="py-3 px-4 font-bold text-slate-900 whitespace-nowrap">
                         {entry.durationHours}h
                       </td>
-                      <td className="py-3 px-4 text-slate-600 truncate whitespace-nowrap overflow-hidden">
-                        <div className="truncate" title={entry.description}>{entry.description}</div>
+                      <td className="py-3 px-4 text-slate-600 min-w-[200px] max-w-md">
+                        <div className="line-clamp-2" title={entry.description}>{entry.description}</div>
                         {entry.returnComment && (
-                          <div className="mt-0.5 text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded px-1.5 py-0.5 truncate" title={`Reason returned: ${entry.returnComment}`}>
+                          <div className="mt-1 text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded px-2 py-1 leading-normal" title={`Reason returned: ${entry.returnComment}`}>
                             <strong>Reason:</strong> {entry.returnComment}
                           </div>
                         )}
                       </td>
-                      <td className="py-3 px-4 truncate whitespace-nowrap overflow-hidden">
+                      <td className="py-3 px-4 whitespace-nowrap">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <Badge variant={statusVariant[entry.status]} label={entry.status} />
                           {entry.status !== 'RETURNED' && (entry.wasReturned || entry.returnComment) && (
@@ -1302,7 +1290,7 @@ export default function TimesheetsPage() {
                           )}
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-right truncate whitespace-nowrap overflow-hidden">
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
                         {(() => {
                           const isOwnEntry = Boolean(user?.id && entry.userId === user.id);
                           const canEdit = isOwnEntry && entry.status === "DRAFT";

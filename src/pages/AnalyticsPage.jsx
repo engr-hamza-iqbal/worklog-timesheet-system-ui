@@ -1084,17 +1084,15 @@ export default function AnalyticsPage() {
 
             {/* Table with Clickable Headers */}
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs table-fixed">
+              <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-slate-50/80 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 select-none">
                   <tr>
                     <ResizableTh
-                      width={columnWidths.label}
-                      onResizeStart={(e) => startResize('label', e)}
                       onClick={() => handleTableSort('label')}
                       className="py-3 px-5 cursor-pointer hover:bg-slate-100 hover:text-slate-900 transition"
                     >
-                      <div className="flex items-center gap-1.5 truncate">
-                        <span className="truncate">
+                      <div className="flex items-center gap-1.5">
+                        <span>
                           {breakdownTab === 'employees'
                             ? 'Contributor Name'
                             : breakdownTab === 'projects'
@@ -1115,13 +1113,11 @@ export default function AnalyticsPage() {
                       </div>
                     </ResizableTh>
                     <ResizableTh
-                      width={columnWidths.hours}
-                      onResizeStart={(e) => startResize('hours', e)}
                       onClick={() => handleTableSort('hours')}
                       className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-900 transition text-right sm:text-left"
                     >
-                      <div className="flex items-center justify-end sm:justify-start gap-1.5 truncate">
-                        <span className="truncate">
+                      <div className="flex items-center justify-end sm:justify-start gap-1.5">
+                        <span>
                           {breakdownTab === 'timeliness' ? 'Avg Lag (Days)' : 'Approved Hours'}
                         </span>
                         {sortColumn === 'hours' ? (
@@ -1136,13 +1132,11 @@ export default function AnalyticsPage() {
                       </div>
                     </ResizableTh>
                     <ResizableTh
-                      width={columnWidths.share}
-                      onResizeStart={(e) => startResize('share', e)}
                       onClick={() => handleTableSort('share')}
                       className="py-3 px-4 hidden sm:table-cell cursor-pointer hover:bg-slate-100 hover:text-slate-900 transition"
                     >
-                      <div className="flex items-center gap-1.5 truncate">
-                        <span className="truncate">
+                      <div className="flex items-center gap-1.5">
+                        <span>
                           {breakdownTab === 'timeliness' ? 'On-Time Submission Rate' : 'Share of Total Effort'}
                         </span>
                         {sortColumn === 'share' ? (
@@ -1157,13 +1151,11 @@ export default function AnalyticsPage() {
                       </div>
                     </ResizableTh>
                     <ResizableTh
-                      width={columnWidths.badge}
-                      onResizeStart={(e) => startResize('badge', e)}
                       onClick={() => handleTableSort('badge')}
                       className="py-3 px-5 text-right cursor-pointer hover:bg-slate-100 hover:text-slate-900 transition"
                     >
-                      <div className="flex items-center justify-end gap-1.5 truncate">
-                        <span className="truncate">Status / Tier</span>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <span>Status / Tier</span>
                         {sortColumn === 'badge' ? (
                           sortDirection === 'asc' ? (
                             <ArrowUp size={12} className="text-indigo-600 shrink-0" />
@@ -1180,15 +1172,15 @@ export default function AnalyticsPage() {
                 <tbody className="divide-y divide-slate-100">
                   {currentTableRows.map((row) => (
                     <tr key={row.id} className="hover:bg-slate-50/70 transition">
-                      <td className="py-3.5 px-5 font-medium text-slate-900 truncate whitespace-nowrap overflow-hidden">
-                        <div className="flex items-center gap-2.5 truncate">
+                      <td className="py-3.5 px-5 font-medium text-slate-900 whitespace-nowrap">
+                        <div className="flex items-center gap-2.5">
                           <div className="w-6 h-6 rounded-md bg-slate-100 text-slate-600 font-bold text-[10px] flex items-center justify-center shrink-0">
                             {row.label.charAt(0).toUpperCase()}
                           </div>
-                          <span className="truncate" title={row.label}>{row.label}</span>
+                          <span title={row.label}>{row.label}</span>
                         </div>
                       </td>
-                      <td className="py-3.5 px-4 font-mono font-semibold text-slate-800 text-right sm:text-left truncate whitespace-nowrap overflow-hidden">
+                      <td className="py-3.5 px-4 font-mono font-semibold text-slate-800 text-right sm:text-left whitespace-nowrap">
                         {breakdownTab === 'timeliness' ? (
                           <>
                             {row.hours.toFixed(1)} <span className="text-[10px] font-sans text-slate-400">days</span>
@@ -1199,7 +1191,7 @@ export default function AnalyticsPage() {
                           </>
                         )}
                       </td>
-                      <td className="py-3.5 px-4 hidden sm:table-cell text-slate-600 truncate whitespace-nowrap overflow-hidden">
+                      <td className="py-3.5 px-4 hidden sm:table-cell text-slate-600 whitespace-nowrap">
                         <div className="flex items-center gap-2.5">
                           <span className="font-mono text-xs w-11 text-right">{row.share.toFixed(1)}%</span>
                           <div className="w-24 bg-slate-100 rounded-full h-1.5 overflow-hidden">
@@ -1210,7 +1202,7 @@ export default function AnalyticsPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="py-3.5 px-5 text-right truncate whitespace-nowrap overflow-hidden">
+                      <td className="py-3.5 px-5 text-right whitespace-nowrap">
                         <span
                           className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${row.badgeColor}`}
                         >

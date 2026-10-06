@@ -600,17 +600,15 @@ export default function ClientsProjectsPage() {
               ) : (
                 <>
                   <div className="overflow-x-auto">
-                    <table className="text-left text-xs min-w-[500px] table-fixed" style={tableStyle}>
+                    <table className="w-full text-left text-xs border-collapse">
                       <thead className="bg-slate-50 text-[10px] font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 select-none">
                         <tr>
                           <ResizableTh
-                            width={columnWidths.name}
-                            onResizeStart={(e) => startResize('name', e)}
                             onClick={() => toggleProjectSort('name')}
                             className="py-2.5 px-5 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                           >
-                            <div className="flex items-center gap-1.5 truncate">
-                              <span className="truncate">Project</span>
+                            <div className="flex items-center gap-1.5">
+                              <span>Project</span>
                               {projectSortField === 'name' ? (
                                 projectSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600 shrink-0" /> : <ArrowDown size={11} className="text-indigo-600 shrink-0" />
                               ) : (
@@ -619,13 +617,11 @@ export default function ClientsProjectsPage() {
                             </div>
                           </ResizableTh>
                           <ResizableTh
-                            width={columnWidths.status}
-                            onResizeStart={(e) => startResize('status', e)}
                             onClick={() => toggleProjectSort('status')}
                             className="py-2.5 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                           >
-                            <div className="flex items-center gap-1.5 truncate">
-                              <span className="truncate">Status</span>
+                            <div className="flex items-center gap-1.5">
+                              <span>Status</span>
                               {projectSortField === 'status' ? (
                                 projectSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600 shrink-0" /> : <ArrowDown size={11} className="text-indigo-600 shrink-0" />
                               ) : (
@@ -635,13 +631,11 @@ export default function ClientsProjectsPage() {
                           </ResizableTh>
                           {canViewBilling && (
                             <ResizableTh
-                              width={columnWidths.currentRate}
-                              onResizeStart={(e) => startResize('currentRate', e)}
                               onClick={() => toggleProjectSort('currentRate')}
                               className="py-2.5 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                             >
-                              <div className="flex items-center gap-1.5 truncate">
-                                <span className="truncate">Rate / hr</span>
+                              <div className="flex items-center gap-1.5">
+                                <span>Rate / hr</span>
                                 {projectSortField === 'currentRate' ? (
                                   projectSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600 shrink-0" /> : <ArrowDown size={11} className="text-indigo-600 shrink-0" />
                                 ) : (
@@ -651,13 +645,11 @@ export default function ClientsProjectsPage() {
                             </ResizableTh>
                           )}
                           <ResizableTh
-                            width={columnWidths.team}
-                            onResizeStart={(e) => startResize('team', e)}
                             onClick={() => toggleProjectSort('team')}
                             className="py-2.5 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                           >
-                            <div className="flex items-center gap-1.5 truncate">
-                              <span className="truncate">Team</span>
+                            <div className="flex items-center gap-1.5">
+                              <span>Team</span>
                               {projectSortField === 'team' ? (
                                 projectSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600 shrink-0" /> : <ArrowDown size={11} className="text-indigo-600 shrink-0" />
                               ) : (
@@ -667,11 +659,9 @@ export default function ClientsProjectsPage() {
                           </ResizableTh>
                           {canManage && (
                             <ResizableTh
-                              width={columnWidths.actions}
-                              resizable={false}
                               className="py-2.5 px-4 text-right"
                             >
-                              <span className="truncate">Actions</span>
+                              <span>Actions</span>
                             </ResizableTh>
                           )}
                         </tr>
@@ -679,10 +669,10 @@ export default function ClientsProjectsPage() {
                       <tbody className="divide-y divide-slate-100">
                         {paginatedProjects.map((project) => (
                           <tr key={project.id} className="hover:bg-slate-50/60 transition">
-                            <td className="py-3 px-5 truncate whitespace-nowrap overflow-hidden">
-                              <div className="font-medium text-slate-900 truncate" title={project.name}>{project.name}</div>
+                            <td className="py-3 px-5 whitespace-nowrap">
+                              <div className="font-medium text-slate-900" title={project.name}>{project.name}</div>
                             </td>
-                            <td className="py-3 px-4 truncate whitespace-nowrap overflow-hidden">
+                            <td className="py-3 px-4 whitespace-nowrap">
                               <Badge
                                 variant={project.status === 'ACTIVE' ? 'active' : 'closed'}
                                 label={project.status === 'ACTIVE' ? 'Active' : 'Closed'}
@@ -690,13 +680,13 @@ export default function ClientsProjectsPage() {
                               />
                             </td>
                             {canViewBilling && (
-                              <td className="py-3 px-4 text-slate-700 truncate whitespace-nowrap overflow-hidden">
+                              <td className="py-3 px-4 text-slate-700 whitespace-nowrap">
                                 {project.currentRate != null
                                   ? <span className="font-medium">${Number(project.currentRate).toFixed(2)}</span>
                                   : <span className="text-slate-400">—</span>}
                               </td>
                             )}
-                            <td className={`py-3 px-4 ${expandedTeamProjects.has(project.id) ? '' : 'truncate whitespace-nowrap overflow-hidden'}`}>
+                            <td className="py-3 px-4 min-w-[160px]">
                               {project.assignedEmployees && project.assignedEmployees.length > 0 ? (
                                 <div className="flex flex-col gap-1.5">
                                   <button
@@ -741,9 +731,9 @@ export default function ClientsProjectsPage() {
                               )}
                             </td>
                             {canManage && (
-                              <td className="py-3 px-4 text-right truncate whitespace-nowrap overflow-hidden">
+                              <td className="py-3 px-4 text-right whitespace-nowrap">
                                 {canManageProject(project) ? (
-                                  <div className="flex items-center gap-1.5 justify-end truncate">
+                                  <div className="flex items-center gap-1.5 justify-end">
                                     {canViewBilling && (
                                       <button
                                         onClick={() => { setRateProjectId(project.id); setModal('addRate'); }}

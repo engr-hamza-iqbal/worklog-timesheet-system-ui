@@ -397,11 +397,11 @@ export default function UserAccessPanel({ targetUser, users, projects, currentUs
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left min-w-[620px] table-fixed">
+            <table className="w-full text-xs text-left border-collapse">
               <thead className="bg-slate-50 text-[10px] font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 select-none">
                 <tr>
                   {!isSelf && (
-                    <th style={{ width: colWidths.checkbox, minWidth: colWidths.checkbox, maxWidth: colWidths.checkbox }} className="py-2.5 px-3">
+                    <th className="py-2.5 px-3 w-10">
                       {(Object.keys(activeByCode).length > 0 || Object.keys(expiredByCode).length > 0) && (
                         <input
                           type="checkbox"
@@ -424,14 +424,11 @@ export default function UserAccessPanel({ targetUser, users, projects, currentUs
                     </th>
                   )}
                   <ResizableTh
-                    colKey="name"
-                    width={colWidths.name}
-                    onResize={startResize}
                     onClick={() => toggleCapSort('name')}
                     className="py-2.5 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                   >
-                    <div className="flex items-center gap-1.5 truncate">
-                      <span className="truncate">Capability</span>
+                    <div className="flex items-center gap-1.5">
+                      <span>Capability</span>
                       {capSortField === 'name' ? (
                         capSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600 shrink-0" /> : <ArrowDown size={11} className="text-indigo-600 shrink-0" />
                       ) : (
@@ -440,14 +437,11 @@ export default function UserAccessPanel({ targetUser, users, projects, currentUs
                     </div>
                   </ResizableTh>
                   <ResizableTh
-                    colKey="scope"
-                    width={colWidths.scope}
-                    onResize={startResize}
                     onClick={() => toggleCapSort('scope')}
                     className="py-2.5 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                   >
-                    <div className="flex items-center gap-1.5 truncate">
-                      <span className="truncate">Scope</span>
+                    <div className="flex items-center gap-1.5">
+                      <span>Scope</span>
                       {capSortField === 'scope' ? (
                         capSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600 shrink-0" /> : <ArrowDown size={11} className="text-indigo-600 shrink-0" />
                       ) : (
@@ -456,14 +450,11 @@ export default function UserAccessPanel({ targetUser, users, projects, currentUs
                     </div>
                   </ResizableTh>
                   <ResizableTh
-                    colKey="grantedBy"
-                    width={colWidths.grantedBy}
-                    onResize={startResize}
                     onClick={() => toggleCapSort('grantedBy')}
                     className="py-2.5 px-4 hidden sm:table-cell cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                   >
-                    <div className="flex items-center gap-1.5 truncate">
-                      <span className="truncate">Granted by</span>
+                    <div className="flex items-center gap-1.5">
+                      <span>Granted by</span>
                       {capSortField === 'grantedBy' ? (
                         capSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600 shrink-0" /> : <ArrowDown size={11} className="text-indigo-600 shrink-0" />
                       ) : (
@@ -472,22 +463,16 @@ export default function UserAccessPanel({ targetUser, users, projects, currentUs
                     </div>
                   </ResizableTh>
                   <ResizableTh
-                    colKey="expires"
-                    width={colWidths.expires}
-                    onResize={startResize}
                     className="py-2.5 px-4 hidden sm:table-cell"
                   >
-                    <span className="truncate">Expires</span>
+                    <span>Expires</span>
                   </ResizableTh>
                   <ResizableTh
-                    colKey="status"
-                    width={colWidths.status}
-                    onResize={startResize}
                     onClick={() => toggleCapSort('status')}
                     className="py-2.5 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                   >
-                    <div className="flex items-center gap-1.5 truncate">
-                      <span className="truncate">Status</span>
+                    <div className="flex items-center gap-1.5">
+                      <span>Status</span>
                       {capSortField === 'status' ? (
                         capSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600 shrink-0" /> : <ArrowDown size={11} className="text-indigo-600 shrink-0" />
                       ) : (
@@ -497,13 +482,10 @@ export default function UserAccessPanel({ targetUser, users, projects, currentUs
                   </ResizableTh>
                   {!isSelf && (
                     <ResizableTh
-                      colKey="actions"
-                      width={colWidths.actions}
-                      onResize={startResize}
                       align="right"
                       className="py-2.5 px-4 text-right"
                     >
-                      <span className="truncate">Actions</span>
+                      <span>Actions</span>
                     </ResizableTh>
                   )}
                 </tr>
@@ -538,28 +520,28 @@ export default function UserAccessPanel({ targetUser, users, projects, currentUs
                         </td>
                       )}
 
-                      <td className="py-3 px-4 truncate whitespace-nowrap overflow-hidden" title={`${CAP_META[code].label} (${code})`}>
-                        <div className="font-medium text-slate-900 truncate">{CAP_META[code].label}</div>
-                        <div className="text-[10px] font-mono text-slate-400 truncate">{code}</div>
+                      <td className="py-3 px-4 whitespace-nowrap" title={`${CAP_META[code].label} (${code})`}>
+                        <div className="font-medium text-slate-900">{CAP_META[code].label}</div>
+                        <div className="text-[10px] font-mono text-slate-400">{code}</div>
                       </td>
 
-                      <td className="py-3 px-4 text-slate-600 truncate whitespace-nowrap overflow-hidden">
+                      <td className="py-3 px-4 text-slate-600 whitespace-nowrap">
                         {renderScope(grant)}
                       </td>
 
-                      <td className="py-3 px-4 text-slate-600 hidden sm:table-cell truncate whitespace-nowrap overflow-hidden" title={grant?.grantedBy?.name || ''}>
+                      <td className="py-3 px-4 text-slate-600 hidden sm:table-cell whitespace-nowrap" title={grant?.grantedBy?.name || ''}>
                         {grant && grant.grantedBy
-                          ? <span className="truncate block">{grant.grantedBy.name}</span>
+                          ? <span>{grant.grantedBy.name}</span>
                           : <span className="text-slate-300">—</span>}
                       </td>
 
-                      <td className="py-3 px-4 hidden sm:table-cell truncate whitespace-nowrap overflow-hidden" title={grant?.expiresAt ? fmtDate(grant.expiresAt) : ''}>
+                      <td className="py-3 px-4 hidden sm:table-cell whitespace-nowrap" title={grant?.expiresAt ? fmtDate(grant.expiresAt) : ''}>
                         {isExpired ? (
-                          <span className="inline-flex items-center gap-1 text-amber-700 text-[11px] font-medium truncate" title={grant.expiresAt}>
+                          <span className="inline-flex items-center gap-1 text-amber-700 text-[11px] font-medium" title={grant.expiresAt}>
                             <Clock className="w-3 h-3 text-amber-600 shrink-0" />Expired ({fmtDate(grant.expiresAt)})
                           </span>
                         ) : isGranted && grant.expiresAt ? (
-                          <span className="inline-flex items-center gap-1 text-amber-700 text-[11px] truncate">
+                          <span className="inline-flex items-center gap-1 text-amber-700 text-[11px]">
                             <Clock className="w-3 h-3 shrink-0" />{fmtDate(grant.expiresAt)}
                           </span>
                         ) : isGranted ? (
@@ -569,7 +551,7 @@ export default function UserAccessPanel({ targetUser, users, projects, currentUs
                         )}
                       </td>
 
-                      <td className="py-3 px-4 truncate whitespace-nowrap overflow-hidden">
+                      <td className="py-3 px-4 whitespace-nowrap">
                         {isGranted ? (
                           <Badge variant="granted" label="Granted" dot />
                         ) : isExpired ? (
@@ -582,7 +564,7 @@ export default function UserAccessPanel({ targetUser, users, projects, currentUs
                       </td>
 
                       {!isSelf && (
-                        <td className="py-3 px-4 text-right truncate whitespace-nowrap overflow-hidden">
+                        <td className="py-3 px-4 text-right whitespace-nowrap">
                           {isGranted ? (
                             <div className="flex items-center gap-1.5 justify-end">
                               <button

@@ -66,19 +66,17 @@ function MetricTable({ title, rows = [], columns = [] }) {
         <span className="text-xs text-slate-400 font-medium">{rows.length} rows</span>
       </div>
       {sortedRows && sortedRows.length ? (
-        <table className="w-full text-left text-sm min-w-[340px] table-fixed">
+        <table className="w-full text-left text-sm border-collapse">
           <thead className="text-xs uppercase text-slate-500 bg-slate-50/40 select-none">
             <tr>
               {columns.map((column) => (
                 <ResizableTh
                   key={column.key}
-                  width={columnWidths[column.key]}
-                  onResizeStart={(e) => startResize(column.key, e)}
                   onClick={() => handleSort(column.key)}
                   className="px-5 py-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                 >
-                  <div className="flex items-center gap-1.5 truncate">
-                    <span className="truncate">{column.label}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span>{column.label}</span>
                     {sortKey === column.key ? (
                       sortOrder === 'asc' ? (
                         <ArrowUp size={12} className="text-indigo-600 shrink-0" />
@@ -102,11 +100,11 @@ function MetricTable({ title, rows = [], columns = [] }) {
                 {columns.map((column, idx) => (
                   <td
                     key={column.key}
-                    className={`px-5 py-3 truncate whitespace-nowrap overflow-hidden ${
+                    className={`px-5 py-3 whitespace-nowrap ${
                       idx === 0 ? 'font-medium text-slate-800' : 'text-slate-600'
                     }`}
                   >
-                    <div className="truncate" title={String(column.value(row) ?? '')}>
+                    <div title={String(column.value(row) ?? '')}>
                       {column.value(row)}
                     </div>
                   </td>
@@ -510,38 +508,30 @@ export default function ReportsPage() {
                 Checking timesheets and approved leave...
               </div>
             ) : missingData?.employees?.length ? (
-              <table className="w-full text-left text-sm min-w-[500px] table-fixed">
-                <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+              <table className="w-full text-left text-sm border-collapse">
+                <thead className="bg-slate-50 text-xs uppercase text-slate-500 select-none">
                   <tr>
                     {isAdmin && (
                       <ResizableTh
-                        width={missingWidths.select}
-                        resizable={false}
                         className="px-5 py-3"
                       >
-                        <span className="truncate">Select</span>
+                        <span>Select</span>
                       </ResizableTh>
                     )}
                     <ResizableTh
-                      width={missingWidths.employee}
-                      onResizeStart={(e) => startMissingResize('employee', e)}
                       className="px-5 py-3"
                     >
-                      <span className="truncate">Employee</span>
+                      <span>Employee</span>
                     </ResizableTh>
                     <ResizableTh
-                      width={missingWidths.email}
-                      onResizeStart={(e) => startMissingResize('email', e)}
                       className="px-5 py-3"
                     >
-                      <span className="truncate">Email</span>
+                      <span>Email</span>
                     </ResizableTh>
                     <ResizableTh
-                      width={missingWidths.chaseStatus}
-                      onResizeStart={(e) => startMissingResize('chaseStatus', e)}
                       className="px-5 py-3"
                     >
-                      <span className="truncate">Chase Status</span>
+                      <span>Chase Status</span>
                     </ResizableTh>
                   </tr>
                 </thead>
@@ -552,7 +542,7 @@ export default function ReportsPage() {
                       className="hover:bg-slate-50/50"
                     >
                       {isAdmin && (
-                        <td className="px-5 py-3 truncate whitespace-nowrap overflow-hidden">
+                        <td className="px-5 py-3 whitespace-nowrap">
                           <input
                             type="checkbox"
                             disabled={emp.chasedToday}
@@ -562,19 +552,19 @@ export default function ReportsPage() {
                           />
                         </td>
                       )}
-                      <td className="px-5 py-3 font-medium text-slate-800 truncate whitespace-nowrap overflow-hidden">
-                        <span className="truncate" title={emp.userName}>{emp.userName}</span>
+                      <td className="px-5 py-3 font-medium text-slate-800 whitespace-nowrap">
+                        <span title={emp.userName}>{emp.userName}</span>
                       </td>
-                      <td className="px-5 py-3 text-slate-600 truncate whitespace-nowrap overflow-hidden">
-                        <span className="truncate" title={emp.email}>{emp.email}</span>
+                      <td className="px-5 py-3 text-slate-600 whitespace-nowrap">
+                        <span title={emp.email}>{emp.email}</span>
                       </td>
-                      <td className="px-5 py-3 truncate whitespace-nowrap overflow-hidden">
+                      <td className="px-5 py-3 whitespace-nowrap">
                         {emp.chasedToday ? (
-                          <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600 truncate">
+                          <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
                             Reminded today
                           </span>
                         ) : (
-                          <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-amber-200 truncate">
+                          <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-amber-200">
                             Unsent
                           </span>
                         )}

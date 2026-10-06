@@ -421,17 +421,15 @@ export default function TimeOffPage() {
             No time-off requests match these filters.
           </div>
         ) : (
-          <table className="text-left text-sm min-w-[580px] table-fixed" style={tableStyle}>
+          <table className="w-full text-left text-sm border-collapse">
             <thead className="bg-slate-50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-200 select-none">
               <tr>
                 <ResizableTh
-                  width={columnWidths.employee}
-                  onResizeStart={(e) => startResize('employee', e)}
                   onClick={() => toggleRequestSort('employee')}
-                  className="p-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  className="px-4 py-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                 >
-                  <div className="flex items-center gap-1.5 truncate">
-                    <span className="truncate">Employee</span>
+                  <div className="flex items-center gap-1.5">
+                    <span>Employee</span>
                     {requestSortField === 'employee' ? (
                       requestSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                     ) : (
@@ -440,13 +438,11 @@ export default function TimeOffPage() {
                   </div>
                 </ResizableTh>
                 <ResizableTh
-                  width={columnWidths.startDate}
-                  onResizeStart={(e) => startResize('startDate', e)}
                   onClick={() => toggleRequestSort('startDate')}
-                  className="p-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  className="px-4 py-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                 >
-                  <div className="flex items-center gap-1.5 truncate">
-                    <span className="truncate">Dates</span>
+                  <div className="flex items-center gap-1.5">
+                    <span>Dates</span>
                     {requestSortField === 'startDate' ? (
                       requestSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                     ) : (
@@ -455,13 +451,11 @@ export default function TimeOffPage() {
                   </div>
                 </ResizableTh>
                 <ResizableTh
-                  width={columnWidths.type}
-                  onResizeStart={(e) => startResize('type', e)}
                   onClick={() => toggleRequestSort('type')}
-                  className="p-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  className="px-4 py-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                 >
-                  <div className="flex items-center gap-1.5 truncate">
-                    <span className="truncate">Type</span>
+                  <div className="flex items-center gap-1.5">
+                    <span>Type</span>
                     {requestSortField === 'type' ? (
                       requestSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                     ) : (
@@ -470,13 +464,11 @@ export default function TimeOffPage() {
                   </div>
                 </ResizableTh>
                 <ResizableTh
-                  width={columnWidths.reason}
-                  onResizeStart={(e) => startResize('reason', e)}
                   onClick={() => toggleRequestSort('reason')}
-                  className="p-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  className="px-4 py-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                 >
-                  <div className="flex items-center gap-1.5 truncate">
-                    <span className="truncate">Reason</span>
+                  <div className="flex items-center gap-1.5">
+                    <span>Reason</span>
                     {requestSortField === 'reason' ? (
                       requestSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                     ) : (
@@ -485,13 +477,11 @@ export default function TimeOffPage() {
                   </div>
                 </ResizableTh>
                 <ResizableTh
-                  width={columnWidths.status}
-                  onResizeStart={(e) => startResize('status', e)}
                   onClick={() => toggleRequestSort('status')}
-                  className="p-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  className="px-4 py-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                 >
-                  <div className="flex items-center gap-1.5 truncate">
-                    <span className="truncate">Status</span>
+                  <div className="flex items-center gap-1.5">
+                    <span>Status</span>
                     {requestSortField === 'status' ? (
                       requestSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                     ) : (
@@ -500,48 +490,46 @@ export default function TimeOffPage() {
                   </div>
                 </ResizableTh>
                 <ResizableTh
-                  width={columnWidths.actions}
-                  resizable={false}
-                  className="p-4"
+                  className="px-4 py-3"
                 >
-                  <span className="truncate">Action</span>
+                  <span>Action</span>
                 </ResizableTh>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100">
               {paginatedRequests.map((request) => (
                 <tr
                   key={request.id}
-                  className="border-t border-slate-100 align-top"
+                  className="hover:bg-slate-50/60 transition align-top"
                 >
-                  <td className="p-4 truncate whitespace-nowrap overflow-hidden">
-                    <span className="truncate" title={request.user?.name || user?.name}>
+                  <td className="px-4 py-3.5 whitespace-nowrap text-xs font-medium text-slate-900">
+                    <span title={request.user?.name || user?.name}>
                       {request.user?.name || user?.name}
                     </span>
                   </td>
-                  <td className="p-4 truncate whitespace-nowrap overflow-hidden">
+                  <td className="px-4 py-3.5 whitespace-nowrap text-xs text-slate-700">
                     {request.startDate} to {request.endDate}
                   </td>
-                  <td className="p-4 truncate whitespace-nowrap overflow-hidden">
-                    <span className="truncate" title={request.timeOffType?.name}>
+                  <td className="px-4 py-3.5 whitespace-nowrap text-xs text-slate-700">
+                    <span title={request.timeOffType?.name}>
                       {request.timeOffType?.name}
                     </span>
                   </td>
-                  <td className="p-4 truncate whitespace-nowrap overflow-hidden">
-                    <div className="truncate" title={request.reason}>{request.reason}</div>
+                  <td className="px-4 py-3.5 text-xs text-slate-600 min-w-[160px] max-w-xs">
+                    <div className="line-clamp-2" title={request.reason}>{request.reason}</div>
                     {request.decisionComment && (
-                      <p className="mt-0.5 text-xs text-red-600 truncate" title={request.decisionComment}>
+                      <p className="mt-0.5 text-xs text-red-600 line-clamp-1" title={request.decisionComment}>
                         {request.decisionComment}
                       </p>
                     )}
                   </td>
-                  <td className="p-4 truncate whitespace-nowrap overflow-hidden">
+                  <td className="px-4 py-3.5 whitespace-nowrap">
                     <Badge
                       variant={statusVariant[request.status]}
                       label={request.status}
                     />
                   </td>
-                  <td className="p-4 truncate whitespace-nowrap overflow-hidden">
+                  <td className="px-4 py-3.5 whitespace-nowrap">
                     <div className="flex gap-2">
                       {request.status === "PENDING" &&
                         request.userId === user?.id && (

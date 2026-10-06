@@ -334,17 +334,15 @@ export default function EmailLogPage() {
             Loading email logs...
           </div>
         ) : logs.length ? (
-          <table className="w-full text-left text-sm min-w-[620px] table-fixed">
-            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
+          <table className="w-full text-left text-sm border-collapse">
+            <thead className="bg-slate-50 text-xs uppercase text-slate-500 select-none">
               <tr>
                 <ResizableTh
-                  width={columnWidths.recipient}
-                  onResizeStart={(e) => startResize('recipient', e)}
                   onClick={() => toggleSort('recipient')}
-                  className="px-5 py-3 cursor-pointer select-none hover:bg-slate-100 hover:text-slate-800 transition"
+                  className="px-5 py-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                 >
-                  <div className="flex items-center gap-1.5 truncate">
-                    <span className="truncate">Recipient</span>
+                  <div className="flex items-center gap-1.5">
+                    <span>Recipient</span>
                     {sortField === 'recipient' ? (
                       sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                     ) : (
@@ -353,13 +351,11 @@ export default function EmailLogPage() {
                   </div>
                 </ResizableTh>
                 <ResizableTh
-                  width={columnWidths.emailType}
-                  onResizeStart={(e) => startResize('emailType', e)}
                   onClick={() => toggleSort('emailType')}
-                  className="px-5 py-3 cursor-pointer select-none hover:bg-slate-100 hover:text-slate-800 transition"
+                  className="px-5 py-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                 >
-                  <div className="flex items-center gap-1.5 truncate">
-                    <span className="truncate">Type</span>
+                  <div className="flex items-center gap-1.5">
+                    <span>Type</span>
                     {sortField === 'emailType' ? (
                       sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                     ) : (
@@ -368,13 +364,11 @@ export default function EmailLogPage() {
                   </div>
                 </ResizableTh>
                 <ResizableTh
-                  width={columnWidths.subject}
-                  onResizeStart={(e) => startResize('subject', e)}
                   onClick={() => toggleSort('subject')}
-                  className="px-5 py-3 cursor-pointer select-none hover:bg-slate-100 hover:text-slate-800 transition"
+                  className="px-5 py-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                 >
-                  <div className="flex items-center gap-1.5 truncate">
-                    <span className="truncate">Subject</span>
+                  <div className="flex items-center gap-1.5">
+                    <span>Subject</span>
                     {sortField === 'subject' ? (
                       sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                     ) : (
@@ -383,13 +377,11 @@ export default function EmailLogPage() {
                   </div>
                 </ResizableTh>
                 <ResizableTh
-                  width={columnWidths.status}
-                  onResizeStart={(e) => startResize('status', e)}
                   onClick={() => toggleSort('status')}
-                  className="px-5 py-3 cursor-pointer select-none hover:bg-slate-100 hover:text-slate-800 transition"
+                  className="px-5 py-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                 >
-                  <div className="flex items-center gap-1.5 truncate">
-                    <span className="truncate">Status</span>
+                  <div className="flex items-center gap-1.5">
+                    <span>Status</span>
                     {sortField === 'status' ? (
                       sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                     ) : (
@@ -398,13 +390,11 @@ export default function EmailLogPage() {
                   </div>
                 </ResizableTh>
                 <ResizableTh
-                  width={columnWidths.attemptedAt}
-                  onResizeStart={(e) => startResize('attemptedAt', e)}
                   onClick={() => toggleSort('attemptedAt')}
-                  className="px-5 py-3 cursor-pointer select-none hover:bg-slate-100 hover:text-slate-800 transition"
+                  className="px-5 py-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                 >
-                  <div className="flex items-center gap-1.5 truncate">
-                    <span className="truncate">Attempted At</span>
+                  <div className="flex items-center gap-1.5">
+                    <span>Attempted At</span>
                     {sortField === 'attemptedAt' ? (
                       sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
                     ) : (
@@ -413,43 +403,41 @@ export default function EmailLogPage() {
                   </div>
                 </ResizableTh>
                 <ResizableTh
-                  width={columnWidths.actions}
-                  resizable={false}
                   className="px-5 py-3 text-right"
                 >
-                  <span className="truncate">Action</span>
+                  <span>Action</span>
                 </ResizableTh>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-slate-100">
               {sortedLogs.map((log) => (
-                <tr key={log.id} className="border-t border-slate-100 hover:bg-slate-50/50">
-                  <td className="px-5 py-3 truncate whitespace-nowrap overflow-hidden">
-                    <div className="font-medium text-slate-900 truncate">
+                <tr key={log.id} className="hover:bg-slate-50/50">
+                  <td className="px-5 py-3 whitespace-nowrap">
+                    <div className="font-medium text-slate-900">
                       {log.recipientUser?.name || 'External'}
                     </div>
-                    <div className="text-xs text-slate-500 truncate">{log.recipientEmail}</div>
+                    <div className="text-xs text-slate-500">{log.recipientEmail}</div>
                   </td>
-                  <td className="px-5 py-3 font-medium text-slate-700 truncate whitespace-nowrap overflow-hidden">
+                  <td className="px-5 py-3 font-medium text-slate-700 whitespace-nowrap">
                     {formatEmailType(log.emailType)}
                   </td>
-                  <td className="px-5 py-3 truncate whitespace-nowrap overflow-hidden">
-                    <div className="text-slate-800 truncate" title={log.subject}>
+                  <td className="px-5 py-3 min-w-[180px] max-w-sm">
+                    <div className="text-slate-800 line-clamp-2" title={log.subject}>
                       {log.subject}
                     </div>
                     {log.errorMessage && (
-                      <div className="mt-0.5 text-xs text-slate-500 truncate" title={log.errorMessage}>
+                      <div className="mt-0.5 text-xs text-red-600 line-clamp-1" title={log.errorMessage}>
                         {log.errorMessage}
                       </div>
                     )}
                   </td>
-                  <td className="px-5 py-3 truncate whitespace-nowrap overflow-hidden">
+                  <td className="px-5 py-3 whitespace-nowrap">
                     <StatusBadge status={log.status} />
                   </td>
-                  <td className="px-5 py-3 text-xs text-slate-500 truncate whitespace-nowrap overflow-hidden">
+                  <td className="px-5 py-3 text-xs text-slate-500 whitespace-nowrap">
                     {new Date(log.attemptedAt).toLocaleString()}
                   </td>
-                  <td className="px-5 py-3 text-right truncate whitespace-nowrap overflow-hidden">
+                  <td className="px-5 py-3 text-right whitespace-nowrap">
                     <button
                       type="button"
                       onClick={() => setSelectedLog(log)}
