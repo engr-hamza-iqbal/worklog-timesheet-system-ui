@@ -130,6 +130,16 @@ export default function TimesheetsPage() {
   }, []);
 
   const allDropdownProjects = useMemo(() => {
+    if (!isAdmin) {
+      // Employees should only see the projects they are assigned in the filters for All projects
+      const map = new Map();
+      (projects || []).forEach((p) => {
+        if (p?.id) map.set(p.id, p);
+      });
+      return Array.from(map.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    }
+
+    // Only admin can have all projects in that dropdown
     const map = new Map();
     (filterProjects || []).forEach((p) => {
       if (p?.id) map.set(p.id, p);
@@ -137,13 +147,17 @@ export default function TimesheetsPage() {
     (projects || []).forEach((p) => {
       if (p?.id) map.set(p.id, p);
     });
-    (historyEntries || []).forEach((e) => {
-      if (e?.project?.id && !map.has(e.project.id)) {
-        map.set(e.project.id, e.project);
-      }
-    });
     return Array.from(map.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-  }, [filterProjects, projects, historyEntries]);
+  }, [isAdmin, filterProjects, projects]);
+
+  useEffect(() => {
+    if (!isAdmin && historyProject && projects.length > 0) {
+      const isAssigned = projects.some((p) => p.id === historyProject);
+      if (!isAssigned) {
+        setHistoryProject("");
+      }
+    }
+  }, [isAdmin, historyProject, projects]);
 
   // Resizable columns for entries table
   const { columnWidths, startResize, tableStyle } = useTableResize({
@@ -297,16 +311,23 @@ export default function TimesheetsPage() {
   useEffect(() => {
     if (activeTab === "entries") {
       fetchHistory({ silent: historyEntries.length > 0 });
-      if (filterProjects.length === 0) {
+      if (isAdmin && filterProjects.length === 0) {
         api.get("/api/projects", {
           params: { activeOnly: true },
         }).then((res) => {
           const nextProjects = Array.isArray(res.data) ? res.data : res.data?.projects || [];
           if (nextProjects.length) setFilterProjects(nextProjects);
         }).catch(() => {});
+      } else if (!isAdmin && projects.length === 0) {
+        api.get("/api/projects", {
+          params: { activeOnly: true, assignedToMe: true },
+        }).then((res) => {
+          const nextProjects = Array.isArray(res.data) ? res.data : res.data?.projects || [];
+          if (nextProjects.length) setProjects(nextProjects);
+        }).catch(() => {});
       }
     }
-  }, [activeTab]);
+  }, [activeTab, isAdmin]);
 
   const handleFilterStatusChange = (st) => {
     if (historyStatus === st || isFiltering) return;
