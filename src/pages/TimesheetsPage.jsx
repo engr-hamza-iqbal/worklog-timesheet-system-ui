@@ -190,7 +190,9 @@ export default function TimesheetsPage() {
         setProjects(nextProjects);
         setForm((current) => ({
           ...current,
-          projectId: current.projectId || nextProjects[0]?.id || "",
+          projectId: nextProjects.some((p) => p.id === current.projectId)
+            ? current.projectId
+            : nextProjects[0]?.id || "",
         }));
       }
 
@@ -221,7 +223,13 @@ export default function TimesheetsPage() {
   } = {}) => {
     const all = Array.from(allKnownEntriesRef.current.values());
     return all.filter((entry) => {
-      if (status !== "ALL" && entry.status !== status) return false;
+      if (status !== "ALL") {
+        if (status === "RETURNED") {
+          if (entry.status !== "RETURNED" && !entry.wasReturned && !entry.returnComment) return false;
+        } else if (entry.status !== status) {
+          return false;
+        }
+      }
       if (project && entry.projectId !== project && entry.project?.id !== project) return false;
       if (search && search.trim()) {
         const q = search.trim().toLowerCase();
@@ -383,7 +391,7 @@ export default function TimesheetsPage() {
   }
 
   function editEntry(entry) {
-    if (isAdmin && entry.status === "RETURNED") return;
+    if (entry.status !== "DRAFT") return;
     if (user?.id && entry.userId && entry.userId !== user.id) return;
     setEditingId(entry.id);
     setForm({
@@ -447,6 +455,7 @@ export default function TimesheetsPage() {
 
   async function removeEntry(id) {
     const entry = allKnownEntriesRef.current.get(id);
+    if (entry && entry.status !== "DRAFT") return;
     if (user?.id && entry?.userId && entry.userId !== user.id) return;
     setConfirmation({
       title: "Delete draft entry",
@@ -888,8 +897,8 @@ export default function TimesheetsPage() {
                       {/* Action buttons */}
                       {(() => {
                         const isOwnEntry = Boolean(user?.id && entry.userId === user.id);
-                        const canEdit = isOwnEntry && (isAdmin ? entry.status === "DRAFT" : (entry.status === "DRAFT" || entry.status === "RETURNED"));
-                        const canDelete = isOwnEntry && (entry.status === "DRAFT" || entry.status === "RETURNED");
+                        const canEdit = isOwnEntry && entry.status === "DRAFT";
+                        const canDelete = isOwnEntry && entry.status === "DRAFT";
 
                         if (!canEdit && !canDelete) return null;
 
@@ -1047,14 +1056,21 @@ export default function TimesheetsPage() {
                               <span className="font-medium text-slate-900 truncate">
                                 {entry.project?.name}
                               </span>
-                              <Badge variant={statusVariant[entry.status]} label={entry.status} />
+                              <div className="flex items-center gap-1 flex-wrap">
+                                <Badge variant={statusVariant[entry.status]} label={entry.status} />
+                                {entry.status !== 'RETURNED' && (entry.wasReturned || entry.returnComment) && (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200" title="This entry was previously returned and re-submitted">
+                                    Re-submitted
+                                  </span>
+                                )}
+                              </div>
                             </div>
                             <p className="text-[11px] text-slate-500 mt-0.5">
                               {entry.durationHours}h · {entry.description}
                             </p>
                             {entry.returnComment && (
                               <p className="mt-1 text-[11px] text-rose-600 bg-rose-50 rounded p-1.5">
-                                {entry.returnComment}
+                                <span className="font-semibold">{entry.status === 'RETURNED' ? 'Returned reason:' : 'Previous return reason:'}</span> {entry.returnComment}
                               </p>
                             )}
                           </div>
@@ -1148,21 +1164,16 @@ export default function TimesheetsPage() {
                 })}
               </div>
             </div>
-
-            <div className="text-xs font-semibold text-slate-600 flex items-center gap-2">
-              {isSilentFetching && (
-                <Loader2 size={13} className="animate-spin text-slate-400" />
-              )}
-              {historyLoading && !isSilentFetching
-                ? "Loading entries..."
-                : isSilentFetching
-                ? "Updating..."
-                : `Showing ${historyTotal} entries`}
-            </div>
           </div>
 
           {/* Historical Table */}
-          <div className="bg-white border border-slate-200 rounded-xl overflow-x-auto shadow-xs">
+          <div className="bg-white border border-slate-200 rounded-xl overflow-x-auto shadow-xs relative">
+            {isSilentFetching && (
+              <div className="bg-slate-50/90 border-b border-slate-200 text-slate-600 text-xs px-4 py-1.5 flex items-center gap-2 font-medium">
+                <Loader2 size={12} className="animate-spin text-slate-500" />
+                <span>Updating entries...</span>
+              </div>
+            )}
             <table className="text-left border-collapse text-xs min-w-[620px] table-fixed" style={tableStyle}>
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px] select-none">
@@ -1252,7 +1263,16 @@ export default function TimesheetsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {paginatedHistory.length ? (
+                {historyLoading && !isSilentFetching ? (
+                  <tr>
+                    <td colSpan="6" className="p-8 text-center text-xs text-slate-500">
+                      <div className="flex items-center justify-center gap-2">
+                        <Loader2 size={16} className="animate-spin text-slate-400" />
+                        <span>Loading entries...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : paginatedHistory.length ? (
                   paginatedHistory.map((entry) => (
                     <tr key={entry.id} className="hover:bg-slate-50/70 transition">
                       <td className="py-3 px-4 font-semibold text-slate-900 truncate whitespace-nowrap overflow-hidden">
@@ -1273,13 +1293,20 @@ export default function TimesheetsPage() {
                         )}
                       </td>
                       <td className="py-3 px-4 truncate whitespace-nowrap overflow-hidden">
-                        <Badge variant={statusVariant[entry.status]} label={entry.status} />
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <Badge variant={statusVariant[entry.status]} label={entry.status} />
+                          {entry.status !== 'RETURNED' && (entry.wasReturned || entry.returnComment) && (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200" title="This entry was previously returned and re-submitted">
+                              Re-submitted
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3 px-4 text-right truncate whitespace-nowrap overflow-hidden">
                         {(() => {
                           const isOwnEntry = Boolean(user?.id && entry.userId === user.id);
-                          const canEdit = isOwnEntry && (isAdmin ? entry.status === "DRAFT" : (entry.status === "DRAFT" || entry.status === "RETURNED"));
-                          const canDelete = isOwnEntry && (entry.status === "DRAFT" || entry.status === "RETURNED");
+                          const canEdit = isOwnEntry && entry.status === "DRAFT";
+                          const canDelete = isOwnEntry && entry.status === "DRAFT";
 
                           if (!canEdit && !canDelete) return null;
 

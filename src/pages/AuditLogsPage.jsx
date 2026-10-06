@@ -31,15 +31,15 @@ import useTableResize from '../hooks/useTableResize.js';
 import ResizableTh from '../components/ResizableTh.jsx';
 
 const CAP_META = {
-  VIEW_OTHER_RECORDS:      { label: 'View Other Records',         desc: 'Read work logs and timesheets of other staff members.' },
-  REVIEW_TIME:             { label: 'Review Time',                desc: 'Approve or return submitted time entries within assigned scope.' },
-  DECIDE_TIME_OFF:         { label: 'Decide Time Off',            desc: 'Approve or decline employee time-off requests within assigned scope.' },
-  MANAGE_CLIENTS_PROJECTS: { label: 'Manage Clients & Projects',  desc: 'Create and configure clients, projects, and billing rates.' },
-  ASSIGN_PROJECTS:         { label: 'Assign Projects',            desc: 'Assign and remove employees on client projects.' },
-  MANAGE_USERS:            { label: 'Manage Users',               desc: 'Create and manage user accounts.' },
-  VIEW_REPORTS:            { label: 'View Reports',               desc: 'Access cross-project summary reports and CSV exports.' },
-  VIEW_ANALYTICS:          { label: 'View Analytics',             desc: 'View utilization rates and billable hours distribution.' },
-  VIEW_BILLING:            { label: 'View Billing',               desc: 'Access sensitive billing rate figures and monetary totals.' },
+  VIEW_OTHER_RECORDS: { label: 'View Other Records', desc: 'Read work logs and timesheets of other staff members.' },
+  REVIEW_TIME: { label: 'Review Time', desc: 'Approve or return submitted time entries within assigned scope.' },
+  DECIDE_TIME_OFF: { label: 'Decide Time Off', desc: 'Approve or decline employee time-off requests within assigned scope.' },
+  MANAGE_CLIENTS_PROJECTS: { label: 'Manage Clients & Projects', desc: 'Create and configure clients, projects, and billing rates.' },
+  ASSIGN_PROJECTS: { label: 'Assign Projects', desc: 'Assign and remove employees on client projects.' },
+  MANAGE_USERS: { label: 'Manage Users', desc: 'Create and manage user accounts.' },
+  VIEW_REPORTS: { label: 'View Reports', desc: 'Access cross-project summary reports and CSV exports.' },
+  VIEW_ANALYTICS: { label: 'View Analytics', desc: 'View utilization rates and billable hours distribution.' },
+  VIEW_BILLING: { label: 'View Billing', desc: 'Access sensitive billing rate figures and monetary totals.' },
 };
 
 const ACTION_CONFIG = {
@@ -224,15 +224,9 @@ export default function AuditLogsPage() {
       <div className="pb-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-200/80 flex items-center justify-center text-indigo-600 shadow-xs">
-              <History className="w-5 h-5" />
-            </div>
             <div>
               <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
                 Access Audit Logs
-                <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
-                  Admin Only
-                </span>
               </h1>
               <p className="text-xs text-slate-500 mt-0.5">
                 Immutable, tamper-evident security audit trail tracking all capability grants, scope updates, and revocations.
@@ -601,9 +595,8 @@ export default function AuditLogsPage() {
             <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <span
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
-                    ACTION_CONFIG[selectedLog.action]?.badge || 'bg-slate-100 text-slate-700 border-slate-200'
-                  }`}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${ACTION_CONFIG[selectedLog.action]?.badge || 'bg-slate-100 text-slate-700 border-slate-200'
+                    }`}
                 >
                   <span className={`w-2 h-2 rounded-full ${ACTION_CONFIG[selectedLog.action]?.dot || 'bg-slate-400'}`} />
                   {ACTION_CONFIG[selectedLog.action]?.label || selectedLog.action}
@@ -718,10 +711,10 @@ export default function AuditLogsPage() {
                     <div className="font-medium text-slate-800 mt-0.5">
                       {selectedLog.details.expiresAt
                         ? new Date(selectedLog.details.expiresAt).toLocaleDateString('en-GB', {
-                            day: '2-digit',
-                            month: 'short',
-                            year: 'numeric',
-                          })
+                          day: '2-digit',
+                          month: 'short',
+                          year: 'numeric',
+                        })
                         : 'Permanent (No expiry date)'}
                     </div>
                   </div>
