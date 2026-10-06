@@ -37,7 +37,7 @@ import {
 } from 'recharts';
 import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import useTableResize from '../hooks/useTableResize.js';
+import Table, { TableHead, TableBody, TableRow, TableTd } from '../components/Table.jsx';
 import ResizableTh from '../components/ResizableTh.jsx';
 
 // Curated sleek palette for charts
@@ -91,13 +91,6 @@ export default function AnalyticsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
 
-  // Resizable columns for breakdown table
-  const { columnWidths, startResize } = useTableResize({
-    label: 260,
-    hours: 140,
-    share: 220,
-    badge: 140,
-  });
 
   async function load(filterValues = filters) {
     try {
@@ -1083,144 +1076,142 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Table with Clickable Headers */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-slate-50/80 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 select-none">
+            <Table>
+              <TableHead>
+                <tr>
+                  <ResizableTh
+                    onClick={() => handleTableSort('label')}
+                    className="py-3 px-5 cursor-pointer hover:bg-slate-100 hover:text-slate-900 transition"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>
+                        {breakdownTab === 'employees'
+                          ? 'Contributor Name'
+                          : breakdownTab === 'projects'
+                            ? 'Project Initiative'
+                            : breakdownTab === 'timeliness'
+                              ? 'Team Member'
+                              : 'Client Organization'}
+                      </span>
+                      {sortColumn === 'label' ? (
+                        sortDirection === 'asc' ? (
+                          <ArrowUp size={12} className="text-indigo-600 shrink-0" />
+                        ) : (
+                          <ArrowDown size={12} className="text-indigo-600 shrink-0" />
+                        )
+                      ) : (
+                        <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
+                      )}
+                    </div>
+                  </ResizableTh>
+                  <ResizableTh
+                    onClick={() => handleTableSort('hours')}
+                    className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-900 transition text-right sm:text-left"
+                  >
+                    <div className="flex items-center justify-end sm:justify-start gap-1.5">
+                      <span>
+                        {breakdownTab === 'timeliness' ? 'Avg Lag (Days)' : 'Approved Hours'}
+                      </span>
+                      {sortColumn === 'hours' ? (
+                        sortDirection === 'asc' ? (
+                          <ArrowUp size={12} className="text-indigo-600 shrink-0" />
+                        ) : (
+                          <ArrowDown size={12} className="text-indigo-600 shrink-0" />
+                        )
+                      ) : (
+                        <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
+                      )}
+                    </div>
+                  </ResizableTh>
+                  <ResizableTh
+                    onClick={() => handleTableSort('share')}
+                    className="py-3 px-4 hidden sm:table-cell cursor-pointer hover:bg-slate-100 hover:text-slate-900 transition"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>
+                        {breakdownTab === 'timeliness' ? 'On-Time Submission Rate' : 'Share of Total Effort'}
+                      </span>
+                      {sortColumn === 'share' ? (
+                        sortDirection === 'asc' ? (
+                          <ArrowUp size={12} className="text-indigo-600 shrink-0" />
+                        ) : (
+                          <ArrowDown size={12} className="text-indigo-600 shrink-0" />
+                        )
+                      ) : (
+                        <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
+                      )}
+                    </div>
+                  </ResizableTh>
+                  <ResizableTh
+                    onClick={() => handleTableSort('badge')}
+                    className="py-3 px-5 text-right cursor-pointer hover:bg-slate-100 hover:text-slate-900 transition"
+                  >
+                    <div className="flex items-center justify-end gap-1.5">
+                      <span>Status / Tier</span>
+                      {sortColumn === 'badge' ? (
+                        sortDirection === 'asc' ? (
+                          <ArrowUp size={12} className="text-indigo-600 shrink-0" />
+                        ) : (
+                          <ArrowDown size={12} className="text-indigo-600 shrink-0" />
+                        )
+                      ) : (
+                        <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
+                      )}
+                    </div>
+                  </ResizableTh>
+                </tr>
+              </TableHead>
+              <TableBody>
+                {currentTableRows.map((row) => (
+                  <TableRow key={row.id}>
+                    <TableTd className="px-5 font-medium text-slate-900">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-6 h-6 rounded-md bg-slate-100 text-slate-600 font-bold text-[10px] flex items-center justify-center shrink-0">
+                          {row.label.charAt(0).toUpperCase()}
+                        </div>
+                        <span title={row.label}>{row.label}</span>
+                      </div>
+                    </TableTd>
+                    <TableTd className="px-4 font-mono font-semibold text-slate-800 text-right sm:text-left">
+                      {breakdownTab === 'timeliness' ? (
+                        <>
+                          {row.hours.toFixed(1)} <span className="text-[10px] font-sans text-slate-400">days</span>
+                        </>
+                      ) : (
+                        <>
+                          {row.hours.toFixed(2)} <span className="text-[10px] font-sans text-slate-400">h</span>
+                        </>
+                      )}
+                    </TableTd>
+                    <TableTd className="px-4 hidden sm:table-cell text-slate-600">
+                      <div className="flex items-center gap-2.5">
+                        <span className="font-mono text-xs w-11 text-right">{row.share.toFixed(1)}%</span>
+                        <div className="w-24 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                          <div
+                            className={`h-full ${breakdownTab === 'timeliness' ? (row.share >= 80 ? 'bg-emerald-600' : 'bg-amber-500') : 'bg-indigo-600'} rounded-full transition-all duration-300`}
+                            style={{ width: `${Math.min(100, Math.max(2, row.share))}%` }}
+                          />
+                        </div>
+                      </div>
+                    </TableTd>
+                    <TableTd className="px-5 text-right">
+                      <span
+                        className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${row.badgeColor}`}
+                      >
+                        {row.badge}
+                      </span>
+                    </TableTd>
+                  </TableRow>
+                ))}
+                {currentTableRows.length === 0 && (
                   <tr>
-                    <ResizableTh
-                      onClick={() => handleTableSort('label')}
-                      className="py-3 px-5 cursor-pointer hover:bg-slate-100 hover:text-slate-900 transition"
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <span>
-                          {breakdownTab === 'employees'
-                            ? 'Contributor Name'
-                            : breakdownTab === 'projects'
-                              ? 'Project Initiative'
-                              : breakdownTab === 'timeliness'
-                                ? 'Team Member'
-                                : 'Client Organization'}
-                        </span>
-                        {sortColumn === 'label' ? (
-                          sortDirection === 'asc' ? (
-                            <ArrowUp size={12} className="text-indigo-600 shrink-0" />
-                          ) : (
-                            <ArrowDown size={12} className="text-indigo-600 shrink-0" />
-                          )
-                        ) : (
-                          <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
-                        )}
-                      </div>
-                    </ResizableTh>
-                    <ResizableTh
-                      onClick={() => handleTableSort('hours')}
-                      className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-900 transition text-right sm:text-left"
-                    >
-                      <div className="flex items-center justify-end sm:justify-start gap-1.5">
-                        <span>
-                          {breakdownTab === 'timeliness' ? 'Avg Lag (Days)' : 'Approved Hours'}
-                        </span>
-                        {sortColumn === 'hours' ? (
-                          sortDirection === 'asc' ? (
-                            <ArrowUp size={12} className="text-indigo-600 shrink-0" />
-                          ) : (
-                            <ArrowDown size={12} className="text-indigo-600 shrink-0" />
-                          )
-                        ) : (
-                          <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
-                        )}
-                      </div>
-                    </ResizableTh>
-                    <ResizableTh
-                      onClick={() => handleTableSort('share')}
-                      className="py-3 px-4 hidden sm:table-cell cursor-pointer hover:bg-slate-100 hover:text-slate-900 transition"
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <span>
-                          {breakdownTab === 'timeliness' ? 'On-Time Submission Rate' : 'Share of Total Effort'}
-                        </span>
-                        {sortColumn === 'share' ? (
-                          sortDirection === 'asc' ? (
-                            <ArrowUp size={12} className="text-indigo-600 shrink-0" />
-                          ) : (
-                            <ArrowDown size={12} className="text-indigo-600 shrink-0" />
-                          )
-                        ) : (
-                          <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
-                        )}
-                      </div>
-                    </ResizableTh>
-                    <ResizableTh
-                      onClick={() => handleTableSort('badge')}
-                      className="py-3 px-5 text-right cursor-pointer hover:bg-slate-100 hover:text-slate-900 transition"
-                    >
-                      <div className="flex items-center justify-end gap-1.5">
-                        <span>Status / Tier</span>
-                        {sortColumn === 'badge' ? (
-                          sortDirection === 'asc' ? (
-                            <ArrowUp size={12} className="text-indigo-600 shrink-0" />
-                          ) : (
-                            <ArrowDown size={12} className="text-indigo-600 shrink-0" />
-                          )
-                        ) : (
-                          <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
-                        )}
-                      </div>
-                    </ResizableTh>
+                    <td colSpan={4} className="py-10 text-center text-xs text-slate-500">
+                      No entries found matching your query "{tableSearch}".
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {currentTableRows.map((row) => (
-                    <tr key={row.id} className="hover:bg-slate-50/70 transition">
-                      <td className="py-3.5 px-5 font-medium text-slate-900 whitespace-nowrap">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-6 h-6 rounded-md bg-slate-100 text-slate-600 font-bold text-[10px] flex items-center justify-center shrink-0">
-                            {row.label.charAt(0).toUpperCase()}
-                          </div>
-                          <span title={row.label}>{row.label}</span>
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4 font-mono font-semibold text-slate-800 text-right sm:text-left whitespace-nowrap">
-                        {breakdownTab === 'timeliness' ? (
-                          <>
-                            {row.hours.toFixed(1)} <span className="text-[10px] font-sans text-slate-400">days</span>
-                          </>
-                        ) : (
-                          <>
-                            {row.hours.toFixed(2)} <span className="text-[10px] font-sans text-slate-400">h</span>
-                          </>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4 hidden sm:table-cell text-slate-600 whitespace-nowrap">
-                        <div className="flex items-center gap-2.5">
-                          <span className="font-mono text-xs w-11 text-right">{row.share.toFixed(1)}%</span>
-                          <div className="w-24 bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                            <div
-                              className={`h-full ${breakdownTab === 'timeliness' ? (row.share >= 80 ? 'bg-emerald-600' : 'bg-amber-500') : 'bg-indigo-600'} rounded-full transition-all duration-300`}
-                              style={{ width: `${Math.min(100, Math.max(2, row.share))}%` }}
-                            />
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-5 text-right whitespace-nowrap">
-                        <span
-                          className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${row.badgeColor}`}
-                        >
-                          {row.badge}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                  {currentTableRows.length === 0 && (
-                    <tr>
-                      <td colSpan={4} className="py-10 text-center text-xs text-slate-500">
-                        No entries found matching your query "{tableSearch}".
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                )}
+              </TableBody>
+            </Table>
 
             {/* Pagination Controls (Max 10 per page, dynamic navigation) */}
             <div className="px-5 py-3 border-t border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">

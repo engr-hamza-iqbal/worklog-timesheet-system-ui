@@ -14,7 +14,7 @@ import { broadcastAuthSync, fmtDate, ErrorAlert } from './helpers.jsx';
 import GrantForm from './GrantForm.jsx';
 import EditGrantForm from './EditGrantForm.jsx';
 import BulkEditGrantsForm from './BulkEditGrantsForm.jsx';
-import useTableResize from '../../hooks/useTableResize.js';
+import Table, { TableHead, TableBody, TableRow } from '../../components/Table.jsx';
 import ResizableTh from '../../components/ResizableTh.jsx';
 import { bulkGrantUpdateSchema } from '../../validation/formSchemas.js';
 
@@ -36,15 +36,6 @@ export default function UserAccessPanel({ targetUser, users, projects, currentUs
   const [bulkEditModal, setBulkEditModal] = useState(false);
   const { notify } = useNotification();
 
-  const { colWidths, startResize } = useTableResize({
-    checkbox: 44,
-    name: 210,
-    scope: 230,
-    grantedBy: 140,
-    expires: 140,
-    status: 120,
-    actions: 140,
-  });
 
   const toggleScopeExpanded = (grantId) => {
     setExpandedScopeGrantIds((prev) => {
@@ -104,6 +95,7 @@ export default function UserAccessPanel({ targetUser, users, projects, currentUs
 
   const grantedCodes = new Set(Object.keys(activeByCode));
   const isSelf = targetUser.id === currentUserId;
+  const hasSelectableGrants = !isSelf && (Object.keys(activeByCode).length > 0 || Object.keys(expiredByCode).length > 0);
 
   const selectedGrantsList = useMemo(() => {
     const all = [...Object.values(activeByCode), ...Object.values(expiredByCode)];
@@ -397,30 +389,28 @@ export default function UserAccessPanel({ targetUser, users, projects, currentUs
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left border-collapse">
-              <thead className="bg-slate-50 text-[10px] font-medium text-slate-500 uppercase tracking-wider border-b border-slate-200 select-none">
+            <Table>
+              <TableHead>
                 <tr>
-                  {!isSelf && (
+                  {hasSelectableGrants && (
                     <th className="py-2.5 px-3 w-10">
-                      {(Object.keys(activeByCode).length > 0 || Object.keys(expiredByCode).length > 0) && (
-                        <input
-                          type="checkbox"
-                          checked={selectedGrantIds.size > 0 && selectedGrantIds.size === (Object.keys(activeByCode).length + Object.keys(expiredByCode).length)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              const allIds = [
-                                ...Object.values(activeByCode).map((g) => g.id),
-                                ...Object.values(expiredByCode).map((g) => g.id),
-                              ];
-                              setSelectedGrantIds(new Set(allIds));
-                            } else {
-                              setSelectedGrantIds(new Set());
-                            }
-                          }}
-                          className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                          title="Select all active and expired grants"
-                        />
-                      )}
+                      <input
+                        type="checkbox"
+                        checked={selectedGrantIds.size > 0 && selectedGrantIds.size === (Object.keys(activeByCode).length + Object.keys(expiredByCode).length)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            const allIds = [
+                              ...Object.values(activeByCode).map((g) => g.id),
+                              ...Object.values(expiredByCode).map((g) => g.id),
+                            ];
+                            setSelectedGrantIds(new Set(allIds));
+                          } else {
+                            setSelectedGrantIds(new Set());
+                          }
+                        }}
+                        className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                        title="Select all active and expired grants"
+                      />
                     </th>
                   )}
                   <ResizableTh
@@ -489,8 +479,8 @@ export default function UserAccessPanel({ targetUser, users, projects, currentUs
                     </ResizableTh>
                   )}
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
+              </TableHead>
+              <TableBody>
                 {sortedCapCodes.map((code) => {
                   const activeGrant = activeByCode[code];
                   const expiredGrant = expiredByCode[code];
@@ -499,8 +489,8 @@ export default function UserAccessPanel({ targetUser, users, projects, currentUs
                   const isExpired = !activeGrant && !!expiredGrant;
 
                   return (
-                    <tr key={code} className="hover:bg-slate-50/50 transition">
-                      {!isSelf && (
+                    <TableRow key={code}>
+                      {hasSelectableGrants && (
                         <td className="py-3 px-3">
                           {grant ? (
                             <input
@@ -615,11 +605,11 @@ export default function UserAccessPanel({ targetUser, users, projects, currentUs
                           )}
                         </td>
                       )}
-                    </tr>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
       </div>

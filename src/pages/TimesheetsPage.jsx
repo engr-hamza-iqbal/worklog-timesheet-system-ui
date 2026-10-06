@@ -25,7 +25,7 @@ import ConfirmDialog from "../components/ConfirmDialog.jsx";
 import Pagination from "../components/Pagination.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useNotification } from "../context/NotificationContext.jsx";
-import useTableResize from "../hooks/useTableResize.js";
+import Table, { TableHead, TableBody, TableRow, TableTd } from "../components/Table.jsx";
 import ResizableTh from "../components/ResizableTh.jsx";
 import { timeEntryFormSchema } from "../validation/timeEntrySchemas.js";
 import { entryIdsSchema } from "../validation/formSchemas.js";
@@ -159,15 +159,7 @@ export default function TimesheetsPage() {
     }
   }, [isAdmin, historyProject, projects]);
 
-  // Resizable columns for entries table
-  const { columnWidths, startResize, tableStyle } = useTableResize({
-    workDate: 120,
-    project: 180,
-    durationHours: 90,
-    description: 300,
-    status: 120,
-    actions: 120,
-  });
+
 
   const weekEnd = useMemo(() => addDays(weekStart, 6), [weekStart]);
   const dateRange = { startDate: iso(weekStart), endDate: iso(weekEnd) };
@@ -1195,8 +1187,8 @@ export default function TimesheetsPage() {
                 <span>Updating entries...</span>
               </div>
             )}
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
+            <Table>
+              <TableHead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px] select-none">
                   <ResizableTh
                     onClick={() => toggleHistorySort('workDate')}
@@ -1270,20 +1262,20 @@ export default function TimesheetsPage() {
                     <span>Actions</span>
                   </ResizableTh>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
+              </TableHead>
+              <TableBody>
                 {historyLoading && !isSilentFetching ? (
-                  <tr>
-                    <td colSpan="6" className="p-8 text-center text-xs text-slate-500">
+                  <TableRow hover={false}>
+                    <TableTd colSpan={6} align="center" className="p-8 text-xs text-slate-500">
                       <div className="flex items-center justify-center gap-2">
                         <Loader2 size={16} className="animate-spin text-slate-400" />
                         <span>Loading entries...</span>
                       </div>
-                    </td>
-                  </tr>
+                    </TableTd>
+                  </TableRow>
                 ) : paginatedHistory.length ? (
                   paginatedHistory.map((entry) => (
-                    <tr key={entry.id} className="hover:bg-slate-50/70 transition">
+                    <TableRow key={entry.id}>
                       <td className="py-3 px-4 font-semibold text-slate-900 whitespace-nowrap">
                         {entry.workDate}
                       </td>
@@ -1343,17 +1335,17 @@ export default function TimesheetsPage() {
                           );
                         })()}
                       </td>
-                    </tr>
+                    </TableRow>
                   ))
                 ) : (
-                  <tr>
-                    <td colSpan="6" className="p-8 text-center text-xs text-slate-400">
+                  <TableRow hover={false}>
+                    <TableTd colSpan={6} align="center" className="p-8 text-xs text-slate-400">
                       No time entries match the selected filters.
-                    </td>
-                  </tr>
+                    </TableTd>
+                  </TableRow>
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
 
             {/* Pagination Controls */}
             <Pagination

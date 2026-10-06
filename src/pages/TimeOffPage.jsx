@@ -18,7 +18,7 @@ import Modal from "../components/Modal.jsx";
 import Pagination from "../components/Pagination.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useNotification } from "../context/NotificationContext.jsx";
-import useTableResize from "../hooks/useTableResize.js";
+import Table, { TableHead, TableBody, TableRow, TableTd } from "../components/Table.jsx";
 import ResizableTh from "../components/ResizableTh.jsx";
 import { timeOffDecisionSchema, timeOffRequestSchema } from "../validation/formSchemas.js";
 
@@ -39,15 +39,7 @@ export default function TimeOffPage() {
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
-  // Resizable columns
-  const { columnWidths, startResize, tableStyle } = useTableResize({
-    employee: 180,
-    startDate: 190,
-    type: 130,
-    reason: 260,
-    status: 120,
-    actions: 110,
-  });
+
 
   const [filters, setFilters] = useState({
     status: "",
@@ -421,8 +413,8 @@ export default function TimeOffPage() {
             No time-off requests match these filters.
           </div>
         ) : (
-          <table className="w-full text-left text-sm border-collapse">
-            <thead className="bg-slate-50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-200 select-none">
+          <Table>
+            <TableHead>
               <tr>
                 <ResizableTh
                   onClick={() => toggleRequestSort('employee')}
@@ -495,12 +487,12 @@ export default function TimeOffPage() {
                   <span>Action</span>
                 </ResizableTh>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
+            </TableHead>
+            <TableBody>
               {paginatedRequests.map((request) => (
-                <tr
+                <TableRow
                   key={request.id}
-                  className="hover:bg-slate-50/60 transition align-top"
+                  className="align-top"
                 >
                   <td className="px-4 py-3.5 whitespace-nowrap text-xs font-medium text-slate-900">
                     <span title={request.user?.name || user?.name}>
@@ -576,10 +568,10 @@ export default function TimeOffPage() {
                         )}
                     </div>
                   </td>
-                </tr>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         )}
         <Pagination
           currentPage={page}

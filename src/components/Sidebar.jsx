@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { NavLink, Link } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from 'react';
+import { NavLink, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import {
   LayoutDashboard,
@@ -28,9 +28,22 @@ export default function Sidebar({
   onRequestLogout,
 }) {
   const { user, isAdmin, capabilities } = useAuth();
+  const location = useLocation();
   const [isHovered, setIsHovered] = useState(false);
+  const desktopActiveRef = useRef(null);
 
   const isExpanded = isOpen || isHovered;
+
+  // Scroll active item smoothly into view if on medium/shorter viewport heights
+  useEffect(() => {
+    if (desktopActiveRef.current) {
+      desktopActiveRef.current.scrollIntoView({
+        block: 'nearest',
+        inline: 'nearest',
+        behavior: 'smooth',
+      });
+    }
+  }, [location.pathname, isExpanded]);
 
   const hasClientProjectAccess = isAdmin || !!capabilities['MANAGE_CLIENTS_PROJECTS'];
   const hasUserAccess = isAdmin || !!capabilities['MANAGE_USERS'] || !!capabilities['ASSIGN_PROJECTS'];
@@ -70,18 +83,23 @@ export default function Sidebar({
 
     const renderItem = (item) => {
       const Icon = item.icon;
+      const isItemActive =
+        location.pathname === item.to ||
+        (item.to !== '/dashboard' && location.pathname.startsWith(item.to));
+
       if (!expanded) {
         return (
           <NavLink
             key={item.to}
             to={item.to}
+            ref={isItemActive && !isMobile ? desktopActiveRef : null}
             onClick={handleItemClick}
             title={item.label}
             aria-label={item.label}
             className={({ isActive }) =>
               `relative flex items-center justify-center w-10 h-10 mx-auto rounded-xl transition-all duration-150 cursor-pointer group ${
                 isActive
-                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-950/40'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-950/40 ring-1 ring-indigo-400/40'
                   : 'text-slate-400 hover:text-white hover:bg-slate-800/80'
               }`
             }
@@ -94,7 +112,7 @@ export default function Sidebar({
                   }`}
                 />
                 {isActive && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-indigo-400 rounded-r" />
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-indigo-400 rounded-r shadow-xs" />
                 )}
               </>
             )}
@@ -106,6 +124,7 @@ export default function Sidebar({
         <NavLink
           key={item.to}
           to={item.to}
+          ref={isItemActive && !isMobile ? desktopActiveRef : null}
           onClick={handleItemClick}
           className={({ isActive }) =>
             `group flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all duration-150 cursor-pointer select-none ${
@@ -133,7 +152,7 @@ export default function Sidebar({
       <div className="flex flex-col h-full justify-between select-none bg-slate-900 text-slate-300">
         {/* Top Header */}
         <div
-          className={`p-3.5 pb-3 flex items-center border-b border-slate-800/80 ${
+          className={`p-3.5 pb-3 flex items-center border-b border-slate-800/80 shrink-0 ${
             expanded ? 'justify-between' : 'justify-center'
           }`}
         >
@@ -199,7 +218,7 @@ export default function Sidebar({
         </div>
 
         {/* Scrollable Navigation Sections */}
-        <div className="flex-1 overflow-y-auto px-2.5 py-3 space-y-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex-1 min-h-0 overflow-y-auto px-2.5 py-3 space-y-4 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           {/* Main / Work Section */}
           <div>
             {expanded ? (
@@ -248,7 +267,7 @@ export default function Sidebar({
         {/* Bottom Section: Profile & Sign Out Card */}
         {user && (
           expanded ? (
-            <div className="p-3 border-t border-slate-800/80 bg-slate-950/50">
+            <div className="shrink-0 p-3 border-t border-slate-800/80 bg-slate-950/50">
               <div className="flex items-center gap-2.5 px-2 py-1.5">
                 <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700/80 text-indigo-400 font-bold text-xs flex items-center justify-center shrink-0">
                   {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
@@ -272,7 +291,7 @@ export default function Sidebar({
               </button>
             </div>
           ) : (
-            <div className="py-3 px-2 border-t border-slate-800/80 bg-slate-950/50 flex flex-col items-center gap-2">
+            <div className="shrink-0 py-3 px-2 border-t border-slate-800/80 bg-slate-950/50 flex flex-col items-center gap-2">
               <div
                 className="w-9 h-9 rounded-full bg-slate-800 border border-slate-700/80 text-indigo-400 font-bold text-xs flex items-center justify-center cursor-default"
                 title={`${user.name} (${isAdmin ? 'Administrator' : 'Employee'})`}

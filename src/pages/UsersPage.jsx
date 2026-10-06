@@ -12,7 +12,7 @@ import EmptyState from '../components/EmptyState.jsx';
 import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import Pagination from '../components/Pagination.jsx';
 import { useNotification } from '../context/NotificationContext.jsx';
-import useTableResize from '../hooks/useTableResize.js';
+import Table, { TableHead, TableBody, TableRow, TableTd } from '../components/Table.jsx';
 import ResizableTh from '../components/ResizableTh.jsx';
 import { assignmentSchema, userAssignmentSchema, userSchema, userStatusSchema } from '../validation/formSchemas.js';
 
@@ -848,14 +848,7 @@ export default function UsersPage() {
   const [togglingUserId, setTogglingUserId] = useState(null);
   const [isTogglingStatus, setIsTogglingStatus] = useState(false);
 
-  // Resizable columns for users table
-  const { columnWidths, startResize, tableStyle } = useTableResize({
-    name: 260,
-    accountType: 130,
-    isActive: 130,
-    projects: 140,
-    actions: 140,
-  });
+
 
   // GET /api/users → { success, data: [...users], message }
   const fetchUsers = useCallback(async () => {
@@ -1049,8 +1042,8 @@ export default function UsersPage() {
           />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead className="bg-slate-50 border-b border-slate-200 text-[10px] font-medium text-slate-500 uppercase tracking-wider select-none">
+            <Table>
+              <TableHead>
                 <tr>
                   <ResizableTh
                     onClick={() => toggleSort('name')}
@@ -1112,13 +1105,13 @@ export default function UsersPage() {
                     </ResizableTh>
                   )}
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
+              </TableHead>
+              <TableBody>
                 {paginatedUsers.map((user) => (
                   <React.Fragment key={user.id}>
-                    <tr
+                    <TableRow
                       onClick={() => setExpandedId((prev) => (prev === user.id ? null : user.id))}
-                      className="hover:bg-slate-50/60 transition cursor-pointer"
+                      className="cursor-pointer"
                     >
                       {/* Name + email */}
                       <td className="py-3.5 px-5 whitespace-nowrap">
@@ -1236,11 +1229,11 @@ export default function UsersPage() {
                           </div>
                         </td>
                       )}
-                    </tr>
+                    </TableRow>
 
                     {/* Expanded assignments */}
                     {expandedId === user.id && (
-                      <tr className="bg-slate-50/70 border-b border-slate-100">
+                      <TableRow hover={false} className="bg-slate-50/70 border-b border-slate-100">
                         <td colSpan={(canManageUsers || canAssign) ? 5 : 4} className="p-0">
                           <UserAssignments
                             user={user}
@@ -1262,12 +1255,12 @@ export default function UsersPage() {
                             }}
                           />
                         </td>
-                      </tr>
+                      </TableRow>
                     )}
                   </React.Fragment>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
         <Pagination

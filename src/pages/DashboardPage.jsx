@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Tooltip } from '../components/Navbar.jsx';
-import useTableResize from '../hooks/useTableResize.js';
+import Table, { TableHead, TableBody, TableRow, TableTd } from '../components/Table.jsx';
 import ResizableTh from '../components/ResizableTh.jsx';
 import {
   RefreshCw,
@@ -45,13 +45,6 @@ export default function DashboardPage() {
   const [sortOrder, setSortOrder] = useState('asc'); // 'asc' | 'desc'
   const [expandedScopeCaps, setExpandedScopeCaps] = useState(new Set());
 
-  // Resizable columns
-  const { columnWidths, startResize } = useTableResize({
-    name: 240,
-    desc: 260,
-    scope: 220,
-    status: 120,
-  });
 
   const toggleScopeExpanded = (code) => {
     setExpandedScopeCaps((prev) => {
@@ -243,8 +236,8 @@ export default function DashboardPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead className="bg-slate-50/80 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 select-none">
+          <Table>
+            <TableHead>
               <tr>
                 <ResizableTh
                   onClick={() => toggleSort('name')}
@@ -299,8 +292,8 @@ export default function DashboardPage() {
                   </div>
                 </ResizableTh>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
+            </TableHead>
+            <TableBody>
               {filteredCapabilities.map((cap) => {
                 const Icon = cap.icon;
                 const grant = capabilities[cap.code];
@@ -310,7 +303,7 @@ export default function DashboardPage() {
                 const userCount = grant?.allowedUserIds?.length || 0;
 
                 return (
-                  <tr key={cap.code} className="hover:bg-slate-50/70 transition">
+                  <TableRow key={cap.code}>
                     <td className="py-3.5 px-5 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${isHeld ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-100 text-slate-400'
@@ -420,18 +413,18 @@ export default function DashboardPage() {
                         </span>
                       )}
                     </td>
-                  </tr>
+                  </TableRow>
                 );
               })}
               {filteredCapabilities.length === 0 && (
-                <tr>
-                  <td colSpan={4} className="py-8 text-center text-xs text-slate-500">
+                <TableRow hover={false}>
+                  <TableTd colSpan={4} align="center" className="py-8 text-xs text-slate-500">
                     No capabilities matched your filter query "{filterQuery}".
-                  </td>
-                </tr>
+                  </TableTd>
+                </TableRow>
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </div>
     </main>

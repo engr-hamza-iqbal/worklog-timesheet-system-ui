@@ -15,22 +15,12 @@ import api from '../api/client.js';
 import { chaseSchema } from '../validation/formSchemas.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useNotification } from '../context/NotificationContext.jsx';
-import useTableResize from '../hooks/useTableResize.js';
+import Table, { TableHead, TableBody, TableRow, TableTd } from '../components/Table.jsx';
 import ResizableTh from '../components/ResizableTh.jsx';
 
 function MetricTable({ title, rows = [], columns = [] }) {
   const [sortKey, setSortKey] = useState(null);
   const [sortOrder, setSortOrder] = useState('asc'); // 'asc' | 'desc'
-
-  const initialWidths = useMemo(() => {
-    const init = {};
-    columns.forEach((col, idx) => {
-      init[col.key] = idx === 0 ? 220 : 140;
-    });
-    return init;
-  }, [columns]);
-
-  const { columnWidths, startResize } = useTableResize(initialWidths);
 
   const handleSort = (key) => {
     if (sortKey === key) {
@@ -66,8 +56,8 @@ function MetricTable({ title, rows = [], columns = [] }) {
         <span className="text-xs text-slate-400 font-medium">{rows.length} rows</span>
       </div>
       {sortedRows && sortedRows.length ? (
-        <table className="w-full text-left text-sm border-collapse">
-          <thead className="text-xs uppercase text-slate-500 bg-slate-50/40 select-none">
+        <Table>
+          <TableHead className="bg-slate-50/40">
             <tr>
               {columns.map((column) => (
                 <ResizableTh
@@ -90,12 +80,11 @@ function MetricTable({ title, rows = [], columns = [] }) {
                 </ResizableTh>
               ))}
             </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
+          </TableHead>
+          <TableBody>
             {sortedRows.map((row, index) => (
-              <tr
+              <TableRow
                 key={row.projectId || row.clientId || row.userId || row.status || index}
-                className="hover:bg-slate-50/50"
               >
                 {columns.map((column, idx) => (
                   <td
@@ -109,10 +98,10 @@ function MetricTable({ title, rows = [], columns = [] }) {
                     </div>
                   </td>
                 ))}
-              </tr>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       ) : (
         <p className="px-5 py-10 text-center text-sm text-slate-500">No approved work in this date range.</p>
       )}
@@ -138,13 +127,6 @@ export default function ReportsPage() {
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [chasing, setChasing] = useState(false);
 
-  // Resizable columns for missing timesheets
-  const { columnWidths: missingWidths, startResize: startMissingResize } = useTableResize({
-    select: 60,
-    employee: 220,
-    email: 260,
-    chaseStatus: 160,
-  });
 
   async function loadSummary(filterValues = filters) {
     try {
@@ -508,12 +490,12 @@ export default function ReportsPage() {
                 Checking timesheets and approved leave...
               </div>
             ) : missingData?.employees?.length ? (
-              <table className="w-full text-left text-sm border-collapse">
-                <thead className="bg-slate-50 text-xs uppercase text-slate-500 select-none">
+              <Table>
+                <TableHead>
                   <tr>
                     {isAdmin && (
                       <ResizableTh
-                        className="px-5 py-3"
+                        className="px-5 py-3 w-12"
                       >
                         <span>Select</span>
                       </ResizableTh>
@@ -534,15 +516,14 @@ export default function ReportsPage() {
                       <span>Chase Status</span>
                     </ResizableTh>
                   </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
+                </TableHead>
+                <TableBody>
                   {missingData.employees.map((emp) => (
-                    <tr
+                    <TableRow
                       key={emp.userId}
-                      className="hover:bg-slate-50/50"
                     >
                       {isAdmin && (
-                        <td className="px-5 py-3 whitespace-nowrap">
+                        <TableTd className="w-12">
                           <input
                             type="checkbox"
                             disabled={emp.chasedToday}
@@ -550,15 +531,15 @@ export default function ReportsPage() {
                             onChange={() => toggleSelectUser(emp.userId)}
                             className="rounded border-slate-300 text-slate-900 focus:ring-slate-900 disabled:opacity-40"
                           />
-                        </td>
+                        </TableTd>
                       )}
-                      <td className="px-5 py-3 font-medium text-slate-800 whitespace-nowrap">
+                      <TableTd className="font-medium text-slate-800">
                         <span title={emp.userName}>{emp.userName}</span>
-                      </td>
-                      <td className="px-5 py-3 text-slate-600 whitespace-nowrap">
+                      </TableTd>
+                      <TableTd className="text-slate-600">
                         <span title={emp.email}>{emp.email}</span>
-                      </td>
-                      <td className="px-5 py-3 whitespace-nowrap">
+                      </TableTd>
+                      <TableTd>
                         {emp.chasedToday ? (
                           <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
                             Reminded today
@@ -568,11 +549,11 @@ export default function ReportsPage() {
                             Unsent
                           </span>
                         )}
-                      </td>
-                    </tr>
+                      </TableTd>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             ) : (
               <div className="py-12 text-center text-sm text-slate-500">
                 <CheckCircle2 className="mx-auto mb-2 text-emerald-500" size={28} />

@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useNotification } from '../context/NotificationContext.jsx';
 import Modal from '../components/Modal.jsx';
 import Pagination from '../components/Pagination.jsx';
-import useTableResize from '../hooks/useTableResize.js';
+import Table, { TableHead, TableBody, TableRow, TableTd } from '../components/Table.jsx';
 import ResizableTh from '../components/ResizableTh.jsx';
 
 function StatusBadge({ status }) {
@@ -59,15 +59,6 @@ export default function EmailLogPage() {
   const PAGE_LIMIT = 10;
   const [pagination, setPagination] = useState({ page: 1, limit: PAGE_LIMIT, total: 0, totalPages: 1 });
 
-  // Resizable columns
-  const { columnWidths, startResize } = useTableResize({
-    recipient: 190,
-    emailType: 140,
-    subject: 260,
-    status: 120,
-    attemptedAt: 170,
-    actions: 100,
-  });
 
   const [filters, setFilters] = useState({
     status: '',
@@ -334,8 +325,8 @@ export default function EmailLogPage() {
             Loading email logs...
           </div>
         ) : logs.length ? (
-          <table className="w-full text-left text-sm border-collapse">
-            <thead className="bg-slate-50 text-xs uppercase text-slate-500 select-none">
+          <Table>
+            <TableHead>
               <tr>
                 <ResizableTh
                   onClick={() => toggleSort('recipient')}
@@ -408,20 +399,20 @@ export default function EmailLogPage() {
                   <span>Action</span>
                 </ResizableTh>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
+            </TableHead>
+            <TableBody>
               {sortedLogs.map((log) => (
-                <tr key={log.id} className="hover:bg-slate-50/50">
-                  <td className="px-5 py-3 whitespace-nowrap">
+                <TableRow key={log.id}>
+                  <TableTd>
                     <div className="font-medium text-slate-900">
                       {log.recipientUser?.name || 'External'}
                     </div>
                     <div className="text-xs text-slate-500">{log.recipientEmail}</div>
-                  </td>
-                  <td className="px-5 py-3 font-medium text-slate-700 whitespace-nowrap">
+                  </TableTd>
+                  <TableTd className="font-medium text-slate-700">
                     {formatEmailType(log.emailType)}
-                  </td>
-                  <td className="px-5 py-3 min-w-[180px] max-w-sm">
+                  </TableTd>
+                  <TableTd className="min-w-[180px] max-w-sm whitespace-normal">
                     <div className="text-slate-800 line-clamp-2" title={log.subject}>
                       {log.subject}
                     </div>
@@ -430,14 +421,14 @@ export default function EmailLogPage() {
                         {log.errorMessage}
                       </div>
                     )}
-                  </td>
-                  <td className="px-5 py-3 whitespace-nowrap">
+                  </TableTd>
+                  <TableTd>
                     <StatusBadge status={log.status} />
-                  </td>
-                  <td className="px-5 py-3 text-xs text-slate-500 whitespace-nowrap">
+                  </TableTd>
+                  <TableTd className="text-xs text-slate-500">
                     {new Date(log.attemptedAt).toLocaleString()}
-                  </td>
-                  <td className="px-5 py-3 text-right whitespace-nowrap">
+                  </TableTd>
+                  <TableTd className="text-right">
                     <button
                       type="button"
                       onClick={() => setSelectedLog(log)}
@@ -446,11 +437,11 @@ export default function EmailLogPage() {
                       <Eye size={12} />
                       <span>Details</span>
                     </button>
-                  </td>
-                </tr>
+                  </TableTd>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         ) : (
           <div className="py-16 text-center text-sm text-slate-500">
             <Mail className="mx-auto mb-2 text-slate-300" size={32} />

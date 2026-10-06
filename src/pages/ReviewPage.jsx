@@ -23,7 +23,7 @@ import Badge from "../components/Badge.jsx";
 import Pagination from "../components/Pagination.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { useNotification } from "../context/NotificationContext.jsx";
-import useTableResize from "../hooks/useTableResize.js";
+import Table, { TableHead, TableBody, TableRow, TableTd } from "../components/Table.jsx";
 import ResizableTh from "../components/ResizableTh.jsx";
 import { entryIdsSchema, reviewReturnSchema, timeOffDecisionSchema } from "../validation/formSchemas.js";
 
@@ -47,26 +47,7 @@ export default function ReviewPage() {
   const [timeOffPage, setTimeOffPage] = useState(1);
   const TIME_OFF_PER_PAGE = 10;
 
-  // Resizable columns for entries queue
-  const { columnWidths: entriesWidths, startResize: startEntriesResize, tableStyle: entriesTableStyle } = useTableResize({
-    select: 48,
-    employee: 180,
-    workDate: 120,
-    project: 180,
-    durationMinutes: 90,
-    description: 280,
-    action: 110,
-  });
 
-  // Resizable columns for time off queue
-  const { columnWidths: timeOffWidths, startResize: startTimeOffResize, tableStyle: timeOffTableStyle } = useTableResize({
-    employee: 200,
-    type: 140,
-    startDate: 190,
-    days: 100,
-    reason: 260,
-    actions: 140,
-  });
   const [scope, setScope] = useState(null);
   const [selected, setSelected] = useState([]);
   const [filters, setFilters] = useState({
@@ -576,8 +557,8 @@ export default function ReviewPage() {
 
       {/* Entries Table */}
       <div className="relative overflow-x-auto bg-white border border-slate-200 rounded-lg shadow-xs">
-        <table className="w-full text-left text-sm border-collapse">
-          <thead className="bg-slate-50 text-xs uppercase text-slate-500 font-semibold border-b border-slate-200 select-none">
+        <Table>
+          <TableHead>
             <tr>
               <ResizableTh
                 className="p-3"
@@ -665,11 +646,11 @@ export default function ReviewPage() {
                 <span>Action</span>
               </ResizableTh>
             </tr>
-          </thead>
-          <tbody>
+          </TableHead>
+          <TableBody>
             {loading && !allEntries.length ? (
-              <tr>
-                <td colSpan="7" className="p-12 text-center">
+              <TableRow hover={false}>
+                <TableTd colSpan={7} align="center" className="p-12 text-center">
                   <Loader2
                     className="mx-auto mb-2 animate-spin text-slate-400"
                     size={22}
@@ -677,15 +658,15 @@ export default function ReviewPage() {
                   <span className="text-sm text-slate-500">
                     Loading submitted entries...
                   </span>
-                </td>
-              </tr>
+                </TableTd>
+              </TableRow>
             ) : paginatedEntries.length > 0 ? (
               paginatedEntries.map((entry) => (
-                <tr
+                <TableRow
                   key={entry.id}
-                  className="border-t border-slate-100 hover:bg-slate-50/60 align-top transition-colors"
+                  className="align-top"
                 >
-                  <td className="p-3 whitespace-nowrap">
+                  <TableTd className="whitespace-nowrap">
                     <input
                       type="checkbox"
                       checked={selected.includes(entry.id)}
@@ -698,20 +679,20 @@ export default function ReviewPage() {
                       }
                       className="rounded border-slate-300 cursor-pointer"
                     />
-                  </td>
-                  <td className="p-3 whitespace-nowrap">
+                  </TableTd>
+                  <TableTd className="whitespace-nowrap">
                     <div className="font-medium text-slate-900">{entry.user?.name}</div>
                     <div className="text-xs text-slate-500">{entry.user?.email}</div>
-                  </td>
-                  <td className="p-3 whitespace-nowrap text-slate-700 text-xs">{entry.workDate}</td>
-                  <td className="p-3 whitespace-nowrap text-slate-700 font-medium text-xs">
+                  </TableTd>
+                  <TableTd className="whitespace-nowrap text-slate-700 text-xs">{entry.workDate}</TableTd>
+                  <TableTd className="whitespace-nowrap text-slate-700 font-medium text-xs">
                     <div title={entry.project?.name}>{entry.project?.name}</div>
-                  </td>
-                  <td className="p-3 whitespace-nowrap text-slate-700 text-xs">{entry.durationHours}</td>
-                  <td className="p-3 text-slate-600 text-xs min-w-[180px] max-w-sm">
+                  </TableTd>
+                  <TableTd className="whitespace-nowrap text-slate-700 text-xs">{entry.durationHours}</TableTd>
+                  <TableTd className="text-slate-600 text-xs min-w-[180px] max-w-sm whitespace-normal">
                     <div className="line-clamp-2" title={entry.description}>{entry.description}</div>
-                  </td>
-                  <td className="p-3 whitespace-nowrap">
+                  </TableTd>
+                  <TableTd className="whitespace-nowrap">
                     <div className="flex gap-2">
                       <button
                         title="Approve entry"
@@ -728,20 +709,20 @@ export default function ReviewPage() {
                         <RotateCcw size={16} />
                       </button>
                     </div>
-                  </td>
-                </tr>
+                  </TableTd>
+                </TableRow>
               ))
             ) : (
-              <tr>
-                <td colSpan="7" className="p-10 text-center text-sm text-slate-500">
+              <TableRow hover={false}>
+                <TableTd colSpan={7} align="center" className="p-10 text-center text-sm text-slate-500">
                   {hasActiveFilters
                     ? "No submitted entries match the active filters."
                     : "No submitted entries pending review."}
-                </td>
-              </tr>
+                </TableTd>
+              </TableRow>
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
 
         <Pagination
           currentPage={page}
@@ -763,8 +744,8 @@ export default function ReviewPage() {
       ) : (
         /* Time Off Requests Queue */
         <div className="bg-white rounded-lg border border-slate-200 overflow-x-auto shadow-xs">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
+          <Table>
+            <TableHead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px] select-none">
                 <ResizableTh
                   onClick={() => toggleTimeOffSort('employee')}
@@ -837,30 +818,30 @@ export default function ReviewPage() {
                   <span>Actions</span>
                 </ResizableTh>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
+            </TableHead>
+            <TableBody>
               {paginatedTimeOff.length ? (
                 paginatedTimeOff.map((reqItem) => (
-                  <tr key={reqItem.id} className="hover:bg-slate-50/80 transition">
-                    <td className="py-3 px-4 whitespace-nowrap">
+                  <TableRow key={reqItem.id}>
+                    <TableTd className="whitespace-nowrap">
                       <div className="font-semibold text-slate-900">{reqItem.user?.name}</div>
                       <div className="text-[11px] text-slate-500">{reqItem.user?.email}</div>
-                    </td>
-                    <td className="py-3 px-4 whitespace-nowrap">
+                    </TableTd>
+                    <TableTd className="whitespace-nowrap">
                       <span className="inline-block px-2 py-0.5 rounded font-medium text-[11px] bg-indigo-50 text-indigo-700 border border-indigo-100">
                         {reqItem.type?.name || 'Leave'}
                       </span>
-                    </td>
-                    <td className="py-3 px-4 whitespace-nowrap text-slate-700 font-medium">
+                    </TableTd>
+                    <TableTd className="whitespace-nowrap text-slate-700 font-medium">
                       {reqItem.startDate} &rarr; {reqItem.endDate}
-                    </td>
-                    <td className="py-3 px-4 whitespace-nowrap text-slate-600">
+                    </TableTd>
+                    <TableTd className="whitespace-nowrap text-slate-600">
                       {reqItem.days?.length || 1} day{(reqItem.days?.length || 1) > 1 ? 's' : ''}
-                    </td>
-                    <td className="py-3 px-4 text-slate-600 min-w-[150px] max-w-xs">
+                    </TableTd>
+                    <TableTd className="text-slate-600 min-w-[150px] max-w-xs whitespace-normal">
                       <div className="line-clamp-2" title={reqItem.reason}>{reqItem.reason || '—'}</div>
-                    </td>
-                    <td className="py-3 px-4 text-right whitespace-nowrap">
+                    </TableTd>
+                    <TableTd className="text-right whitespace-nowrap">
                       {reqItem.status === 'EXPIRED' || reqItem.startDate < new Date().toISOString().split('T')[0] ? (
                         <div className="flex items-center justify-end">
                           <Badge variant="expired" label="Expired" dot />
@@ -887,18 +868,18 @@ export default function ReviewPage() {
                           </button>
                         </div>
                       )}
-                    </td>
-                  </tr>
+                    </TableTd>
+                  </TableRow>
                 ))
               ) : (
-                <tr>
-                  <td colSpan="6" className="p-10 text-center text-sm text-slate-500">
+                <TableRow hover={false}>
+                  <TableTd colSpan={6} align="center" className="p-10 text-center text-sm text-slate-500">
                     No pending time off requests awaiting decision.
-                  </td>
-                </tr>
+                  </TableTd>
+                </TableRow>
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
 
           <Pagination
             currentPage={timeOffPage}

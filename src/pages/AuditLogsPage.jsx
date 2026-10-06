@@ -27,7 +27,7 @@ import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import Modal from '../components/Modal.jsx';
 import Pagination from '../components/Pagination.jsx';
-import useTableResize from '../hooks/useTableResize.js';
+import Table, { TableHead, TableBody, TableRow, TableTd } from '../components/Table.jsx';
 import ResizableTh from '../components/ResizableTh.jsx';
 
 const CAP_META = {
@@ -85,16 +85,6 @@ export default function AuditLogsPage() {
   const [selectedLog, setSelectedLog] = useState(null);
   const [copiedId, setCopiedId] = useState(false);
 
-  // Resizable columns
-  const { columnWidths, startResize } = useTableResize({
-    action: 140,
-    capability: 210,
-    actor: 210,
-    targetUser: 210,
-    scope: 140,
-    createdAt: 170,
-    actions: 100,
-  });
 
   const fetchLogs = useCallback(async (isInitial = false) => {
     if (isInitial) setLoading(true);
@@ -372,190 +362,188 @@ export default function AuditLogsPage() {
           </div>
         ) : (
           <div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs text-left border-collapse">
-                <thead className="bg-slate-50/90 text-[11px] font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 select-none">
-                  <tr>
-                    <ResizableTh
-                      onClick={() => toggleSort('action')}
-                      className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <span>Action</span>
-                        {sortField === 'action' ? (
-                          sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
-                        ) : (
-                          <ArrowUpDown size={12} className="text-slate-300 shrink-0" />
-                        )}
-                      </div>
-                    </ResizableTh>
-                    <ResizableTh
-                      onClick={() => toggleSort('capabilityCode')}
-                      className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <span>Capability</span>
-                        {sortField === 'capabilityCode' ? (
-                          sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
-                        ) : (
-                          <ArrowUpDown size={12} className="text-slate-300 shrink-0" />
-                        )}
-                      </div>
-                    </ResizableTh>
-                    <ResizableTh
-                      onClick={() => toggleSort('actor')}
-                      className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <span>Performed By (Actor)</span>
-                        {sortField === 'actor' ? (
-                          sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
-                        ) : (
-                          <ArrowUpDown size={12} className="text-slate-300 shrink-0" />
-                        )}
-                      </div>
-                    </ResizableTh>
-                    <ResizableTh
-                      onClick={() => toggleSort('targetUser')}
-                      className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <span>Target Employee</span>
-                        {sortField === 'targetUser' ? (
-                          sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
-                        ) : (
-                          <ArrowUpDown size={12} className="text-slate-300 shrink-0" />
-                        )}
-                      </div>
-                    </ResizableTh>
-                    <ResizableTh
-                      className="py-3 px-4"
-                    >
-                      <span>Scope</span>
-                    </ResizableTh>
-                    <ResizableTh
-                      onClick={() => toggleSort('createdAt')}
-                      className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <span>Timestamp</span>
-                        {sortField === 'createdAt' ? (
-                          sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
-                        ) : (
-                          <ArrowUpDown size={12} className="text-slate-300 shrink-0" />
-                        )}
-                      </div>
-                    </ResizableTh>
-                    <ResizableTh
-                      className="py-3 px-4 text-right"
-                    >
+            <Table>
+              <TableHead>
+                <tr>
+                  <ResizableTh
+                    onClick={() => toggleSort('action')}
+                    className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  >
+                    <div className="flex items-center gap-1.5">
                       <span>Action</span>
-                    </ResizableTh>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {sortedLogs.map((log) => {
-                    const actionInfo = ACTION_CONFIG[log.action] || {
-                      label: log.action,
-                      badge: 'bg-slate-100 text-slate-700 border-slate-200',
-                      dot: 'bg-slate-400',
-                    };
-                    const capMeta = CAP_META[log.capabilityCode] || { label: log.capabilityCode, desc: '' };
+                      {sortField === 'action' ? (
+                        sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
+                      ) : (
+                        <ArrowUpDown size={12} className="text-slate-300 shrink-0" />
+                      )}
+                    </div>
+                  </ResizableTh>
+                  <ResizableTh
+                    onClick={() => toggleSort('capabilityCode')}
+                    className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Capability</span>
+                      {sortField === 'capabilityCode' ? (
+                        sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
+                      ) : (
+                        <ArrowUpDown size={12} className="text-slate-300 shrink-0" />
+                      )}
+                    </div>
+                  </ResizableTh>
+                  <ResizableTh
+                    onClick={() => toggleSort('actor')}
+                    className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Performed By (Actor)</span>
+                      {sortField === 'actor' ? (
+                        sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
+                      ) : (
+                        <ArrowUpDown size={12} className="text-slate-300 shrink-0" />
+                      )}
+                    </div>
+                  </ResizableTh>
+                  <ResizableTh
+                    onClick={() => toggleSort('targetUser')}
+                    className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Target Employee</span>
+                      {sortField === 'targetUser' ? (
+                        sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
+                      ) : (
+                        <ArrowUpDown size={12} className="text-slate-300 shrink-0" />
+                      )}
+                    </div>
+                  </ResizableTh>
+                  <ResizableTh
+                    className="py-3 px-4"
+                  >
+                    <span>Scope</span>
+                  </ResizableTh>
+                  <ResizableTh
+                    onClick={() => toggleSort('createdAt')}
+                    className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Timestamp</span>
+                      {sortField === 'createdAt' ? (
+                        sortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
+                      ) : (
+                        <ArrowUpDown size={12} className="text-slate-300 shrink-0" />
+                      )}
+                    </div>
+                  </ResizableTh>
+                  <ResizableTh
+                    className="py-3 px-4 text-right"
+                  >
+                    <span>Action</span>
+                  </ResizableTh>
+                </tr>
+              </TableHead>
+              <TableBody>
+                {sortedLogs.map((log) => {
+                  const actionInfo = ACTION_CONFIG[log.action] || {
+                    label: log.action,
+                    badge: 'bg-slate-100 text-slate-700 border-slate-200',
+                    dot: 'bg-slate-400',
+                  };
+                  const capMeta = CAP_META[log.capabilityCode] || { label: log.capabilityCode, desc: '' };
 
-                    return (
-                      <tr
-                        key={log.id}
-                        onClick={() => setSelectedLog(log)}
-                        className="hover:bg-slate-50/80 transition cursor-pointer group"
-                      >
-                        <td className="py-3 px-4 whitespace-nowrap">
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${actionInfo.badge}`}
-                          >
-                            <span className={`w-1.5 h-1.5 rounded-full ${actionInfo.dot}`} />
-                            <span>{actionInfo.label}</span>
+                  return (
+                    <TableRow
+                      key={log.id}
+                      onClick={() => setSelectedLog(log)}
+                      className="cursor-pointer group"
+                    >
+                      <TableTd className="px-4">
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${actionInfo.badge}`}
+                        >
+                          <span className={`w-1.5 h-1.5 rounded-full ${actionInfo.dot}`} />
+                          <span>{actionInfo.label}</span>
+                        </span>
+                      </TableTd>
+
+                      <TableTd className="px-4">
+                        <div className="font-semibold text-slate-900 group-hover:text-indigo-600 transition">
+                          {capMeta.label}
+                        </div>
+                        <div className="font-mono text-[10px] text-slate-400">
+                          {log.capabilityCode}
+                        </div>
+                      </TableTd>
+
+                      <TableTd className="px-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600 shrink-0">
+                            {log.actor?.name?.charAt(0)?.toUpperCase() || 'A'}
+                          </div>
+                          <div>
+                            <div className="font-medium text-slate-800">{log.actor?.name || 'System Admin'}</div>
+                            <div className="text-[10px] text-slate-400">{log.actor?.email || '—'}</div>
+                          </div>
+                        </div>
+                      </TableTd>
+
+                      <TableTd className="px-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-[10px] font-bold text-indigo-700 shrink-0">
+                            {log.targetUser?.name?.charAt(0)?.toUpperCase() || 'U'}
+                          </div>
+                          <div>
+                            <div className="font-medium text-slate-800">{log.targetUser?.name || '—'}</div>
+                            <div className="text-[10px] text-slate-400">{log.targetUser?.email || '—'}</div>
+                          </div>
+                        </div>
+                      </TableTd>
+
+                      <TableTd className="px-4">
+                        {getScopeBadge(log.details)}
+                      </TableTd>
+
+                      <TableTd className="px-4 text-slate-500">
+                        <div className="flex items-center gap-1 font-medium text-slate-700">
+                          <Calendar size={11} className="text-slate-400 shrink-0" />
+                          <span>
+                            {new Date(log.createdAt).toLocaleDateString('en-GB', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
                           </span>
-                        </td>
+                        </div>
+                        <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-0.5">
+                          <Clock size={10} className="text-slate-300 shrink-0" />
+                          <span>
+                            {new Date(log.createdAt).toLocaleTimeString('en-GB', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              second: '2-digit',
+                            })}
+                          </span>
+                        </div>
+                      </TableTd>
 
-                        <td className="py-3 px-4 whitespace-nowrap">
-                          <div className="font-semibold text-slate-900 group-hover:text-indigo-600 transition">
-                            {capMeta.label}
-                          </div>
-                          <div className="font-mono text-[10px] text-slate-400">
-                            {log.capabilityCode}
-                          </div>
-                        </td>
-
-                        <td className="py-3 px-4 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-600 shrink-0">
-                              {log.actor?.name?.charAt(0)?.toUpperCase() || 'A'}
-                            </div>
-                            <div>
-                              <div className="font-medium text-slate-800">{log.actor?.name || 'System Admin'}</div>
-                              <div className="text-[10px] text-slate-400">{log.actor?.email || '—'}</div>
-                            </div>
-                          </div>
-                        </td>
-
-                        <td className="py-3 px-4 whitespace-nowrap">
-                          <div className="flex items-center gap-2">
-                            <div className="w-6 h-6 rounded-full bg-indigo-100 flex items-center justify-center text-[10px] font-bold text-indigo-700 shrink-0">
-                              {log.targetUser?.name?.charAt(0)?.toUpperCase() || 'U'}
-                            </div>
-                            <div>
-                              <div className="font-medium text-slate-800">{log.targetUser?.name || '—'}</div>
-                              <div className="text-[10px] text-slate-400">{log.targetUser?.email || '—'}</div>
-                            </div>
-                          </div>
-                        </td>
-
-                        <td className="py-3 px-4 whitespace-nowrap">
-                          {getScopeBadge(log.details)}
-                        </td>
-
-                        <td className="py-3 px-4 whitespace-nowrap text-slate-500">
-                          <div className="flex items-center gap-1 font-medium text-slate-700">
-                            <Calendar size={11} className="text-slate-400 shrink-0" />
-                            <span>
-                              {new Date(log.createdAt).toLocaleDateString('en-GB', {
-                                day: '2-digit',
-                                month: 'short',
-                                year: 'numeric',
-                              })}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-0.5">
-                            <Clock size={10} className="text-slate-300 shrink-0" />
-                            <span>
-                              {new Date(log.createdAt).toLocaleTimeString('en-GB', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                second: '2-digit',
-                              })}
-                            </span>
-                          </div>
-                        </td>
-
-                        <td className="py-3 px-4 text-right whitespace-nowrap">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedLog(log);
-                            }}
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 rounded-md shadow-2xs transition cursor-pointer"
-                          >
-                            <Eye className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                            <span>Details</span>
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                      <TableTd className="px-4 text-right">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedLog(log);
+                          }}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 rounded-md shadow-2xs transition cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          <span>Details</span>
+                        </button>
+                      </TableTd>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
 
             <Pagination
               currentPage={page}
