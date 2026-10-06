@@ -3,14 +3,11 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import {
   Menu,
-  PanelLeftClose,
-  PanelLeftOpen,
   ChevronDown,
   LogOut,
   Calendar,
   LayoutDashboard,
 } from 'lucide-react';
-import { Tooltip } from './Navbar.jsx';
 import AppLogo from './AppLogo.jsx';
 
 const ROUTE_TITLES = {
@@ -146,44 +143,18 @@ export default function AppHeader({
               {currentRouteInfo.title}
             </span>
 
-            {/* Desktop single collapse / expand toggle */}
-            <Tooltip
-              text={sidebarOpen ? 'Close sidebar (Ctrl+B)' : 'Expand sidebar (Ctrl+B)'}
-              side="bottom"
-              align="left"
-            >
-              <button
-                onClick={onToggleSidebar}
-                className="hidden md:flex p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer"
-                aria-label={sidebarOpen ? 'Close sidebar' : 'Expand sidebar'}
-              >
-                {sidebarOpen ? (
-                  <PanelLeftClose className="w-4.5 h-4.5" />
-                ) : (
-                  <PanelLeftOpen className="w-4.5 h-4.5" />
-                )}
-              </button>
-            </Tooltip>
-
-            {/* When sidebar is closed, show brand and breadcrumbs */}
-            {!sidebarOpen && (
-              <>
-                <Link
-                  to="/dashboard"
-                  className="hidden md:flex items-center gap-2 mr-1 group cursor-pointer"
-                >
-                  <AppLogo className="w-7 h-7 rounded-lg group-hover:scale-105 transition" />
-                  <span className="text-sm font-bold text-slate-900 tracking-tight">Work Log</span>
-                </Link>
-
-                <div className="hidden sm:flex items-center gap-2 text-xs font-medium text-slate-400">
-                  <span>/</span>
-                  <span className="text-slate-900 font-semibold truncate max-w-[200px] lg:max-w-none">
-                    {currentRouteInfo.title}
-                  </span>
-                </div>
-              </>
-            )}
+            {/* Desktop Breadcrumbs / Page Title */}
+            <div className="hidden md:flex items-center gap-2 text-xs font-medium">
+              {currentRouteInfo.category && (
+                <>
+                  <span className="text-slate-400">{currentRouteInfo.category}</span>
+                  <span className="text-slate-300">/</span>
+                </>
+              )}
+              <span className="text-slate-900 font-semibold text-sm tracking-tight truncate max-w-[320px] lg:max-w-none">
+                {currentRouteInfo.title}
+              </span>
+            </div>
           </>
         ) : (
           /* Guest / Auth Brand */

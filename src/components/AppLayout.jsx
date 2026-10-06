@@ -134,6 +134,7 @@ export default function AppLayout({ children }) {
       {/* ── Collapsible Sidebar ── */}
       <Sidebar
         isOpen={sidebarOpen}
+        onToggle={() => setSidebarOpen((v) => !v)}
         onClose={() => setSidebarOpen(false)}
         isMobileOpen={mobileOpen}
         onMobileClose={() => setMobileOpen(false)}

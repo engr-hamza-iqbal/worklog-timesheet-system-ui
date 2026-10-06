@@ -166,7 +166,7 @@ export default function AccessPage() {
                 No users found.
               </div>
             ) : (
-              <ul className="divide-y divide-slate-100 max-h-[55vh] overflow-y-auto">
+              <ul className="divide-y divide-slate-100 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 {paginatedUsers.map((user) => (
                   <li key={user.id}>
                     <button
