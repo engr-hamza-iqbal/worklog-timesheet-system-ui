@@ -306,6 +306,23 @@ export default function AnalyticsPage() {
               : 'bg-slate-100 text-slate-600 border-slate-200',
         };
       });
+    } else if (breakdownTab === 'timeliness') {
+      return (analytics.submissionTimeliness?.byPerson || []).map((row) => {
+        const pct = Number(row.onTimePercentage) || 0;
+        return {
+          id: row.userId,
+          label: row.name,
+          hours: Number(row.avgLagDays) || 0,
+          share: pct,
+          badge: pct >= 90 ? 'Consistently On-Time' : pct >= 70 ? 'Acceptable' : 'Frequently Late',
+          badgeColor:
+            pct >= 90
+              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+              : pct >= 70
+              ? 'bg-amber-50 text-amber-700 border-amber-200'
+              : 'bg-rose-50 text-rose-700 border-rose-200',
+        };
+      });
     } else {
       return (analytics.clients || []).map((row) => {
         const hours = Number(row.hours) || 0;
@@ -881,6 +898,124 @@ export default function AnalyticsPage() {
             </section>
           </div>
 
+          {/* ── Status Breakdown, Time-Off & Timeliness Row ── */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Review Status & Time-Off Card */}
+            <section className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs flex flex-col justify-between">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm font-semibold text-slate-900">Review Status &amp; Time-Off</h2>
+                  <p className="text-[11px] text-slate-500">Lifecycle state distribution of recorded hours and leave</p>
+                </div>
+                {analytics.timeOff?.length > 0 && (
+                  <span className="text-xs font-mono font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/60">
+                    {analytics.timeOff.reduce((acc, t) => acc + (t.days || 0), 0)} leave days
+                  </span>
+                )}
+              </div>
+
+              {/* Status pills / progress meters */}
+              <div className="space-y-3">
+                {(analytics.statusBreakdown || []).map((sb) => {
+                  const statusColors = {
+                    APPROVED: { bg: 'bg-emerald-500', light: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+                    SUBMITTED: { bg: 'bg-indigo-500', light: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+                    DRAFT: { bg: 'bg-slate-400', light: 'bg-slate-50 text-slate-700 border-slate-200' },
+                    RETURNED: { bg: 'bg-rose-500', light: 'bg-rose-50 text-rose-700 border-rose-200' },
+                  };
+                  const colors = statusColors[sb.status] || { bg: 'bg-slate-400', light: 'bg-slate-50 text-slate-700 border-slate-200' };
+                  const totalHrs = (analytics.statusBreakdown || []).reduce((acc, x) => acc + Number(x.hours || 0), 0);
+                  const pct = totalHrs > 0 ? ((Number(sb.hours || 0) / totalHrs) * 100).toFixed(1) : 0;
+
+                  return (
+                    <div key={sb.status} className="p-2.5 rounded-lg border border-slate-100 bg-slate-50/50">
+                      <div className="flex items-center justify-between text-xs mb-1.5">
+                        <span className="font-semibold text-slate-800">{sb.status}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-slate-900 font-bold">{Number(sb.hours || 0).toFixed(1)} hrs</span>
+                          <span className="text-slate-400 text-[11px]">({sb.entries || 0} entries &bull; {pct}%)</span>
+                        </div>
+                      </div>
+                      <div className="w-full bg-slate-200/70 h-2 rounded-full overflow-hidden">
+                        <div className={`h-full ${colors.bg} rounded-full transition-all duration-500`} style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+
+                {/* Time Off breakdown */}
+                {analytics.timeOff && analytics.timeOff.length > 0 && (
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
+                    <span className="font-medium text-slate-700">Time-Off Requests:</span>
+                    <div className="flex items-center gap-2">
+                      {analytics.timeOff.map((t) => (
+                        <span key={t.status} className="inline-flex items-center gap-1 font-mono text-[11px] px-2 py-0.5 rounded bg-slate-100 text-slate-700">
+                          {t.status}: <strong className="text-slate-900">{t.days}d</strong>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* Submission Timeliness Card */}
+            <section className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs flex flex-col justify-between">
+              <div className="mb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="text-sm font-semibold text-slate-900">Submission Timeliness</h2>
+                  <p className="text-[11px] text-slate-500">How promptly work logs are submitted after execution</p>
+                </div>
+                <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded border ${
+                  (analytics.submissionTimeliness?.overall?.onTimePercentage ?? 100) >= 80
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : 'bg-amber-50 text-amber-700 border-amber-200'
+                }`}>
+                  {analytics.submissionTimeliness?.overall?.onTimePercentage ?? 100}% on-time
+                </span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="p-3 rounded-lg border border-slate-100 bg-slate-50 text-center">
+                  <div className="text-[11px] text-slate-500 uppercase font-semibold">Avg Lag</div>
+                  <div className="mt-1 text-xl font-bold text-slate-900 font-mono">
+                    {analytics.submissionTimeliness?.overall?.avgLagDays ?? 0} <span className="text-xs font-normal text-slate-500">days</span>
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg border border-slate-100 bg-slate-50 text-center">
+                  <div className="text-[11px] text-slate-500 uppercase font-semibold">On-Time</div>
+                  <div className="mt-1 text-xl font-bold text-emerald-600 font-mono">
+                    {analytics.submissionTimeliness?.overall?.onTimeCount ?? 0}
+                  </div>
+                </div>
+                <div className="p-3 rounded-lg border border-slate-100 bg-slate-50 text-center">
+                  <div className="text-[11px] text-slate-500 uppercase font-semibold">Late (&gt;2d)</div>
+                  <div className="mt-1 text-xl font-bold text-rose-600 font-mono">
+                    {analytics.submissionTimeliness?.overall?.lateCount ?? 0}
+                  </div>
+                </div>
+              </div>
+
+              {/* By-person top late submitters */}
+              <div className="overflow-y-auto max-h-40 scrollbar-thin space-y-1.5">
+                {(analytics.submissionTimeliness?.byPerson || []).slice(0, 5).map((person) => (
+                  <div key={person.userId} className="flex items-center justify-between text-xs py-1 px-2 rounded hover:bg-slate-50">
+                    <span className="font-medium text-slate-800 truncate max-w-[140px]">{person.name}</span>
+                    <div className="flex items-center gap-3 font-mono text-[11px]">
+                      <span className="text-slate-500">{person.avgLagDays}d avg lag</span>
+                      <span className={person.lateCount > 0 ? 'text-rose-600 font-semibold' : 'text-emerald-600 font-semibold'}>
+                        {person.onTimePercentage}% on-time
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                {(!analytics.submissionTimeliness?.byPerson || analytics.submissionTimeliness.byPerson.length === 0) && (
+                  <div className="text-center text-xs text-slate-400 py-3">No submission history in range.</div>
+                )}
+              </div>
+            </section>
+          </div>
+
           {/* ── Detailed Analytics Breakdown Table (With click-to-sort headers and search filter) ── */}
           <section className="rounded-xl border border-slate-200/80 bg-white shadow-xs overflow-hidden">
             <div className="border-b border-slate-200 bg-slate-50/50 p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -930,6 +1065,17 @@ export default function AnalyticsPage() {
                   >
                     Clients ({analytics?.clients?.length || 0})
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => handleTabChange('timeliness')}
+                    className={`px-3 py-1 rounded-md font-semibold transition cursor-pointer ${
+                      breakdownTab === 'timeliness'
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Timeliness ({analytics?.submissionTimeliness?.byPerson?.length || 0})
+                  </button>
                 </div>
 
                 <div className="relative">
@@ -965,6 +1111,8 @@ export default function AnalyticsPage() {
                             ? 'Contributor Name'
                             : breakdownTab === 'projects'
                             ? 'Project Initiative'
+                            : breakdownTab === 'timeliness'
+                            ? 'Team Member'
                             : 'Client Organization'}
                         </span>
                         {sortColumn === 'label' ? (
@@ -985,7 +1133,9 @@ export default function AnalyticsPage() {
                       className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-900 transition text-right sm:text-left"
                     >
                       <div className="flex items-center justify-end sm:justify-start gap-1.5 truncate">
-                        <span className="truncate">Approved Hours</span>
+                        <span className="truncate">
+                          {breakdownTab === 'timeliness' ? 'Avg Lag (Days)' : 'Approved Hours'}
+                        </span>
                         {sortColumn === 'hours' ? (
                           sortDirection === 'asc' ? (
                             <ArrowUp size={12} className="text-indigo-600 shrink-0" />
@@ -1004,7 +1154,9 @@ export default function AnalyticsPage() {
                       className="py-3 px-4 hidden sm:table-cell cursor-pointer hover:bg-slate-100 hover:text-slate-900 transition"
                     >
                       <div className="flex items-center gap-1.5 truncate">
-                        <span className="truncate">Share of Total Effort</span>
+                        <span className="truncate">
+                          {breakdownTab === 'timeliness' ? 'On-Time Submission Rate' : 'Share of Total Effort'}
+                        </span>
                         {sortColumn === 'share' ? (
                           sortDirection === 'asc' ? (
                             <ArrowUp size={12} className="text-indigo-600 shrink-0" />
@@ -1049,14 +1201,22 @@ export default function AnalyticsPage() {
                         </div>
                       </td>
                       <td className="py-3.5 px-4 font-mono font-semibold text-slate-800 text-right sm:text-left truncate whitespace-nowrap overflow-hidden">
-                        {row.hours.toFixed(2)} <span className="text-[10px] font-sans text-slate-400">h</span>
+                        {breakdownTab === 'timeliness' ? (
+                          <>
+                            {row.hours.toFixed(1)} <span className="text-[10px] font-sans text-slate-400">days</span>
+                          </>
+                        ) : (
+                          <>
+                            {row.hours.toFixed(2)} <span className="text-[10px] font-sans text-slate-400">h</span>
+                          </>
+                        )}
                       </td>
                       <td className="py-3.5 px-4 hidden sm:table-cell text-slate-600 truncate whitespace-nowrap overflow-hidden">
                         <div className="flex items-center gap-2.5">
                           <span className="font-mono text-xs w-11 text-right">{row.share.toFixed(1)}%</span>
                           <div className="w-24 bg-slate-100 rounded-full h-1.5 overflow-hidden">
                             <div
-                              className="h-full bg-indigo-600 rounded-full transition-all duration-300"
+                              className={`h-full ${breakdownTab === 'timeliness' ? (row.share >= 80 ? 'bg-emerald-600' : 'bg-amber-500') : 'bg-indigo-600'} rounded-full transition-all duration-300`}
                               style={{ width: `${Math.min(100, Math.max(2, row.share))}%` }}
                             />
                           </div>

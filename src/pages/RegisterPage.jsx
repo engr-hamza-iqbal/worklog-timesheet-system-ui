@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Loader2, Eye, EyeOff, Check } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Loader2, Eye, EyeOff, Check, Key } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import AppLogo from '../components/AppLogo.jsx';
 import { registerSchema } from '../validation/formSchemas.js';
@@ -8,11 +8,14 @@ import { registerSchema } from '../validation/formSchemas.js';
 export default function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [invitationToken, setInvitationToken] = useState(() => searchParams.get('token') || searchParams.get('invite') || '');
+  const [showInvitationField, setShowInvitationField] = useState(() => Boolean(searchParams.get('token') || searchParams.get('invite')));
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -31,7 +34,12 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      await register({ name: parsed.data.name, email: parsed.data.email, password: parsed.data.password });
+      await register({
+        name: parsed.data.name,
+        email: parsed.data.email,
+        password: parsed.data.password,
+        invitationToken: invitationToken.trim() || undefined,
+      });
       navigate('/dashboard', { replace: true });
     } catch (err) {
       setErrorMessage(err.message || 'Registration failed.');
@@ -193,6 +201,32 @@ export default function RegisterPage() {
                     {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
+              </div>
+
+              <div>
+                {!showInvitationField ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowInvitationField(true)}
+                    className="text-xs text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1 cursor-pointer transition"
+                  >
+                    <Key size={12} />
+                    <span>Have an invitation code?</span>
+                  </button>
+                ) : (
+                  <div>
+                    <label className="block text-xs font-medium text-slate-700 mb-1">
+                      Invitation Token (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={invitationToken}
+                      onChange={(e) => setInvitationToken(e.target.value)}
+                      placeholder="Paste invitation token if required"
+                      className="w-full h-9 px-3 py-1.5 text-xs font-mono rounded-md border border-slate-200 bg-slate-50/60 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition"
+                    />
+                  </div>
+                )}
               </div>
 
               <button

@@ -19,10 +19,21 @@ function wait(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
+function getCsrfToken() {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(/(?:^|;\s*)worklog_csrf_token=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 // Browser sessions use the HttpOnly worklog_session cookie. Bearer tokens remain supported by the server for API clients.
 api.interceptors.request.use(
   (config) => {
     config.__retryCount = config.__retryCount || 0;
+    const csrfToken = getCsrfToken();
+    if (csrfToken) {
+      config.headers = config.headers || {};
+      config.headers['X-CSRF-Token'] = csrfToken;
+    }
     return config;
   },
   (error) => Promise.reject(error)
