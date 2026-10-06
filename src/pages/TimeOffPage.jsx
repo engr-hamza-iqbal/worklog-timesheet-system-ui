@@ -129,8 +129,21 @@ export default function TimeOffPage() {
     setPage(1);
   };
 
+  useEffect(() => {
+    setPage(1);
+  }, [filters.status, filters.startDate, filters.endDate]);
+
+  const filteredRequests = useMemo(() => {
+    return requests.filter((req) => {
+      if (filters.status && req.status !== filters.status) return false;
+      if (filters.startDate && req.startDate < filters.startDate) return false;
+      if (filters.endDate && req.endDate > filters.endDate) return false;
+      return true;
+    });
+  }, [requests, filters.status, filters.startDate, filters.endDate]);
+
   const sortedRequests = useMemo(() => {
-    return [...requests].sort((a, b) => {
+    return [...filteredRequests].sort((a, b) => {
       let cmp = 0;
       if (requestSortField === 'employee') {
         cmp = (a.user?.name || user?.name || '').localeCompare(b.user?.name || user?.name || '');
@@ -145,7 +158,7 @@ export default function TimeOffPage() {
       }
       return requestSortOrder === 'asc' ? cmp : -cmp;
     });
-  }, [requests, requestSortField, requestSortOrder, user]);
+  }, [filteredRequests, requestSortField, requestSortOrder, user]);
 
   const paginatedRequests = useMemo(() => {
     const start = (page - 1) * ITEMS_PER_PAGE;
@@ -361,6 +374,7 @@ export default function TimeOffPage() {
             From
             <input
               type="date"
+              max={filters.endDate || undefined}
               value={filters.startDate}
               onChange={(e) =>
                 setFilters({ ...filters, startDate: e.target.value })
@@ -381,10 +395,6 @@ export default function TimeOffPage() {
             />
           </label>
           <div className="flex items-center gap-2 mt-1 sm:mt-0 w-full sm:w-auto">
-            <button type="submit" className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-3.5 py-2 text-xs font-semibold text-white hover:bg-slate-800 transition cursor-pointer shadow-xs">
-              <CalendarDays size={13} />
-              <span>Filter</span>
-            </button>
             <button
               type="button"
               onClick={() => {
@@ -406,7 +416,7 @@ export default function TimeOffPage() {
             <RefreshCw className="animate-spin" size={20} />
             Loading time-off requests...
           </div>
-        ) : requests.length === 0 ? (
+        ) : filteredRequests.length === 0 ? (
           <div className="p-12 text-center text-sm text-slate-500">
             No time-off requests match these filters.
           </div>
@@ -585,7 +595,7 @@ export default function TimeOffPage() {
         )}
         <Pagination
           currentPage={page}
-          totalItems={requests.length}
+          totalItems={filteredRequests.length}
           itemsPerPage={ITEMS_PER_PAGE}
           onPageChange={setPage}
         />
