@@ -124,18 +124,24 @@ function NotificationItem({ notification, onDismiss }) {
     const interval = setInterval(() => {
       if (!isPaused) {
         setProgress((prev) => {
-          if (prev <= step) {
+          const next = prev - step;
+          if (next <= 0) {
             clearInterval(interval);
-            onDismiss(id);
             return 0;
           }
-          return prev - step;
+          return next;
         });
       }
     }, intervalTime);
 
     return () => clearInterval(interval);
-  }, [id, duration, isPaused, onDismiss]);
+  }, [duration, isPaused]);
+
+  useEffect(() => {
+    if (progress <= 0) {
+      onDismiss(id);
+    }
+  }, [progress, id, onDismiss]);
 
   const styleConfig = {
     success: {

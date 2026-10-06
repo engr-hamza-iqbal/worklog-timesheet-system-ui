@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Shield, Clock, FolderOpen, User, Search, Loader2 } from 'lucide-react';
 import api from '../../api/client.js';
 import { CAP_META } from './constants.js';
