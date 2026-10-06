@@ -96,6 +96,7 @@ export default function TimesheetsPage() {
   const [isSilentFetching, setIsSilentFetching] = useState(false);
   const [historySortField, setHistorySortField] = useState('workDate');
   const [historySortOrder, setHistorySortOrder] = useState('desc');
+  const [filterProjects, setFilterProjects] = useState([]);
   const ITEMS_PER_PAGE = 10;
 
   const allKnownEntriesRef = useRef(new Map());
@@ -130,6 +131,9 @@ export default function TimesheetsPage() {
 
   const allDropdownProjects = useMemo(() => {
     const map = new Map();
+    (filterProjects || []).forEach((p) => {
+      if (p?.id) map.set(p.id, p);
+    });
     (projects || []).forEach((p) => {
       if (p?.id) map.set(p.id, p);
     });
@@ -139,7 +143,7 @@ export default function TimesheetsPage() {
       }
     });
     return Array.from(map.values()).sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-  }, [projects, historyEntries]);
+  }, [filterProjects, projects, historyEntries]);
 
   // Resizable columns for entries table
   const { columnWidths, startResize, tableStyle } = useTableResize({
@@ -170,7 +174,7 @@ export default function TimesheetsPage() {
       const [entriesResult, projectsResult] = await Promise.allSettled([
         api.get("/api/timesheets", { params: dateRange }),
         api.get("/api/projects", {
-          params: { activeOnly: true, ...(isAdmin ? {} : { assignedToMe: true }) },
+          params: { activeOnly: true, assignedToMe: true },
         }),
       ]);
       if (entriesResult.status === "fulfilled") {
@@ -285,16 +289,16 @@ export default function TimesheetsPage() {
   useEffect(() => {
     if (activeTab === "entries") {
       fetchHistory({ silent: historyEntries.length > 0 });
-      if (projects.length === 0) {
+      if (filterProjects.length === 0) {
         api.get("/api/projects", {
-          params: { activeOnly: true, ...(isAdmin ? {} : { assignedToMe: true }) },
+          params: { activeOnly: true },
         }).then((res) => {
           const nextProjects = Array.isArray(res.data) ? res.data : res.data?.projects || [];
-          if (nextProjects.length) setProjects(nextProjects);
+          if (nextProjects.length) setFilterProjects(nextProjects);
         }).catch(() => {});
       }
     }
-  }, [activeTab, isAdmin]);
+  }, [activeTab]);
 
   const handleFilterStatusChange = (st) => {
     if (historyStatus === st || isFiltering) return;
@@ -379,6 +383,8 @@ export default function TimesheetsPage() {
   }
 
   function editEntry(entry) {
+    if (isAdmin && entry.status === "RETURNED") return;
+    if (user?.id && entry.userId && entry.userId !== user.id) return;
     setEditingId(entry.id);
     setForm({
       projectId: entry.projectId,
@@ -440,6 +446,8 @@ export default function TimesheetsPage() {
   }
 
   async function removeEntry(id) {
+    const entry = allKnownEntriesRef.current.get(id);
+    if (user?.id && entry?.userId && entry.userId !== user.id) return;
     setConfirmation({
       title: "Delete draft entry",
       message: "Delete this draft time entry? This action cannot be undone.",
@@ -728,9 +736,9 @@ export default function TimesheetsPage() {
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 text-xs bg-white focus:border-slate-900 focus:outline-none transition cursor-pointer"
                 >
                   <option value="">
-                    {loading ? "Loading assigned projects..." : (allDropdownProjects.length || projects.length) ? "Select project" : "No assigned projects"}
+                    {loading ? "Loading assigned projects..." : projects.length ? "Select project" : "No assigned projects"}
                   </option>
-                  {(allDropdownProjects.length ? allDropdownProjects : projects).map((project) => (
+                  {projects.map((project) => (
                     <option key={project.id} value={project.id}>
                       {project.clientName || project.client?.name || "Client"} / {project.name}
                     </option>
@@ -878,26 +886,38 @@ export default function TimesheetsPage() {
                       </div>
 
                       {/* Action buttons */}
-                      {(entry.status === "DRAFT" || entry.status === "RETURNED") && (
-                        <div className="flex items-center gap-2 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => editEntry(entry)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium text-slate-700 hover:bg-slate-100 border border-slate-200 transition cursor-pointer"
-                          >
-                            <Pencil size={12} />
-                            <span>Edit</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => removeEntry(entry.id)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium text-rose-600 hover:bg-rose-50 border border-rose-200 transition cursor-pointer"
-                          >
-                            <Trash2 size={12} />
-                            <span>Delete</span>
-                          </button>
-                        </div>
-                      )}
+                      {(() => {
+                        const isOwnEntry = Boolean(user?.id && entry.userId === user.id);
+                        const canEdit = isOwnEntry && (isAdmin ? entry.status === "DRAFT" : (entry.status === "DRAFT" || entry.status === "RETURNED"));
+                        const canDelete = isOwnEntry && (entry.status === "DRAFT" || entry.status === "RETURNED");
+
+                        if (!canEdit && !canDelete) return null;
+
+                        return (
+                          <div className="flex items-center gap-2 shrink-0">
+                            {canEdit && (
+                              <button
+                                type="button"
+                                onClick={() => editEntry(entry)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium text-slate-700 hover:bg-slate-100 border border-slate-200 transition cursor-pointer"
+                              >
+                                <Pencil size={12} />
+                                <span>Edit</span>
+                              </button>
+                            )}
+                            {canDelete && (
+                              <button
+                                type="button"
+                                onClick={() => removeEntry(entry.id)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium text-rose-600 hover:bg-rose-50 border border-rose-200 transition cursor-pointer"
+                              >
+                                <Trash2 size={12} />
+                                <span>Delete</span>
+                              </button>
+                            )}
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 ))
@@ -1256,24 +1276,36 @@ export default function TimesheetsPage() {
                         <Badge variant={statusVariant[entry.status]} label={entry.status} />
                       </td>
                       <td className="py-3 px-4 text-right truncate whitespace-nowrap overflow-hidden">
-                        {(entry.status === "DRAFT" || entry.status === "RETURNED") && (
-                          <div className="inline-flex items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => editEntry(entry)}
-                              className="px-2 py-1 rounded border border-slate-200 text-slate-700 hover:bg-slate-100 text-[11px] font-medium transition cursor-pointer"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => removeEntry(entry.id)}
-                              className="px-2 py-1 rounded border border-rose-200 text-rose-600 hover:bg-rose-50 text-[11px] font-medium transition cursor-pointer"
-                            >
-                              Delete
-                            </button>
-                          </div>
-                        )}
+                        {(() => {
+                          const isOwnEntry = Boolean(user?.id && entry.userId === user.id);
+                          const canEdit = isOwnEntry && (isAdmin ? entry.status === "DRAFT" : (entry.status === "DRAFT" || entry.status === "RETURNED"));
+                          const canDelete = isOwnEntry && (entry.status === "DRAFT" || entry.status === "RETURNED");
+
+                          if (!canEdit && !canDelete) return null;
+
+                          return (
+                            <div className="inline-flex items-center gap-1.5">
+                              {canEdit && (
+                                <button
+                                  type="button"
+                                  onClick={() => editEntry(entry)}
+                                  className="px-2 py-1 rounded border border-slate-200 text-slate-700 hover:bg-slate-100 text-[11px] font-medium transition cursor-pointer"
+                                >
+                                  Edit
+                                </button>
+                              )}
+                              {canDelete && (
+                                <button
+                                  type="button"
+                                  onClick={() => removeEntry(entry.id)}
+                                  className="px-2 py-1 rounded border border-rose-200 text-rose-600 hover:bg-rose-50 text-[11px] font-medium transition cursor-pointer"
+                                >
+                                  Delete
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </td>
                     </tr>
                   ))
