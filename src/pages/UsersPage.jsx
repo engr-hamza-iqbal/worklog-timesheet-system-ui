@@ -47,13 +47,43 @@ function InviteUserForm({ onCancel, existingEmails = [] }) {
   const [revokingId, setRevokingId] = useState(null);
   const [copiedTokenId, setCopiedTokenId] = useState(null);
   const [actionFeedback, setActionFeedback] = useState('');
+  const [customRevokeToken, setCustomRevokeToken] = useState('');
+  const [revokingCustom, setRevokingCustom] = useState(false);
+
+  const handleRevokeCustom = async () => {
+    const raw = customRevokeToken.trim();
+    if (!raw) return;
+    setRevokingCustom(true);
+    setActionFeedback('');
+    setListError('');
+    try {
+      await api.post(`/api/auth/invitations/${encodeURIComponent(raw)}/revoke`);
+      setActionFeedback('Invitation has been successfully revoked and expired.');
+      setCustomRevokeToken('');
+      fetchInvitations();
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || err.message || 'Failed to revoke token.';
+      setListError(msg);
+    } finally {
+      setRevokingCustom(false);
+    }
+  };
 
   const fetchInvitations = useCallback(async () => {
     setLoadingList(true);
     setListError('');
     try {
       const res = await api.get('/api/auth/invitations');
-      setInvitations(res.data.invitations || []);
+      const list = Array.isArray(res?.data?.invitations)
+        ? res.data.invitations
+        : Array.isArray(res?.data)
+        ? res.data
+        : Array.isArray(res?.invitations)
+        ? res.invitations
+        : Array.isArray(res)
+        ? res
+        : [];
+      setInvitations(list);
     } catch (err) {
       setListError(err.message || 'Failed to load invitations.');
     } finally {
@@ -62,10 +92,8 @@ function InviteUserForm({ onCancel, existingEmails = [] }) {
   }, []);
 
   useEffect(() => {
-    if (activeTab === 'manage') {
-      fetchInvitations();
-    }
-  }, [activeTab, fetchInvitations]);
+    fetchInvitations();
+  }, [fetchInvitations]);
 
   const isAlreadyRegistered = useMemo(() => {
     if (!email.trim()) return false;
@@ -87,10 +115,12 @@ function InviteUserForm({ onCancel, existingEmails = [] }) {
         email: cleanEmail,
         expiresInHours: Number(expiresInHours),
       });
-      const inviteUrl = `${window.location.origin}/register?invite=${res.data.invitationToken}`;
-      setInviteResult({ ...res.data, inviteUrl });
+      const token = res?.data?.invitationToken || res?.invitationToken;
+      const inviteUrl = `${window.location.origin}/register?invite=${token}`;
+      setInviteResult({ ...(res?.data || res), inviteUrl });
+      fetchInvitations();
     } catch (err) {
-      const msg = err.response?.data?.message || err.message || 'Failed to generate invitation.';
+      const msg = err.response?.data?.message || err.response?.data?.error?.message || err.message || 'Failed to generate invitation.';
       setError(msg);
     } finally {
       setLoading(false);
@@ -329,6 +359,26 @@ function InviteUserForm({ onCancel, existingEmails = [] }) {
               <button onClick={() => setActionFeedback('')} className="text-emerald-600 hover:text-emerald-800">✕</button>
             </div>
           )}
+
+          {/* Quick Revoke by Link or Token */}
+          <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg flex items-center gap-2">
+            <input
+              type="text"
+              value={customRevokeToken}
+              onChange={(e) => setCustomRevokeToken(e.target.value)}
+              placeholder="Paste any invitation URL or token to revoke immediately..."
+              className="flex-1 px-2.5 py-1.5 text-xs font-mono bg-white border border-slate-300 rounded focus:outline-none focus:border-slate-900"
+            />
+            <button
+              type="button"
+              disabled={revokingCustom || !customRevokeToken.trim()}
+              onClick={handleRevokeCustom}
+              className="px-3 py-1.5 text-xs font-medium bg-red-600 hover:bg-red-700 disabled:bg-slate-300 text-white rounded transition cursor-pointer shrink-0 inline-flex items-center gap-1.5 disabled:cursor-not-allowed"
+            >
+              {revokingCustom ? <Loader2 size={11} className="animate-spin" /> : <Ban size={11} />}
+              <span>Revoke Link</span>
+            </button>
+          </div>
 
           {loadingList && invitations.length === 0 ? (
             <div className="py-8 flex flex-col items-center justify-center text-slate-400 gap-2">
