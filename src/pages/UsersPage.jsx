@@ -293,7 +293,7 @@ function InviteUserForm({ onCancel, existingEmails = [] }) {
                   </p>
                 ) : (
                   <p className="text-[11px] text-slate-500 mt-1">
-                    The invitation token will be cryptographically bound to this email.
+                    This invitation will be linked to this email address.
                   </p>
                 )}
               </div>
@@ -390,9 +390,9 @@ function InviteUserForm({ onCancel, existingEmails = [] }) {
               No invitations have been generated yet.
             </div>
           ) : (
-            <div className="border border-slate-200 rounded overflow-hidden max-h-[50vh] overflow-y-auto">
+            <div className="border border-slate-200 rounded overflow-hidden">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200 sticky top-0">
+                <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
                   <tr>
                     <th className="py-2 px-3">Invitee Email</th>
                     <th className="py-2 px-3">Status</th>
@@ -472,7 +472,7 @@ function InviteUserForm({ onCancel, existingEmails = [] }) {
           )}
 
           <p className="text-[11px] text-slate-500 pt-1">
-            Note: Revoked and expired links are immediately blocked. Once an employee finishes registration, their invite is automatically consumed and cannot be reused.
+            Note: Revoked and expired links cannot be used. Once an employee completes registration, their invite is automatically marked as used.
           </p>
 
           <div className="flex justify-end pt-2 border-t border-slate-100">

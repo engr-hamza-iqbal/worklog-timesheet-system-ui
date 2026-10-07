@@ -118,12 +118,12 @@ export default function RegisterPage() {
       return;
     }
 
-    // Fast preliminary syntax check: JWT must have 3 dot-separated parts
+    // Fast preliminary syntax check
     const parts = cleaned.split('.');
     if (parts.length !== 3 || !parts[0] || !parts[1] || !parts[2]) {
       setInvitationPayload(null);
       setInvitationVerified(false);
-      setTokenValidationMsg('Invalid token format (must be a valid 3-part signed token).');
+      setTokenValidationMsg('Invalid invitation code or link.');
       setIsVerifyingToken(false);
       return;
     }
@@ -149,13 +149,13 @@ export default function RegisterPage() {
         } else {
           setInvitationPayload(null);
           setInvitationVerified(false);
-          setTokenValidationMsg('Invalid or tampered invitation token.');
+          setTokenValidationMsg('Invalid or modified invitation link.');
         }
       } catch (err) {
         if (!isSubscribed) return;
         setInvitationPayload(null);
         setInvitationVerified(false);
-        const msg = err.response?.data?.error?.message || err.message || 'Invalid or tampered invitation token.';
+        const msg = err.response?.data?.error?.message || err.message || 'Invalid or expired invitation link.';
         setTokenValidationMsg(msg);
       } finally {
         if (isSubscribed) setIsVerifyingToken(false);
@@ -169,7 +169,20 @@ export default function RegisterPage() {
   }, [invitationToken]);
 
   const handleInvitationChange = (inputVal) => {
-    setInvitationToken(inputVal);
+    // When user types or pastes, extract the trimmed token only into the field
+    const cleaned = extractInvitationToken(inputVal);
+    setInvitationToken(cleaned);
+  };
+
+  const handleTokenPaste = (e) => {
+    const text = e.clipboardData?.getData('text') || '';
+    if (text) {
+      const cleaned = extractInvitationToken(text);
+      if (cleaned) {
+        e.preventDefault();
+        setInvitationToken(cleaned);
+      }
+    }
   };
 
   const handleClearInvitation = () => {
@@ -718,11 +731,11 @@ export default function RegisterPage() {
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <label className="block text-xs font-medium text-slate-700">
-                        Invitation Token or Link {isInvited ? '(Active & Verified)' : '(Optional)'}
+                        Invitation Code or Link {isInvited ? '(Verified)' : '(Optional)'}
                       </label>
                       {isVerifyingToken && (
                         <span className="text-[10px] text-blue-600 inline-flex items-center gap-1 font-medium">
-                          <Loader2 size={10} className="animate-spin" /> Verifying token...
+                          <Loader2 size={10} className="animate-spin" /> Checking invitation...
                         </span>
                       )}
                     </div>
@@ -731,7 +744,8 @@ export default function RegisterPage() {
                         type="text"
                         value={invitationToken}
                         onChange={(e) => handleInvitationChange(e.target.value)}
-                        placeholder="Paste invite URL (http://localhost:5173/register?invite=...) or token"
+                        onPaste={handleTokenPaste}
+                        placeholder="Paste invitation link or code"
                         className={`w-full h-9 px-3 py-1.5 text-xs font-mono rounded-md border text-slate-900 placeholder:text-slate-400 focus:outline-none transition ${
                           tokenValidationMsg
                             ? 'border-rose-400 bg-rose-50/20 focus:ring-2 focus:ring-rose-500'
@@ -750,12 +764,12 @@ export default function RegisterPage() {
                     {isInvited && (
                       <p className="text-[11px] text-emerald-700 mt-1 flex items-center gap-1 font-medium">
                         <Check size={12} className="shrink-0 text-emerald-600" />
-                        <span>Cryptographically verified invitation for {invitationPayload.email}. Email OTP is waived.</span>
+                        <span>Verified invitation for {invitationPayload.email}. Verification code is waived.</span>
                       </p>
                     )}
                     {!tokenValidationMsg && !isInvited && (
                       <p className="text-[10px] text-slate-400 mt-1">
-                        You can paste the entire invitation link or the raw token.
+                        You can paste the entire invitation link or just the code.
                       </p>
                     )}
                   </div>
