@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Users, Plus, UserCheck, UserX, AlertCircle, RefreshCw,
   Search, FolderOpen, ChevronDown, ChevronUp, Loader2,
-  ArrowUpDown, ArrowUp, ArrowDown, Briefcase, Check, Mail, Copy,
+  ArrowUpDown, ArrowUp, ArrowDown, Briefcase, Check, Mail, Copy, Key, Ban, Clock,
 } from 'lucide-react';
 import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -31,7 +31,8 @@ function ErrorAlert({ message, onDismiss }) {
 
 // ─── Invite User Form ─────────────────────────────────────────────────────────
 
-function InviteUserForm({ onCancel }) {
+function InviteUserForm({ onCancel, existingEmails = [] }) {
+  const [activeTab, setActiveTab] = useState('generate');
   const [email, setEmail] = useState('');
   const [expiresInHours, setExpiresInHours] = useState('72');
   const [loading, setLoading] = useState(false);
@@ -39,135 +40,403 @@ function InviteUserForm({ onCancel }) {
   const [inviteResult, setInviteResult] = useState(null);
   const [copied, setCopied] = useState(false);
 
+  // Manage tab state
+  const [invitations, setInvitations] = useState([]);
+  const [loadingList, setLoadingList] = useState(false);
+  const [listError, setListError] = useState('');
+  const [revokingId, setRevokingId] = useState(null);
+  const [copiedTokenId, setCopiedTokenId] = useState(null);
+  const [actionFeedback, setActionFeedback] = useState('');
+
+  const fetchInvitations = useCallback(async () => {
+    setLoadingList(true);
+    setListError('');
+    try {
+      const res = await api.get('/api/auth/invitations');
+      setInvitations(res.data.invitations || []);
+    } catch (err) {
+      setListError(err.message || 'Failed to load invitations.');
+    } finally {
+      setLoadingList(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'manage') {
+      fetchInvitations();
+    }
+  }, [activeTab, fetchInvitations]);
+
+  const isAlreadyRegistered = useMemo(() => {
+    if (!email.trim()) return false;
+    return existingEmails.includes(email.trim().toLowerCase());
+  }, [email, existingEmails]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email.trim()) { setError('Email is required.'); return; }
+    const cleanEmail = email.trim();
+    if (!cleanEmail) { setError('Email is required.'); return; }
+    if (isAlreadyRegistered) {
+      setError('This email is already registered to an active or existing user. You cannot send an invitation.');
+      return;
+    }
     setLoading(true);
     setError('');
     try {
       const res = await api.post('/api/auth/invite', {
-        email: email.trim(),
+        email: cleanEmail,
         expiresInHours: Number(expiresInHours),
       });
       const inviteUrl = `${window.location.origin}/register?invite=${res.data.invitationToken}`;
       setInviteResult({ ...res.data, inviteUrl });
     } catch (err) {
-      setError(err.message || 'Failed to generate invitation.');
+      const msg = err.response?.data?.message || err.message || 'Failed to generate invitation.';
+      setError(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  const copyToClipboard = () => {
-    if (!inviteResult?.inviteUrl) return;
-    navigator.clipboard.writeText(inviteResult.inviteUrl);
+  const copyToClipboard = (url) => {
+    if (!url) return;
+    navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 3000);
   };
 
-  if (inviteResult) {
-    return (
-      <div className="space-y-4">
-        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-xs">
-          <div className="font-semibold flex items-center gap-1.5 mb-1">
-            <Check className="w-4 h-4 text-emerald-600" />
-            Invitation Generated Successfully
-          </div>
-          <p>
-            An invitation link has been created for <strong>{inviteResult.email}</strong>. It will expire in {inviteResult.expiresInHours} hours.
-          </p>
-        </div>
+  const handleCopyExistingLink = (token, id) => {
+    const url = `${window.location.origin}/register?invite=${token}`;
+    navigator.clipboard.writeText(url);
+    setCopiedTokenId(id);
+    setTimeout(() => setCopiedTokenId(null), 3000);
+  };
 
-        <div>
-          <label className="block text-xs font-medium text-slate-700 mb-1">
-            Registration Invitation Link
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              readOnly
-              value={inviteResult.inviteUrl}
-              className="flex-1 px-3 py-2 text-xs font-mono bg-slate-50 border border-slate-300 rounded focus:outline-none"
-            />
-            <button
-              type="button"
-              onClick={copyToClipboard}
-              className="px-3 py-2 text-xs font-medium bg-slate-900 hover:bg-slate-800 text-white rounded transition cursor-pointer shrink-0 inline-flex items-center gap-1.5"
-            >
-              {copied ? <Check size={13} /> : <Copy size={13} />}
-              <span>{copied ? 'Copied!' : 'Copy Link'}</span>
-            </button>
-          </div>
-          <p className="text-[11px] text-slate-500 mt-1.5">
-            Share this link with the employee. When they open it, their email is pre-verified, email verification code is waived, and they can immediately set their password.
-          </p>
-        </div>
-
-        <div className="flex justify-end pt-2 border-t border-slate-100">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="py-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded transition cursor-pointer"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const handleRevoke = async (inv) => {
+    if (!window.confirm(`Are you sure you want to revoke and immediately expire the invite link for ${inv.email}? The invitee will not be able to register.`)) {
+      return;
+    }
+    setRevokingId(inv.id);
+    setActionFeedback('');
+    try {
+      await api.post(`/api/auth/invitations/${inv.id}/revoke`);
+      setActionFeedback(`Invite link for ${inv.email} was successfully revoked.`);
+      setInvitations((prev) =>
+        prev.map((item) => (item.id === inv.id ? { ...item, status: 'REVOKED', revokedAt: new Date().toISOString() } : item))
+      );
+    } catch (err) {
+      setActionFeedback(`Failed to revoke invitation: ${err.message}`);
+    } finally {
+      setRevokingId(null);
+    }
+  };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <ErrorAlert message={error} onDismiss={() => setError('')} />
-
-      <div>
-        <label className="block text-xs font-medium text-slate-700 mb-1.5">Invitee Email Address</label>
-        <input
-          type="email"
-          required
-          autoFocus
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="colleague@company.com"
-          className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition"
-        />
-        <p className="text-[11px] text-slate-500 mt-1">
-          The invitation token will be cryptographically bound to this email.
-        </p>
-      </div>
-
-      <div>
-        <label className="block text-xs font-medium text-slate-700 mb-1.5">Link Expiration</label>
-        <select
-          value={expiresInHours}
-          onChange={(e) => setExpiresInHours(e.target.value)}
-          className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition bg-white"
-        >
-          <option value="24">24 hours (1 day)</option>
-          <option value="48">48 hours (2 days)</option>
-          <option value="72">72 hours (3 days)</option>
-          <option value="168">168 hours (7 days)</option>
-        </select>
-      </div>
-
-      <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+    <div className="space-y-4">
+      {/* Tabs */}
+      <div className="flex border-b border-slate-200 -mx-5 px-5">
         <button
           type="button"
-          onClick={onCancel}
-          className="py-2 px-3 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded transition cursor-pointer"
+          onClick={() => setActiveTab('generate')}
+          className={`pb-2.5 px-3 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 cursor-pointer ${
+            activeTab === 'generate'
+              ? 'border-slate-900 text-slate-900'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
         >
-          Cancel
+          <Mail size={13} />
+          Generate Invite Link
         </button>
         <button
-          type="submit"
-          disabled={loading || !email.trim()}
-          className="py-2 px-4 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white text-xs font-medium rounded transition cursor-pointer disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+          type="button"
+          onClick={() => setActiveTab('manage')}
+          className={`pb-2.5 px-3 text-xs font-semibold border-b-2 transition flex items-center gap-1.5 cursor-pointer ${
+            activeTab === 'manage'
+              ? 'border-slate-900 text-slate-900'
+              : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
         >
-          {loading && <Loader2 className="animate-spin" size={13} />}
-          <span>{loading ? 'Generating...' : 'Generate Invite Link'}</span>
+          <Key size={13} />
+          Active & Revoked Invites
+          {invitations.length > 0 && (
+            <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-slate-100 text-slate-600 font-mono">
+              {invitations.length}
+            </span>
+          )}
         </button>
       </div>
-    </form>
+
+      {activeTab === 'generate' && (
+        <div>
+          {inviteResult ? (
+            <div className="space-y-4">
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-xs">
+                <div className="font-semibold flex items-center gap-1.5 mb-1">
+                  <Check className="w-4 h-4 text-emerald-600" />
+                  Invitation Generated Successfully
+                </div>
+                <p>
+                  An invitation link has been created for <strong>{inviteResult.email}</strong>. It will expire in {inviteResult.expiresInHours} hours.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Registration Invitation Link
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={inviteResult.inviteUrl}
+                    className="flex-1 px-3 py-2 text-xs font-mono bg-slate-50 border border-slate-300 rounded focus:outline-none select-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(inviteResult.inviteUrl)}
+                    className="px-3 py-2 text-xs font-medium bg-slate-900 hover:bg-slate-800 text-white rounded transition cursor-pointer shrink-0 inline-flex items-center gap-1.5"
+                  >
+                    {copied ? <Check size={13} /> : <Copy size={13} />}
+                    <span>{copied ? 'Copied!' : 'Copy Link'}</span>
+                  </button>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-1.5">
+                  Share this link with the employee. When they open it, their email is pre-verified, OTP is waived, and the token expires immediately once used or if revoked by an admin.
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInviteResult(null);
+                    setEmail('');
+                    setError('');
+                  }}
+                  className="text-xs text-slate-600 hover:text-slate-900 font-medium underline cursor-pointer"
+                >
+                  + Generate another invite
+                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('manage')}
+                    className="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded transition cursor-pointer"
+                  >
+                    View All Invites
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onCancel}
+                    className="py-2 px-4 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded transition cursor-pointer"
+                  >
+                    Done
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <ErrorAlert message={error} onDismiss={() => setError('')} />
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">Invitee Email Address</label>
+                <input
+                  type="email"
+                  required
+                  autoFocus
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (error) setError('');
+                  }}
+                  placeholder="colleague@company.com"
+                  className={`w-full px-3 py-2 text-sm border rounded focus:outline-none transition ${
+                    isAlreadyRegistered
+                      ? 'border-amber-400 bg-amber-50/30 focus:border-amber-500 focus:ring-1 focus:ring-amber-500'
+                      : 'border-slate-300 focus:border-slate-900 focus:ring-1 focus:ring-slate-900'
+                  }`}
+                />
+                {isAlreadyRegistered ? (
+                  <p className="text-xs text-amber-700 mt-1.5 flex items-center gap-1 font-medium bg-amber-50 border border-amber-200 p-2 rounded">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0 text-amber-600" />
+                    This email is already registered to an existing team member. Invitations can only be generated for new members.
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    The invitation token will be cryptographically bound to this email.
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">Link Expiration</label>
+                <select
+                  value={expiresInHours}
+                  onChange={(e) => setExpiresInHours(e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition bg-white"
+                >
+                  <option value="24">24 hours (1 day)</option>
+                  <option value="48">48 hours (2 days)</option>
+                  <option value="72">72 hours (3 days)</option>
+                  <option value="168">168 hours (7 days)</option>
+                </select>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={onCancel}
+                  className="py-2 px-3 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading || !email.trim() || isAlreadyRegistered}
+                  className="py-2 px-4 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white text-xs font-medium rounded transition cursor-pointer disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+                >
+                  {loading && <Loader2 className="animate-spin" size={13} />}
+                  <span>{loading ? 'Generating...' : 'Generate Invite Link'}</span>
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'manage' && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-slate-500">
+              Manage existing invitation links. Revoking an invite immediately renders the link invalid.
+            </p>
+            <button
+              type="button"
+              onClick={fetchInvitations}
+              disabled={loadingList}
+              className="text-xs text-slate-600 hover:text-slate-900 font-medium inline-flex items-center gap-1 cursor-pointer"
+            >
+              <RefreshCw size={12} className={loadingList ? 'animate-spin' : ''} />
+              <span>Refresh</span>
+            </button>
+          </div>
+
+          <ErrorAlert message={listError} onDismiss={() => setListError('')} />
+
+          {actionFeedback && (
+            <div className="p-2.5 rounded bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-center justify-between">
+              <span>{actionFeedback}</span>
+              <button onClick={() => setActionFeedback('')} className="text-emerald-600 hover:text-emerald-800">✕</button>
+            </div>
+          )}
+
+          {loadingList && invitations.length === 0 ? (
+            <div className="py-8 flex flex-col items-center justify-center text-slate-400 gap-2">
+              <Loader2 className="animate-spin" size={20} />
+              <span className="text-xs">Loading invitation links...</span>
+            </div>
+          ) : invitations.length === 0 ? (
+            <div className="py-8 text-center text-slate-500 text-xs bg-slate-50 rounded border border-slate-200">
+              No invitations have been generated yet.
+            </div>
+          ) : (
+            <div className="border border-slate-200 rounded overflow-hidden max-h-[50vh] overflow-y-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200 sticky top-0">
+                  <tr>
+                    <th className="py-2 px-3">Invitee Email</th>
+                    <th className="py-2 px-3">Status</th>
+                    <th className="py-2 px-3">Expires / Created</th>
+                    <th className="py-2 px-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                  {invitations.map((inv) => {
+                    const isPending = inv.status === 'PENDING';
+                    const isAccepted = inv.status === 'ACCEPTED';
+                    const isRevoked = inv.status === 'REVOKED';
+
+                    return (
+                      <tr key={inv.id} className="hover:bg-slate-50/50">
+                        <td className="py-2.5 px-3 font-mono font-medium text-slate-800">
+                          {inv.email}
+                        </td>
+                        <td className="py-2.5 px-3">
+                          {isPending && <Badge variant="active" label="Active" dot />}
+                          {isAccepted && <Badge variant="pending" label="Registered" dot />}
+                          {isRevoked && <Badge variant="revoked" label="Revoked" dot />}
+                          {inv.status === 'EXPIRED' && <Badge variant="expired" label="Expired" dot />}
+                        </td>
+                        <td className="py-2.5 px-3 text-[11px] text-slate-500">
+                          <div className="flex items-center gap-1">
+                            <Clock size={11} className="text-slate-400" />
+                            <span>
+                              {new Date(inv.expiresAt).toLocaleDateString([], {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-3 text-right">
+                          {isPending ? (
+                            <div className="inline-flex items-center gap-1.5 justify-end">
+                              <button
+                                type="button"
+                                onClick={() => handleCopyExistingLink(inv.token, inv.id)}
+                                className="px-2 py-1 text-[11px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded transition inline-flex items-center gap-1 cursor-pointer"
+                                title="Copy invitation link"
+                              >
+                                {copiedTokenId === inv.id ? <Check size={11} className="text-emerald-600" /> : <Copy size={11} />}
+                                <span>{copiedTokenId === inv.id ? 'Copied' : 'Copy'}</span>
+                              </button>
+                              <button
+                                type="button"
+                                disabled={revokingId === inv.id}
+                                onClick={() => handleRevoke(inv)}
+                                className="px-2 py-1 text-[11px] bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 font-medium rounded transition inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                                title="Revoke and expire invitation link"
+                              >
+                                {revokingId === inv.id ? (
+                                  <Loader2 size={11} className="animate-spin" />
+                                ) : (
+                                  <Ban size={11} />
+                                )}
+                                <span>Revoke</span>
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="text-[11px] text-slate-400 italic">
+                              {isAccepted ? 'Registered' : isRevoked ? 'Revoked' : 'Expired'}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <p className="text-[11px] text-slate-500 pt-1">
+            Note: Revoked and expired links are immediately blocked. Once an employee finishes registration, their invite is automatically consumed and cannot be reused.
+          </p>
+
+          <div className="flex justify-end pt-2 border-t border-slate-100">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="py-1.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded transition cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1494,8 +1763,16 @@ export default function UsersPage() {
       </Modal>
 
       {/* Invite user modal */}
-      <Modal isOpen={modal === 'inviteUser'} onClose={() => setModal(null)} title="Invite Team Member">
-        <InviteUserForm onCancel={() => setModal(null)} />
+      <Modal
+        isOpen={modal === 'inviteUser'}
+        onClose={() => setModal(null)}
+        title="Team Member Invitations"
+        size="lg"
+      >
+        <InviteUserForm
+          onCancel={() => setModal(null)}
+          existingEmails={users.map((u) => (u.email || '').toLowerCase().trim())}
+        />
       </Modal>
 
       {/* Create user modal */}
