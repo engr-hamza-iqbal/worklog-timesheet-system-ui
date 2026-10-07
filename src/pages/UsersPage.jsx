@@ -99,7 +99,7 @@ function InviteUserForm({ onCancel }) {
             </button>
           </div>
           <p className="text-[11px] text-slate-500 mt-1.5">
-            Share this link with the employee. When they open it, their email and invitation token will be auto-filled on the registration screen.
+            Share this link with the employee. When they open it, their email is pre-verified, email verification code is waived, and they can immediately set their password.
           </p>
         </div>
 

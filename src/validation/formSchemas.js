@@ -14,16 +14,35 @@ export const passwordStrengthSchema = z
   .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character (!@#$%^&* etc.).');
 
 export const loginSchema = z.object({ email, password: z.string().min(1, 'Password is required.') });
-export const registerSchema = z.object({
-  name: z.string().trim().min(2, 'Name must be at least 2 characters.'),
-  email,
-  password: passwordStrengthSchema,
-  confirmPassword: z.string().min(1, 'Confirm your password.'),
-  otp: z.string().trim().length(6, 'Verification code must be exactly 6 digits.').regex(/^\d{6}$/, 'Verification code must be 6 digits.'),
-}).refine((data) => data.password === data.confirmPassword, {
-  path: ['confirmPassword'],
-  message: 'Passwords do not match.',
-});
+export const registerSchema = z
+  .object({
+    name: z.string().trim().min(2, 'Name must be at least 2 characters.'),
+    email,
+    password: passwordStrengthSchema,
+    confirmPassword: z.string().min(1, 'Confirm your password.'),
+    invitationToken: z.string().optional(),
+    otp: z.string().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.password !== data.confirmPassword) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['confirmPassword'],
+        message: 'Passwords do not match.',
+      });
+    }
+
+    const hasInvite = Boolean(data.invitationToken && data.invitationToken.trim());
+    if (!hasInvite) {
+      if (!data.otp || !/^\d{6}$/.test(data.otp.trim())) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['otp'],
+          message: 'Verification code must be exactly 6 digits.',
+        });
+      }
+    }
+  });
 
 export const clientSchema = z.object({ name: nonEmpty('Client name') });
 export const projectSchema = z.object({

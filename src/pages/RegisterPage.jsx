@@ -1,28 +1,90 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Loader2, Eye, EyeOff, Check, Key, ShieldCheck, Mail, Clock, RefreshCw, AlertCircle, Sparkles } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Check, Key, ShieldCheck, Mail, Clock, AlertCircle, Sparkles, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import AppLogo from '../components/AppLogo.jsx';
 import api from '../api/client.js';
 import { registerSchema } from '../validation/formSchemas.js';
+
+/**
+ * Extracts and sanitizes an invitation token from either:
+ * - A full URL: http://localhost:5173/register?invite=eyJhbGciOi...
+ * - A query string: ?invite=eyJ... or ?token=eyJ...
+ * - A raw JWT token: eyJhbGciOi...
+ */
+export function extractInvitationToken(raw) {
+  if (!raw || typeof raw !== 'string') return '';
+  const trimmed = raw.trim();
+  if (
+    trimmed.includes('invite=') ||
+    trimmed.includes('token=') ||
+    trimmed.startsWith('http://') ||
+    trimmed.startsWith('https://') ||
+    trimmed.startsWith('/') ||
+    trimmed.startsWith('?')
+  ) {
+    try {
+      const parsedUrl = new URL(trimmed, 'http://localhost');
+      const param = parsedUrl.searchParams.get('invite') || parsedUrl.searchParams.get('token');
+      if (param) return param.trim();
+      if (parsedUrl.hash) {
+        const hashMatch = parsedUrl.hash.match(/[#?&](?:invite|token)=([^&#\s]+)/);
+        if (hashMatch) return decodeURIComponent(hashMatch[1]).trim();
+      }
+    } catch {
+      // fallback regex
+    }
+    const match = trimmed.match(/[?&#](?:invite|token)=([^&#\s]+)/);
+    if (match) return decodeURIComponent(match[1]).trim();
+  }
+  return trimmed;
+}
+
+/**
+ * Safely decodes a JWT payload in the browser without verifying secret
+ */
+export function parseJwtPayload(token) {
+  if (!token || typeof token !== 'string') return null;
+  const parts = token.trim().split('.');
+  if (parts.length !== 3) return null;
+  try {
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+}
 
 export default function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
+  // Initial invitation detection
+  const initialRaw = searchParams.get('token') || searchParams.get('invite') || '';
+  const initialToken = extractInvitationToken(initialRaw);
+  const initialPayload = parseJwtPayload(initialToken);
+
+  const [invitationToken, setInvitationToken] = useState(initialToken);
+  const [invitationPayload, setInvitationPayload] = useState(initialPayload);
+  const [showInvitationField, setShowInvitationField] = useState(Boolean(initialToken));
+
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => (initialPayload?.email ? initialPayload.email : ''));
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [invitationToken, setInvitationToken] = useState(() => searchParams.get('token') || searchParams.get('invite') || '');
-  const [showInvitationField, setShowInvitationField] = useState(() => Boolean(searchParams.get('token') || searchParams.get('invite')));
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // ── OTP State ─────────────────────────────────────────────────────────────
+  // ── OTP State (Only for non-invited public registrations) ─────────────────
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [otpSending, setOtpSending] = useState(false);
@@ -30,6 +92,49 @@ export default function RegisterPage() {
   const [resendCooldown, setResendCooldown] = useState(0); // Cooldown between sends
   const [otpSuccessMessage, setOtpSuccessMessage] = useState('');
   const [devOtp, setDevOtp] = useState('');
+
+  // Synchronize when URL search parameters change
+  useEffect(() => {
+    const raw = searchParams.get('token') || searchParams.get('invite');
+    if (raw) {
+      const clean = extractInvitationToken(raw);
+      setInvitationToken(clean);
+      const payload = parseJwtPayload(clean);
+      if (payload && payload.email) {
+        setInvitationPayload(payload);
+        setEmail(payload.email);
+        setShowInvitationField(true);
+      }
+    }
+  }, [searchParams]);
+
+  // Handle user typing or pasting full URL or token into input field
+  const handleInvitationChange = (inputVal) => {
+    const cleaned = extractInvitationToken(inputVal);
+    setInvitationToken(cleaned);
+    const payload = parseJwtPayload(cleaned);
+    if (payload && payload.email) {
+      setInvitationPayload(payload);
+      setEmail(payload.email);
+      setErrorMessage('');
+      setOtpSent(false);
+      setOtp('');
+    } else {
+      setInvitationPayload(null);
+    }
+  };
+
+  const handleClearInvitation = () => {
+    setInvitationToken('');
+    setInvitationPayload(null);
+    setShowInvitationField(false);
+    setEmail('');
+    setOtpSent(false);
+    setOtp('');
+    setDevOtp('');
+  };
+
+  const isInvited = Boolean(invitationPayload && invitationPayload.email);
 
   // 10-Minute Expiration Countdown Timer
   useEffect(() => {
@@ -88,7 +193,7 @@ export default function RegisterPage() {
     return { checks, passedCount, strength };
   }, [password]);
 
-  // ── Send Verification OTP ────────────────────────────────────────────────
+  // ── Send Verification OTP (Public Registration Only) ──────────────────────
   const handleSendOtp = async () => {
     setErrorMessage('');
     setOtpSuccessMessage('');
@@ -121,19 +226,22 @@ export default function RegisterPage() {
     e.preventDefault();
     setErrorMessage('');
 
-    if (!otpSent) {
-      setErrorMessage('Please verify your email address by requesting an OTP code.');
-      return;
-    }
+    // If registering publicly without an invitation, email OTP is strictly required
+    if (!isInvited) {
+      if (!otpSent) {
+        setErrorMessage('Please verify your email address by requesting an OTP code.');
+        return;
+      }
 
-    if (otpTimer === 0) {
-      setErrorMessage('Your verification code has expired. Please request a new code.');
-      return;
-    }
+      if (otpTimer === 0) {
+        setErrorMessage('Your verification code has expired. Please request a new code.');
+        return;
+      }
 
-    if (!otp || otp.trim().length !== 6) {
-      setErrorMessage('Please enter the complete 6-digit verification code.');
-      return;
+      if (!otp || otp.trim().length !== 6) {
+        setErrorMessage('Please enter the complete 6-digit verification code.');
+        return;
+      }
     }
 
     const parsed = registerSchema.safeParse({
@@ -141,7 +249,8 @@ export default function RegisterPage() {
       email,
       password,
       confirmPassword,
-      otp: otp.trim(),
+      invitationToken: invitationToken.trim() || undefined,
+      otp: !isInvited ? otp.trim() : undefined,
     });
 
     if (!parsed.success) {
@@ -157,7 +266,7 @@ export default function RegisterPage() {
         email: parsed.data.email,
         password: parsed.data.password,
         otp: parsed.data.otp,
-        invitationToken: invitationToken.trim() || undefined,
+        invitationToken: parsed.data.invitationToken,
       });
       navigate('/dashboard', { replace: true });
     } catch (err) {
@@ -174,7 +283,7 @@ export default function RegisterPage() {
       <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 bg-indigo-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
 
       <div className="max-w-5xl w-full mx-auto grid lg:grid-cols-12 gap-6 lg:gap-8 items-center">
-        {/* Left Column: General Employee & Team Welcome */}
+        {/* Left Column: Welcome Information */}
         <div className="lg:col-span-5 hidden md:block pr-0 lg:pr-4">
           <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
             Welcome to <span className="text-blue-600">WorkLog System</span>
@@ -191,7 +300,7 @@ export default function RegisterPage() {
               <div>
                 <h2 className="text-sm font-semibold text-slate-900">Verified &amp; Secure Access</h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  10-minute OTP verification ensures only authenticated and valid emails register.
+                  Direct admin invitation links or 10-minute email OTP verification ensure only valid users register.
                 </p>
               </div>
             </div>
@@ -229,12 +338,47 @@ export default function RegisterPage() {
             <div className="text-center mb-5">
               <AppLogo className="w-13 h-13 mx-auto mb-2 shadow-sm rounded-2xl" />
               <h2 className="text-2xl font-bold tracking-tight text-slate-900">
-                Create an <span className="text-blue-600">account</span>
+                {isInvited ? 'Accept Team Invitation' : 'Create an account'}
               </h2>
               <p className="text-slate-500 text-xs sm:text-sm mt-0.5">
-                Verify your email and set up a secure password to register
+                {isInvited
+                  ? 'Complete your profile and set up a secure password to join'
+                  : 'Verify your email and set up a secure password to register'}
               </p>
             </div>
+
+            {/* Invitation Recognition Banner */}
+            {isInvited && (
+              <div className="mb-4 p-3.5 rounded-xl bg-gradient-to-r from-blue-50/90 via-indigo-50/80 to-blue-50/90 border border-blue-200 text-slate-800 shadow-2xs">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                    <Sparkles size={16} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <h3 className="text-xs font-bold text-blue-900 uppercase tracking-wide">
+                        Team Invitation Accepted
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={handleClearInvitation}
+                        className="text-[11px] font-medium text-slate-500 hover:text-rose-600 inline-flex items-center gap-0.5 cursor-pointer transition"
+                      >
+                        <X size={12} />
+                        <span>Clear invite</span>
+                      </button>
+                    </div>
+                    <p className="text-xs text-slate-700 mt-1">
+                      Welcome! You were invited to register with <strong className="text-slate-950 font-semibold">{invitationPayload.email}</strong>.
+                    </p>
+                    <p className="text-[11px] text-emerald-700 font-medium mt-1 flex items-center gap-1.5">
+                      <ShieldCheck size={14} className="text-emerald-600 shrink-0" />
+                      <span>Pre-verified by administrator &bull; Email verification code waived</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Error message */}
             {errorMessage && (
@@ -245,7 +389,7 @@ export default function RegisterPage() {
             )}
 
             {/* Success message */}
-            {otpSuccessMessage && (
+            {otpSuccessMessage && !isInvited && (
               <div className="mb-4 p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-start gap-2">
                 <Check className="w-4 h-4 shrink-0 text-emerald-600 mt-0.5" />
                 <span className="flex-1">{otpSuccessMessage}</span>
@@ -269,67 +413,92 @@ export default function RegisterPage() {
                 />
               </div>
 
-              {/* Email with Send OTP Button */}
+              {/* Email Address */}
               <div>
                 <label className="block text-xs font-medium text-slate-700 mb-1">
                   Email Address
                 </label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <input
-                      type="email"
-                      required
-                      value={email}
-                      disabled={otpSent && otpTimer > 0}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="name@example.com"
-                      className="w-full h-9 px-3 py-1.5 text-sm rounded-md border border-slate-200 bg-slate-50/60 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition disabled:bg-slate-100 disabled:text-slate-500"
-                    />
+                {isInvited ? (
+                  <div>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <input
+                          type="email"
+                          required
+                          value={email}
+                          disabled
+                          className="w-full h-9 px-3 py-1.5 text-sm rounded-md border border-emerald-300 bg-emerald-50/50 text-slate-900 font-medium cursor-not-allowed"
+                        />
+                      </div>
+                      <div className="h-9 px-3 text-xs font-semibold rounded-md border border-emerald-300 bg-emerald-100 text-emerald-800 shrink-0 inline-flex items-center gap-1.5 shadow-2xs">
+                        <ShieldCheck size={14} className="text-emerald-700" />
+                        <span>Pre-verified</span>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-emerald-700 mt-1 flex items-center gap-1 font-medium">
+                      <span>Email locked to invitation recipient. Verification code is waived.</span>
+                    </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleSendOtp}
-                    disabled={otpSending || (otpSent && resendCooldown > 0)}
-                    className="h-9 px-3.5 text-xs font-medium rounded-md border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition shrink-0 inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                  >
-                    {otpSending ? (
-                      <Loader2 className="animate-spin" size={13} />
-                    ) : (
-                      <Mail size={13} />
+                ) : (
+                  <div>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <input
+                          type="email"
+                          required
+                          value={email}
+                          disabled={otpSent && otpTimer > 0}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="name@example.com"
+                          className="w-full h-9 px-3 py-1.5 text-sm rounded-md border border-slate-200 bg-slate-50/60 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition disabled:bg-slate-100 disabled:text-slate-500"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleSendOtp}
+                        disabled={otpSending || (otpSent && resendCooldown > 0)}
+                        className="h-9 px-3.5 text-xs font-medium rounded-md border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition shrink-0 inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                      >
+                        {otpSending ? (
+                          <Loader2 className="animate-spin" size={13} />
+                        ) : (
+                          <Mail size={13} />
+                        )}
+                        <span>
+                          {otpSending
+                            ? 'Sending...'
+                            : !otpSent
+                            ? 'Send Code'
+                            : resendCooldown > 0
+                            ? `Resend in ${resendCooldown}s`
+                            : 'Resend Code'}
+                        </span>
+                      </button>
+                    </div>
+                    {otpSent && (
+                      <p className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
+                        <span>
+                          Code sent to <strong className="text-slate-700">{email}</strong>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOtpSent(false);
+                            setOtpTimer(0);
+                            setOtp('');
+                          }}
+                          className="text-blue-600 hover:underline cursor-pointer"
+                        >
+                          Change email
+                        </button>
+                      </p>
                     )}
-                    <span>
-                      {otpSending
-                        ? 'Sending...'
-                        : !otpSent
-                        ? 'Send Code'
-                        : resendCooldown > 0
-                        ? `Resend in ${resendCooldown}s`
-                        : 'Resend Code'}
-                    </span>
-                  </button>
-                </div>
-                {otpSent && (
-                  <p className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
-                    <span>
-                      Code sent to <strong className="text-slate-700">{email}</strong>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setOtpSent(false);
-                        setOtpTimer(0);
-                        setOtp('');
-                      }}
-                      className="text-blue-600 hover:underline cursor-pointer"
-                    >
-                      Change email
-                    </button>
-                  </p>
+                  </div>
                 )}
               </div>
 
-              {/* OTP Input & Live 10-Minute Expiration Countdown */}
-              {otpSent && (
+              {/* OTP Input & Live 10-Minute Expiration Countdown (Only when NOT invited) */}
+              {!isInvited && otpSent && (
                 <div className="p-3 rounded-lg border border-blue-100 bg-blue-50/40 space-y-2">
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-semibold text-slate-800 flex items-center gap-1.5">
@@ -483,7 +652,7 @@ export default function RegisterPage() {
                 )}
               </div>
 
-              {/* Invitation Token Section */}
+              {/* Invitation Token or Link Section */}
               <div>
                 {!showInvitationField ? (
                   <button
@@ -492,22 +661,22 @@ export default function RegisterPage() {
                     className="text-xs text-blue-600 hover:text-blue-700 font-medium inline-flex items-center gap-1 cursor-pointer transition"
                   >
                     <Key size={12} />
-                    <span>Have an invitation code?</span>
+                    <span>Have an invitation link or code?</span>
                   </button>
                 ) : (
                   <div>
                     <label className="block text-xs font-medium text-slate-700 mb-1">
-                      Invitation Token (Optional)
+                      Invitation Token or Link {isInvited ? '(Active & Verified)' : '(Optional)'}
                     </label>
                     <input
                       type="text"
                       value={invitationToken}
-                      onChange={(e) => setInvitationToken(e.target.value)}
-                      placeholder="Paste invitation token if required"
+                      onChange={(e) => handleInvitationChange(e.target.value)}
+                      placeholder="Paste invite URL (http://localhost:5173/register?invite=...) or token"
                       className="w-full h-9 px-3 py-1.5 text-xs font-mono rounded-md border border-slate-200 bg-slate-50/60 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition"
                     />
                     <p className="text-[10px] text-slate-400 mt-1">
-                      If provided by an administrator, this links and authorizes your registration.
+                      You can paste the entire invitation link or the raw token. It automatically waives email OTP.
                     </p>
                   </div>
                 )}
@@ -519,7 +688,13 @@ export default function RegisterPage() {
                 className="w-full mt-2 h-10 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-400 text-white text-sm font-medium rounded-md transition-colors cursor-pointer shadow-xs inline-flex items-center justify-center gap-2 disabled:cursor-not-allowed"
               >
                 {loading && <Loader2 className="animate-spin" size={15} />}
-                <span>{loading ? 'Creating account...' : 'Create Account'}</span>
+                <span>
+                  {loading
+                    ? 'Creating account...'
+                    : isInvited
+                    ? 'Accept Invitation & Complete Registration'
+                    : 'Create Account'}
+                </span>
               </button>
             </form>
 
