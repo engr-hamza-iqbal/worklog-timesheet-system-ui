@@ -11,8 +11,7 @@ import {
   ArrowRight,
   CheckCircle2,
   Lock,
-  Sparkles,
-  Zap,
+  Briefcase,
   TrendingUp,
   FileCheck,
   Users,
@@ -33,7 +32,7 @@ export default function LandingPage() {
           <div className="text-center max-w-3xl mx-auto">
             {/* Status Chip */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white text-slate-700 border border-slate-200/90 mb-6 shadow-xs hover:border-slate-300 transition">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+              <Briefcase className="w-3.5 h-3.5 text-indigo-600" />
               <span className="text-slate-800">Time Tracking &amp; Timesheets Built for Modern Teams</span>
             </div>
 
@@ -140,7 +139,7 @@ export default function LandingPage() {
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
-                  Team Summary
+                  Team Activity
                 </button>
               </div>
             </div>
@@ -246,6 +245,7 @@ export default function LandingPage() {
 
               {activePreviewTab === 'analytics' && (
                 <div className="space-y-4 animate-in fade-in duration-200">
+                  {/* Top Stats Strip */}
                   <div className="grid grid-cols-3 gap-3">
                     <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
                       <div className="text-[11px] font-semibold text-slate-500">Approved This Month</div>
@@ -261,20 +261,84 @@ export default function LandingPage() {
                     </div>
                   </div>
 
+                  {/* 2nd Card: Weekly Team Hours Live Activity with complete placeholders, axes, and legend */}
                   <div className="bg-white p-4 rounded-xl border border-slate-200">
-                    <div className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-3">
-                      <span>Weekly Team Hours</span>
-                      <span className="text-indigo-600 font-medium">Live Activity</span>
+                    <div className="flex items-center justify-between text-xs font-semibold text-slate-800 mb-3">
+                      <div className="flex items-center gap-2">
+                        <span>Weekly Team Hours</span>
+                        <span className="text-[11px] font-normal text-slate-400">· Aug 24 – Aug 28</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          184.5h Logged
+                        </span>
+                        <span className="text-[11px] text-slate-400 font-medium hidden sm:inline">36.9h/day avg</span>
+                      </div>
                     </div>
-                    <div className="h-24 flex items-end gap-2 pt-2 border-b border-slate-100">
-                      {[40, 65, 80, 55, 90, 85, 95, 75, 88, 100].map((h, i) => (
-                        <div key={i} className="flex-1 flex flex-col items-center gap-1 group">
-                          <div
-                            className="w-full bg-gradient-to-t from-indigo-600 to-sky-500 rounded-t transition-all group-hover:brightness-110"
-                            style={{ height: `${h}%` }}
-                          />
-                        </div>
-                      ))}
+
+                    {/* Chart Container with Target Line & Axis */}
+                    <div className="relative pt-4 pb-1">
+                      {/* 40h Target Reference Line */}
+                      <div className="absolute top-7 left-0 right-0 border-b border-dashed border-slate-200 flex items-center justify-end z-0">
+                        <span className="text-[10px] font-semibold text-slate-400 bg-white px-1 -translate-y-1/2">
+                          40h Target
+                        </span>
+                      </div>
+
+                      {/* 5 Workday Bars */}
+                      <div className="h-28 flex items-end gap-3 sm:gap-6 relative z-10">
+                        {[
+                          { day: 'Mon', date: 'Aug 24', clientHours: 30.0, internalHours: 6.5, total: 36.5, heightPct: 75 },
+                          { day: 'Tue', date: 'Aug 25', clientHours: 32.0, internalHours: 6.0, total: 38.0, heightPct: 80 },
+                          { day: 'Wed', date: 'Aug 26', clientHours: 35.5, internalHours: 7.0, total: 42.5, heightPct: 92 },
+                          { day: 'Thu', date: 'Aug 27', clientHours: 31.0, internalHours: 8.0, total: 39.0, heightPct: 82 },
+                          { day: 'Fri', date: 'Aug 28', clientHours: 22.5, internalHours: 6.0, total: 28.5, heightPct: 58 },
+                        ].map((col) => (
+                          <div key={col.day} className="flex-1 flex flex-col items-center h-full justify-end group cursor-default">
+                            {/* Value label above bar */}
+                            <span className="text-[11px] font-bold text-slate-700 mb-1.5 group-hover:text-indigo-600 transition">
+                              {col.total}h
+                            </span>
+                            {/* Stacked Bar with Project Breakdown */}
+                            <div
+                              className="w-full max-w-[42px] bg-slate-100 rounded-t-lg overflow-hidden flex flex-col justify-end transition-all group-hover:brightness-105"
+                              style={{ height: `${col.heightPct}%` }}
+                            >
+                              <div
+                                className="w-full bg-sky-400"
+                                style={{ height: `${(col.internalHours / col.total) * 100}%` }}
+                                title={`Internal & Approvals: ${col.internalHours}h`}
+                              />
+                              <div
+                                className="w-full bg-indigo-600"
+                                style={{ height: `${(col.clientHours / col.total) * 100}%` }}
+                                title={`Client Billable: ${col.clientHours}h`}
+                              />
+                            </div>
+                            {/* X-axis Day & Date Labels */}
+                            <div className="mt-2 text-center select-none">
+                              <div className="text-[11px] font-bold text-slate-800">{col.day}</div>
+                              <div className="text-[10px] text-slate-400 font-medium">{col.date.split(' ')[1]}</div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Chart Legend / Metadata Footer */}
+                    <div className="mt-3 pt-2.5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
+                      <div className="flex items-center gap-3">
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-sm bg-indigo-600 inline-block" />
+                          <span>Client Billable (151.0h)</span>
+                        </span>
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-2.5 h-2.5 rounded-sm bg-sky-400 inline-block" />
+                          <span>Internal Review (33.5h)</span>
+                        </span>
+                      </div>
+                      <span className="text-slate-400">100% Timesheets Submitted</span>
                     </div>
                   </div>
                 </div>
@@ -312,7 +376,7 @@ export default function LandingPage() {
       <section className="py-16 sm:py-24 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="text-center max-w-2xl mx-auto mb-14">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/60 mb-3">
-            <Zap size={13} />
+            <BarChart3 size={13} className="text-indigo-600" />
             <span>Built for Productive Teams</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">

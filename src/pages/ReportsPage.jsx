@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import {
   BarChart3,
   RefreshCw,
@@ -17,6 +17,8 @@ import {
   ChevronDown,
   ChevronUp,
   FileSpreadsheet,
+  Search,
+  Check,
 } from 'lucide-react';
 import api from '../api/client.js';
 import { chaseSchema } from '../validation/formSchemas.js';
@@ -111,8 +113,8 @@ function MetricTable({ title, rows = [], columns = [], filename, onExport, defau
   };
 
   return (
-    <section className="overflow-x-auto rounded-xl border border-slate-200/90 bg-white shadow-xs">
-      <div className="border-b border-slate-200 bg-slate-50/70 px-5 py-3.5 flex items-center justify-between">
+    <section className="flex flex-col rounded-xl border border-slate-200/90 bg-white shadow-xs overflow-hidden">
+      <div className="border-b border-slate-200 bg-slate-50/70 px-5 py-3.5 flex items-center justify-between shrink-0">
         <h2 className="text-sm font-bold text-slate-900">{title}</h2>
         <div className="flex items-center gap-2">
           <span className="text-xs text-slate-400 font-medium">{rows.length} rows</span>
@@ -131,58 +133,63 @@ function MetricTable({ title, rows = [], columns = [], filename, onExport, defau
       </div>
       {sortedRows && sortedRows.length ? (
         <>
-          <Table>
-            <TableHead className="bg-slate-50/40">
-              <tr>
-                {columns.map((column) => (
-                  <ResizableTh
-                    key={column.key}
-                    onClick={() => handleSort(column.key)}
-                    className="px-5 py-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span>{column.label}</span>
-                      {sortKey === column.key ? (
-                        sortOrder === 'asc' ? (
-                          <ArrowUp size={12} className="text-indigo-600 shrink-0" />
-                        ) : (
-                          <ArrowDown size={12} className="text-indigo-600 shrink-0" />
-                        )
-                      ) : (
-                        <ArrowUpDown size={12} className="text-slate-400 opacity-50 shrink-0" />
-                      )}
-                    </div>
-                  </ResizableTh>
-                ))}
-              </tr>
-            </TableHead>
-            <TableBody>
-              {paginatedRows.map((row, index) => (
-                <TableRow
-                  key={row.projectId || row.clientId || row.userId || row.periodDate || row.status || index}
-                >
-                  {columns.map((column, idx) => (
-                    <td
+          <div className="overflow-x-auto flex-1 min-w-0">
+            <Table>
+              <TableHead className="bg-slate-50/40">
+                <tr>
+                  {columns.map((column) => (
+                    <ResizableTh
                       key={column.key}
-                      className={`px-5 py-3 whitespace-nowrap ${
-                        idx === 0 ? 'font-medium text-slate-800' : 'text-slate-600'
-                      }`}
+                      onClick={() => handleSort(column.key)}
+                      className="px-5 py-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                     >
-                      <div title={String(typeof column.value === 'function' ? column.value(row) : (row[column.key] ?? ''))}>
-                        {typeof column.value === 'function' ? column.value(row) : row[column.key]}
+                      <div className="flex items-center gap-1.5">
+                        <span>{column.label}</span>
+                        {sortKey === column.key ? (
+                          sortOrder === 'asc' ? (
+                            <ArrowUp size={12} className="text-indigo-600 shrink-0" />
+                          ) : (
+                            <ArrowDown size={12} className="text-indigo-600 shrink-0" />
+                          )
+                        ) : (
+                          <ArrowUpDown size={12} className="text-slate-400 opacity-50 shrink-0" />
+                        )}
                       </div>
-                    </td>
+                    </ResizableTh>
                   ))}
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          <Pagination
-            currentPage={safePage}
-            totalItems={sortedRows.length}
-            itemsPerPage={pageSize}
-            onPageChange={setCurrentPage}
-          />
+                </tr>
+              </TableHead>
+              <TableBody>
+                {paginatedRows.map((row, index) => (
+                  <TableRow
+                    key={row.projectId || row.clientId || row.userId || row.periodDate || row.status || index}
+                  >
+                    {columns.map((column, idx) => (
+                      <td
+                        key={column.key}
+                        className={`px-5 py-3 whitespace-nowrap ${
+                          idx === 0 ? 'font-medium text-slate-800' : 'text-slate-600'
+                        }`}
+                      >
+                        <div title={String(typeof column.value === 'function' ? column.value(row) : (row[column.key] ?? ''))}>
+                          {typeof column.value === 'function' ? column.value(row) : row[column.key]}
+                        </div>
+                      </td>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+          <div className="shrink-0 border-t border-slate-200/90">
+            <Pagination
+              currentPage={safePage}
+              totalItems={sortedRows.length}
+              itemsPerPage={pageSize}
+              onPageChange={setCurrentPage}
+              className="border-t-0"
+            />
+          </div>
         </>
       ) : (
         <p className="px-5 py-10 text-center text-sm text-slate-500">No data found for this selection.</p>
@@ -212,40 +219,207 @@ function ReviewerEntriesTable({ entries = [] }) {
   }
 
   return (
-    <div className="rounded-lg border border-slate-200 overflow-hidden bg-white shadow-2xs">
-      <Table>
-        <TableHead>
-          <tr>
-            <ResizableTh className="px-4 py-2 text-xs"><span>Employee</span></ResizableTh>
-            <ResizableTh className="px-4 py-2 text-xs"><span>Project</span></ResizableTh>
-            <ResizableTh className="px-4 py-2 text-xs"><span>Work Date</span></ResizableTh>
-            <ResizableTh className="px-4 py-2 text-xs"><span>Hours</span></ResizableTh>
-            <ResizableTh className="px-4 py-2 text-xs"><span>Description</span></ResizableTh>
-          </tr>
-        </TableHead>
-        <TableBody>
-          {paginated.map((entry) => (
-            <TableRow key={entry.id}>
-              <TableTd className="text-xs font-medium text-slate-800">{entry.userName}</TableTd>
-              <TableTd className="text-xs text-slate-600">
-                {entry.projectName} <span className="text-slate-400">· {entry.clientName}</span>
-              </TableTd>
-              <TableTd className="text-xs text-slate-600">{entry.workDate}</TableTd>
-              <TableTd className="text-xs font-bold text-slate-900">{entry.hours} h</TableTd>
-              <TableTd className="text-xs text-slate-500 max-w-sm truncate" title={entry.description}>
-                {entry.description}
-              </TableTd>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+    <div className="rounded-lg border border-slate-200 overflow-hidden bg-white shadow-2xs flex flex-col">
+      <div className="overflow-x-auto flex-1 min-w-0">
+        <Table>
+          <TableHead>
+            <tr>
+              <ResizableTh className="px-4 py-2 text-xs"><span>Employee</span></ResizableTh>
+              <ResizableTh className="px-4 py-2 text-xs"><span>Project</span></ResizableTh>
+              <ResizableTh className="px-4 py-2 text-xs"><span>Work Date</span></ResizableTh>
+              <ResizableTh className="px-4 py-2 text-xs"><span>Hours</span></ResizableTh>
+              <ResizableTh className="px-4 py-2 text-xs"><span>Description</span></ResizableTh>
+            </tr>
+          </TableHead>
+          <TableBody>
+            {paginated.map((entry) => (
+              <TableRow key={entry.id}>
+                <TableTd className="text-xs font-medium text-slate-800">{entry.userName}</TableTd>
+                <TableTd className="text-xs text-slate-600">
+                  {entry.projectName} <span className="text-slate-400">· {entry.clientName}</span>
+                </TableTd>
+                <TableTd className="text-xs text-slate-600">{entry.workDate}</TableTd>
+                <TableTd className="text-xs font-bold text-slate-900">{entry.hours} h</TableTd>
+                <TableTd className="text-xs text-slate-500 max-w-sm truncate" title={entry.description}>
+                  {entry.description}
+                </TableTd>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
       {entries.length > pageSize && (
-        <Pagination
-          currentPage={safePage}
-          totalItems={entries.length}
-          itemsPerPage={pageSize}
-          onPageChange={setCurrentPage}
-        />
+        <div className="shrink-0 border-t border-slate-200/90">
+          <Pagination
+            currentPage={safePage}
+            totalItems={entries.length}
+            itemsPerPage={pageSize}
+            onPageChange={setCurrentPage}
+            className="border-t-0"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SearchableEmployeeSelect({
+  users = [],
+  selectedId = '',
+  onSelect,
+  disabled = false,
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const dropdownRef = useRef(null);
+  const searchInputRef = useRef(null);
+
+  const selectedUser = useMemo(() => {
+    return users.find((u) => u.id === selectedId) || null;
+  }, [users, selectedId]);
+
+  const filteredUsers = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return users;
+    return users.filter(
+      (u) =>
+        (u.name && u.name.toLowerCase().includes(term)) ||
+        (u.email && u.email.toLowerCase().includes(term))
+    );
+  }, [users, searchTerm]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    }
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 50);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (e.key === 'Escape' && isOpen) {
+        setIsOpen(false);
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen]);
+
+  const handleSelect = (user) => {
+    onSelect(user.id);
+    setIsOpen(false);
+    setSearchTerm('');
+  };
+
+  return (
+    <div className="relative w-full sm:w-80" ref={dropdownRef}>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => setIsOpen((prev) => !prev)}
+        className="w-full flex items-center justify-between gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-left text-sm text-slate-800 shadow-2xs hover:bg-slate-50 focus:border-slate-900 focus:outline-none transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold text-[11px] flex items-center justify-center shrink-0">
+            {selectedUser?.name ? selectedUser.name.charAt(0).toUpperCase() : 'U'}
+          </div>
+          <div className="truncate">
+            {selectedUser ? (
+              <span className="font-medium text-slate-900">
+                {selectedUser.name}{' '}
+                <span className="text-slate-400 font-normal text-xs">({selectedUser.email})</span>
+              </span>
+            ) : (
+              <span className="text-slate-400">Select employee...</span>
+            )}
+          </div>
+        </div>
+        <ChevronDown size={16} className={`text-slate-400 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <div className="absolute left-0 top-full mt-1.5 w-full sm:w-96 rounded-xl border border-slate-200 bg-white shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+          <div className="p-2 border-b border-slate-100 bg-slate-50/80">
+            <div className="relative">
+              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by name or email..."
+                className="w-full rounded-lg border border-slate-200 bg-white py-1.5 pl-8 pr-7 text-xs text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:outline-none"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                  title="Clear search"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+            <div className="flex items-center justify-between px-1 pt-1.5 text-[11px] text-slate-400">
+              <span>{filteredUsers.length} employee{filteredUsers.length === 1 ? '' : 's'} found</span>
+              {searchTerm && <span>Filtering by &ldquo;{searchTerm}&rdquo;</span>}
+            </div>
+          </div>
+
+          <div className="max-h-60 overflow-y-auto p-1 divide-y divide-slate-50 [scrollbar-width:thin]">
+            {filteredUsers.length > 0 ? (
+              filteredUsers.map((u) => {
+                const isSelected = u.id === selectedId;
+                return (
+                  <button
+                    key={u.id}
+                    type="button"
+                    onClick={() => handleSelect(u)}
+                    className={`w-full flex items-center justify-between gap-3 px-3 py-2 text-left rounded-lg text-xs transition cursor-pointer ${
+                      isSelected
+                        ? 'bg-indigo-50 text-indigo-950 font-semibold'
+                        : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div
+                        className={`w-6 h-6 rounded-full font-bold text-[11px] flex items-center justify-center shrink-0 ${
+                          isSelected
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-slate-100 text-slate-600 border border-slate-200'
+                        }`}
+                      >
+                        {u.name ? u.name.charAt(0).toUpperCase() : 'U'}
+                      </div>
+                      <div className="min-w-0 truncate">
+                        <div className="truncate font-medium text-slate-900">{u.name}</div>
+                        <div className="truncate text-[11px] text-slate-500">{u.email}</div>
+                      </div>
+                    </div>
+                    {isSelected && <Check size={14} className="text-indigo-600 shrink-0" />}
+                  </button>
+                );
+              })
+            ) : (
+              <div className="py-6 text-center text-xs text-slate-400">
+                No employees matching &ldquo;{searchTerm}&rdquo;
+              </div>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
@@ -641,7 +815,7 @@ export default function ReportsPage() {
             </div>
           ) : report ? (
             <div className="relative">
-              <div className="grid gap-5 lg:grid-cols-2">
+              <div className="grid gap-5 lg:grid-cols-2 items-start">
                 <MetricTable
                   title="Total approved hours per project"
                   filename="report_approved_hours_by_project"
@@ -783,8 +957,8 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
-            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-4">
+          <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-4 shrink-0">
               <div>
                 <h2 className="text-base font-semibold text-slate-900">
                   Employees with Missing Timesheets
@@ -811,68 +985,73 @@ export default function ReportsPage() {
               </div>
             ) : missingData?.employees?.length ? (
               <>
-                <Table>
-                  <TableHead>
-                    <tr>
-                      {isAdmin && (
-                        <ResizableTh className="px-5 py-3 w-12">
-                          <span>Select</span>
+                <div className="overflow-x-auto flex-1 min-w-0">
+                  <Table>
+                    <TableHead>
+                      <tr>
+                        {isAdmin && (
+                          <ResizableTh className="px-5 py-3 w-12">
+                            <span>Select</span>
+                          </ResizableTh>
+                        )}
+                        <ResizableTh className="px-5 py-3">
+                          <span>Employee</span>
                         </ResizableTh>
-                      )}
-                      <ResizableTh className="px-5 py-3">
-                        <span>Employee</span>
-                      </ResizableTh>
-                      <ResizableTh className="px-5 py-3">
-                        <span>Email</span>
-                      </ResizableTh>
-                      <ResizableTh className="px-5 py-3">
-                        <span>Chase Status</span>
-                      </ResizableTh>
-                    </tr>
-                  </TableHead>
-                  <TableBody>
-                    {missingData.employees
-                      .slice((missingPage - 1) * missingPageSize, missingPage * missingPageSize)
-                      .map((emp) => (
-                        <TableRow key={emp.userId}>
-                          {isAdmin && (
-                            <TableTd className="w-12">
-                              <input
-                                type="checkbox"
-                                disabled={emp.chasedToday}
-                                checked={selectedUsers.includes(emp.userId)}
-                                onChange={() => toggleSelectUser(emp.userId)}
-                                className="rounded border-slate-300 text-slate-900 focus:ring-slate-900 disabled:opacity-40"
-                              />
-                            </TableTd>
-                          )}
-                          <TableTd className="font-medium text-slate-800">
-                            <span title={emp.userName}>{emp.userName}</span>
-                          </TableTd>
-                          <TableTd className="text-slate-600">
-                            <span title={emp.email}>{emp.email}</span>
-                          </TableTd>
-                          <TableTd>
-                            {emp.chasedToday ? (
-                              <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
-                                Reminded today
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-amber-200">
-                                Unsent
-                              </span>
+                        <ResizableTh className="px-5 py-3">
+                          <span>Email</span>
+                        </ResizableTh>
+                        <ResizableTh className="px-5 py-3">
+                          <span>Chase Status</span>
+                        </ResizableTh>
+                      </tr>
+                    </TableHead>
+                    <TableBody>
+                      {missingData.employees
+                        .slice((missingPage - 1) * missingPageSize, missingPage * missingPageSize)
+                        .map((emp) => (
+                          <TableRow key={emp.userId}>
+                            {isAdmin && (
+                              <TableTd className="w-12">
+                                <input
+                                  type="checkbox"
+                                  disabled={emp.chasedToday}
+                                  checked={selectedUsers.includes(emp.userId)}
+                                  onChange={() => toggleSelectUser(emp.userId)}
+                                  className="rounded border-slate-300 text-slate-900 focus:ring-slate-900 disabled:opacity-40"
+                                />
+                              </TableTd>
                             )}
-                          </TableTd>
-                        </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
-                <Pagination
-                  currentPage={missingPage}
-                  totalItems={missingData.employees.length}
-                  itemsPerPage={missingPageSize}
-                  onPageChange={setMissingPage}
-                />
+                            <TableTd className="font-medium text-slate-800">
+                              <span title={emp.userName}>{emp.userName}</span>
+                            </TableTd>
+                            <TableTd className="text-slate-600">
+                              <span title={emp.email}>{emp.email}</span>
+                            </TableTd>
+                            <TableTd>
+                              {emp.chasedToday ? (
+                                <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
+                                  Reminded today
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-amber-200">
+                                  Unsent
+                                </span>
+                              )}
+                            </TableTd>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                <div className="shrink-0 border-t border-slate-200/90">
+                  <Pagination
+                    currentPage={missingPage}
+                    totalItems={missingData.employees.length}
+                    itemsPerPage={missingPageSize}
+                    onPageChange={setMissingPage}
+                    className="border-t-0"
+                  />
+                </div>
               </>
             ) : (
               <div className="py-12 text-center text-sm text-slate-500">
@@ -948,8 +1127,8 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-200 bg-slate-50 px-5 py-4">
+          <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
+            <div className="border-b border-slate-200 bg-slate-50 px-5 py-4 shrink-0">
               <h2 className="text-base font-semibold text-slate-900">
                 Employees Away on {awayDate}
               </h2>
@@ -965,52 +1144,57 @@ export default function ReportsPage() {
               </div>
             ) : awayData?.awayUsers?.length ? (
               <>
-                <Table>
-                  <TableHead>
-                    <tr>
-                      <ResizableTh className="px-5 py-3"><span>Employee</span></ResizableTh>
-                      <ResizableTh className="px-5 py-3"><span>Email</span></ResizableTh>
-                      <ResizableTh className="px-5 py-3"><span>Leave Type</span></ResizableTh>
-                      <ResizableTh className="px-5 py-3"><span>Period</span></ResizableTh>
-                      <ResizableTh className="px-5 py-3"><span>Status</span></ResizableTh>
-                      <ResizableTh className="px-5 py-3"><span>Reason</span></ResizableTh>
-                    </tr>
-                  </TableHead>
-                  <TableBody>
-                    {awayData.awayUsers
-                      .slice((awayPage - 1) * awayPageSize, awayPage * awayPageSize)
-                      .map((item) => (
-                        <TableRow key={item.requestId + item.userId}>
-                          <TableTd className="font-medium text-slate-800">{item.userName}</TableTd>
-                          <TableTd className="text-slate-600">{item.userEmail}</TableTd>
-                          <TableTd className="font-semibold text-slate-700">{item.timeOffType}</TableTd>
-                          <TableTd className="text-slate-600 text-xs">
-                            {item.startDate} &rarr; {item.endDate}
-                          </TableTd>
-                          <TableTd>
-                            <span
-                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                                item.status === 'APPROVED'
-                                  ? 'bg-sky-50 text-sky-800 border border-sky-200'
-                                  : 'bg-amber-50 text-amber-800 border border-amber-200'
-                              }`}
-                            >
-                              {item.status}
-                            </span>
-                          </TableTd>
-                          <TableTd className="text-slate-500 text-xs max-w-xs truncate" title={item.reason}>
-                            {item.reason}
-                          </TableTd>
-                        </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
-                <Pagination
-                  currentPage={awayPage}
-                  totalItems={awayData.awayUsers.length}
-                  itemsPerPage={awayPageSize}
-                  onPageChange={setAwayPage}
-                />
+                <div className="overflow-x-auto flex-1 min-w-0">
+                  <Table>
+                    <TableHead>
+                      <tr>
+                        <ResizableTh className="px-5 py-3"><span>Employee</span></ResizableTh>
+                        <ResizableTh className="px-5 py-3"><span>Email</span></ResizableTh>
+                        <ResizableTh className="px-5 py-3"><span>Leave Type</span></ResizableTh>
+                        <ResizableTh className="px-5 py-3"><span>Period</span></ResizableTh>
+                        <ResizableTh className="px-5 py-3"><span>Status</span></ResizableTh>
+                        <ResizableTh className="px-5 py-3"><span>Reason</span></ResizableTh>
+                      </tr>
+                    </TableHead>
+                    <TableBody>
+                      {awayData.awayUsers
+                        .slice((awayPage - 1) * awayPageSize, awayPage * awayPageSize)
+                        .map((item) => (
+                          <TableRow key={item.requestId + item.userId}>
+                            <TableTd className="font-medium text-slate-800">{item.userName}</TableTd>
+                            <TableTd className="text-slate-600">{item.userEmail}</TableTd>
+                            <TableTd className="font-semibold text-slate-700">{item.timeOffType}</TableTd>
+                            <TableTd className="text-slate-600 text-xs">
+                              {item.startDate} &rarr; {item.endDate}
+                            </TableTd>
+                            <TableTd>
+                              <span
+                                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                                  item.status === 'APPROVED'
+                                    ? 'bg-sky-50 text-sky-800 border border-sky-200'
+                                    : 'bg-amber-50 text-amber-800 border border-amber-200'
+                                }`}
+                              >
+                                {item.status}
+                              </span>
+                            </TableTd>
+                            <TableTd className="text-slate-500 text-xs max-w-xs truncate" title={item.reason}>
+                              {item.reason}
+                            </TableTd>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                <div className="shrink-0 border-t border-slate-200/90">
+                  <Pagination
+                    currentPage={awayPage}
+                    totalItems={awayData.awayUsers.length}
+                    itemsPerPage={awayPageSize}
+                    onPageChange={setAwayPage}
+                    className="border-t-0"
+                  />
+                </div>
               </>
             ) : (
               <div className="py-12 text-center text-sm text-slate-500">
@@ -1160,24 +1344,23 @@ export default function ReportsPage() {
       {activeTab === 'employee' && (
         <section className="space-y-6">
           <div className="flex flex-col sm:flex-row flex-wrap sm:items-end justify-between gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-end gap-3 w-full sm:w-auto">
-              <label className="text-xs font-medium text-slate-600 w-full sm:w-auto">
-                Select Employee
-                <select
-                  value={selectedEmployeeId}
-                  onChange={(e) => setSelectedEmployeeId(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
-                >
-                  {employeeUsers.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name} ({u.email})
-                    </option>
-                  ))}
-                </select>
-              </label>
+            <div className="flex flex-col sm:flex-row sm:items-end gap-4 w-full sm:w-auto">
+              <div>
+                <label className="text-xs font-medium text-slate-600 mb-1 block">
+                  Select Employee
+                </label>
+                <SearchableEmployeeSelect
+                  users={employeeUsers}
+                  selectedId={selectedEmployeeId}
+                  onSelect={(newId) => setSelectedEmployeeId(newId)}
+                  disabled={loadingEmp || employeeUsers.length === 0}
+                />
+              </div>
 
-              <label className="text-xs font-medium text-slate-600 w-full sm:w-auto">
-                Trend Period
+              <div>
+                <label className="text-xs font-medium text-slate-600 mb-1 block">
+                  Trend Period
+                </label>
                 <select
                   value={empFilters.period}
                   onChange={(e) => {
@@ -1185,12 +1368,12 @@ export default function ReportsPage() {
                     setEmpFilters(next);
                     loadEmployeeDetails(selectedEmployeeId, next);
                   }}
-                  className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
+                  className="block w-full sm:w-36 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-2xs hover:bg-slate-50 focus:border-slate-900 focus:outline-none cursor-pointer"
                 >
                   <option value="week">Weekly</option>
                   <option value="month">Monthly</option>
                 </select>
-              </label>
+              </div>
             </div>
 
             <div className="flex items-center gap-2">
@@ -1206,7 +1389,7 @@ export default function ReportsPage() {
               Aggregating employee projects and trends in database...
             </div>
           ) : (
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid gap-6 lg:grid-cols-2 items-start">
               {/* Project Split Table */}
               <MetricTable
                 title={`Project Split: ${empBreakdown?.user?.name || 'Employee'}`}
