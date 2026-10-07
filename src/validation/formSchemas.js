@@ -5,12 +5,21 @@ const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must use YYYY-MM-D
 const email = z.string().trim().email('Enter a valid email address.');
 const nonEmpty = (label) => z.string().trim().min(1, `${label} is required.`);
 
+export const passwordStrengthSchema = z
+  .string()
+  .min(8, 'Password must be at least 8 characters long.')
+  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter (A-Z).')
+  .regex(/[a-z]/, 'Password must contain at least one lowercase letter (a-z).')
+  .regex(/[0-9]/, 'Password must contain at least one number (0-9).')
+  .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character (!@#$%^&* etc.).');
+
 export const loginSchema = z.object({ email, password: z.string().min(1, 'Password is required.') });
 export const registerSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters.'),
   email,
-  password: z.string().min(8, 'Password must be at least 8 characters.'),
+  password: passwordStrengthSchema,
   confirmPassword: z.string().min(1, 'Confirm your password.'),
+  otp: z.string().trim().length(6, 'Verification code must be exactly 6 digits.').regex(/^\d{6}$/, 'Verification code must be 6 digits.'),
 }).refine((data) => data.password === data.confirmPassword, {
   path: ['confirmPassword'],
   message: 'Passwords do not match.',
@@ -32,7 +41,7 @@ export const clientStatusSchema = z.object({ isActive: z.boolean() });
 export const userSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters.'),
   email,
-  password: z.string().min(8, 'Password must be at least 8 characters.'),
+  password: passwordStrengthSchema,
 });
 export const assignmentSchema = z.object({
   projectIds: z.array(id).min(1, 'Select at least one project.'),

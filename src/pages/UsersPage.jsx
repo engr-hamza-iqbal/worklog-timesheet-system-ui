@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Users, Plus, UserCheck, UserX, AlertCircle, RefreshCw,
   Search, FolderOpen, ChevronDown, ChevronUp, Loader2,
-  ArrowUpDown, ArrowUp, ArrowDown, Briefcase, Check,
+  ArrowUpDown, ArrowUp, ArrowDown, Briefcase, Check, Mail, Copy,
 } from 'lucide-react';
 import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -26,6 +26,148 @@ function ErrorAlert({ message, onDismiss }) {
       <span className="flex-1">{message}</span>
       {onDismiss && <button onClick={onDismiss} className="text-red-400 hover:text-red-600 ml-auto">✕</button>}
     </div>
+  );
+}
+
+// ─── Invite User Form ─────────────────────────────────────────────────────────
+
+function InviteUserForm({ onCancel }) {
+  const [email, setEmail] = useState('');
+  const [expiresInHours, setExpiresInHours] = useState('72');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [inviteResult, setInviteResult] = useState(null);
+  const [copied, setCopied] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!email.trim()) { setError('Email is required.'); return; }
+    setLoading(true);
+    setError('');
+    try {
+      const res = await api.post('/api/auth/invite', {
+        email: email.trim(),
+        expiresInHours: Number(expiresInHours),
+      });
+      const inviteUrl = `${window.location.origin}/register?invite=${res.data.invitationToken}`;
+      setInviteResult({ ...res.data, inviteUrl });
+    } catch (err) {
+      setError(err.message || 'Failed to generate invitation.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copyToClipboard = () => {
+    if (!inviteResult?.inviteUrl) return;
+    navigator.clipboard.writeText(inviteResult.inviteUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 3000);
+  };
+
+  if (inviteResult) {
+    return (
+      <div className="space-y-4">
+        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-800 text-xs">
+          <div className="font-semibold flex items-center gap-1.5 mb-1">
+            <Check className="w-4 h-4 text-emerald-600" />
+            Invitation Generated Successfully
+          </div>
+          <p>
+            An invitation link has been created for <strong>{inviteResult.email}</strong>. It will expire in {inviteResult.expiresInHours} hours.
+          </p>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-slate-700 mb-1">
+            Registration Invitation Link
+          </label>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              readOnly
+              value={inviteResult.inviteUrl}
+              className="flex-1 px-3 py-2 text-xs font-mono bg-slate-50 border border-slate-300 rounded focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={copyToClipboard}
+              className="px-3 py-2 text-xs font-medium bg-slate-900 hover:bg-slate-800 text-white rounded transition cursor-pointer shrink-0 inline-flex items-center gap-1.5"
+            >
+              {copied ? <Check size={13} /> : <Copy size={13} />}
+              <span>{copied ? 'Copied!' : 'Copy Link'}</span>
+            </button>
+          </div>
+          <p className="text-[11px] text-slate-500 mt-1.5">
+            Share this link with the employee. When they open it, their email and invitation token will be auto-filled on the registration screen.
+          </p>
+        </div>
+
+        <div className="flex justify-end pt-2 border-t border-slate-100">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="py-2 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded transition cursor-pointer"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <ErrorAlert message={error} onDismiss={() => setError('')} />
+
+      <div>
+        <label className="block text-xs font-medium text-slate-700 mb-1.5">Invitee Email Address</label>
+        <input
+          type="email"
+          required
+          autoFocus
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="colleague@company.com"
+          className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition"
+        />
+        <p className="text-[11px] text-slate-500 mt-1">
+          The invitation token will be cryptographically bound to this email.
+        </p>
+      </div>
+
+      <div>
+        <label className="block text-xs font-medium text-slate-700 mb-1.5">Link Expiration</label>
+        <select
+          value={expiresInHours}
+          onChange={(e) => setExpiresInHours(e.target.value)}
+          className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition bg-white"
+        >
+          <option value="24">24 hours (1 day)</option>
+          <option value="48">48 hours (2 days)</option>
+          <option value="72">72 hours (3 days)</option>
+          <option value="168">168 hours (7 days)</option>
+        </select>
+      </div>
+
+      <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="py-2 px-3 text-xs font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded transition cursor-pointer"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={loading || !email.trim()}
+          className="py-2 px-4 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white text-xs font-medium rounded transition cursor-pointer disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+        >
+          {loading && <Loader2 className="animate-spin" size={13} />}
+          <span>{loading ? 'Generating...' : 'Generate Invite Link'}</span>
+        </button>
+      </div>
+    </form>
   );
 }
 
@@ -989,12 +1131,21 @@ export default function UsersPage() {
               </button>
             )}
             {canCreateUser && (
-              <button
-                onClick={() => setModal('createUser')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 rounded transition cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />New User
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => setModal('inviteUser')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer"
+                >
+                  <Mail className="w-3.5 h-3.5 text-slate-500" />Invite User
+                </button>
+                <button
+                  onClick={() => setModal('createUser')}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 rounded transition cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />New User
+                </button>
+              </>
             )}
           </div>
         )}
@@ -1340,6 +1491,11 @@ export default function UsersPage() {
             onCancel={() => setAssigningUser(null)}
           />
         )}
+      </Modal>
+
+      {/* Invite user modal */}
+      <Modal isOpen={modal === 'inviteUser'} onClose={() => setModal(null)} title="Invite Team Member">
+        <InviteUserForm onCancel={() => setModal(null)} />
       </Modal>
 
       {/* Create user modal */}
