@@ -11,11 +11,7 @@ import {
   ArrowRight,
   CheckCircle2,
   Lock,
-  Layers,
   Sparkles,
-  ChevronRight,
-  Building2,
-  Check,
   Zap,
   TrendingUp,
   FileCheck,
@@ -37,23 +33,21 @@ export default function LandingPage() {
           <div className="text-center max-w-3xl mx-auto">
             {/* Status Chip */}
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white text-slate-700 border border-slate-200/90 mb-6 shadow-xs hover:border-slate-300 transition">
-              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-slate-800">Enterprise Time Tracking &amp; Governance</span>
-              <span className="text-slate-300">|</span>
-              <span className="text-indigo-600 font-medium">v2.0 Active</span>
+              <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+              <span className="text-slate-800">Time Tracking &amp; Timesheets Built for Modern Teams</span>
             </div>
 
             {/* Main Headline */}
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.12]">
-              Precision work logging,{' '}
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.14]">
+              Track project hours.{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-sky-600 to-indigo-800">
-                zero spreadsheet drift.
+                Simplify team timesheets.
               </span>
             </h1>
 
             {/* Subheading */}
             <p className="mt-5 text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto font-normal">
-              Capture daily billable hours in 15-minute increments against assigned client projects. Route submissions through scoped review queues and unlock aggregated SQL analytics in real time.
+              Log daily work in intuitive 15-minute steps, submit weekly timesheets for manager approval, coordinate team time off, and get clean project reports without spreadsheet clutter.
             </p>
 
             {/* Call To Action Buttons */}
@@ -64,7 +58,7 @@ export default function LandingPage() {
                     to="/dashboard"
                     className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-slate-900 text-white hover:bg-slate-800 transition shadow-sm hover:shadow-md cursor-pointer group"
                   >
-                    <span>Launch Workspace</span>
+                    <span>Go to Dashboard</span>
                     <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
                   </Link>
                   <Link
@@ -81,14 +75,14 @@ export default function LandingPage() {
                     to="/login"
                     className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-slate-900 text-white hover:bg-slate-800 transition shadow-sm hover:shadow-md cursor-pointer group"
                   >
-                    <span>Sign in to Workspace</span>
+                    <span>Sign In to Workspace</span>
                     <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
                   </Link>
                   <Link
                     to="/register"
                     className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 transition shadow-2xs cursor-pointer"
                   >
-                    <span>Register New Account</span>
+                    <span>Create an Account</span>
                   </Link>
                 </>
               )}
@@ -111,39 +105,42 @@ export default function LandingPage() {
                 <div className="w-3 h-3 rounded-full bg-rose-500/80" />
                 <div className="w-3 h-3 rounded-full bg-amber-500/80" />
                 <div className="w-3 h-3 rounded-full bg-emerald-500/80" />
-                <span className="ml-2 text-xs font-mono text-slate-400">worklog.internal.portal</span>
+                <span className="ml-2 text-xs font-mono text-slate-400">app.worklog.io</span>
               </div>
               {/* Preview Tabs */}
               <div className="flex items-center gap-1 bg-slate-800/80 p-0.5 rounded-lg border border-slate-700/60 text-xs">
                 <button
                   type="button"
                   onClick={() => setActivePreviewTab('timesheet')}
-                  className={`px-3 py-1 rounded-md transition cursor-pointer font-medium ${activePreviewTab === 'timesheet'
+                  className={`px-3 py-1 rounded-md transition cursor-pointer font-medium ${
+                    activePreviewTab === 'timesheet'
                       ? 'bg-indigo-600 text-white shadow-xs'
                       : 'text-slate-400 hover:text-slate-200'
-                    }`}
+                  }`}
                 >
                   Timesheet Grid
                 </button>
                 <button
                   type="button"
                   onClick={() => setActivePreviewTab('review')}
-                  className={`px-3 py-1 rounded-md transition cursor-pointer font-medium ${activePreviewTab === 'review'
+                  className={`px-3 py-1 rounded-md transition cursor-pointer font-medium ${
+                    activePreviewTab === 'review'
                       ? 'bg-indigo-600 text-white shadow-xs'
                       : 'text-slate-400 hover:text-slate-200'
-                    }`}
+                  }`}
                 >
                   Review Queue
                 </button>
                 <button
                   type="button"
                   onClick={() => setActivePreviewTab('analytics')}
-                  className={`px-3 py-1 rounded-md transition cursor-pointer font-medium ${activePreviewTab === 'analytics'
+                  className={`px-3 py-1 rounded-md transition cursor-pointer font-medium ${
+                    activePreviewTab === 'analytics'
                       ? 'bg-indigo-600 text-white shadow-xs'
                       : 'text-slate-400 hover:text-slate-200'
-                    }`}
+                  }`}
                 >
-                  Analytics &amp; KPI
+                  Team Summary
                 </button>
               </div>
             </div>
@@ -154,23 +151,26 @@ export default function LandingPage() {
                 <div className="space-y-4 animate-in fade-in duration-200">
                   <div className="flex items-center justify-between pb-3 border-b border-slate-200">
                     <div>
-                      <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Current Period</div>
-                      <div className="text-sm font-bold text-slate-900">Mon, Aug 24 - Sun, Aug 30 (38.5 hrs logged)</div>
+                      <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Weekly Overview</div>
+                      <div className="text-sm font-bold text-slate-900">Monday – Friday · 38.5 hours logged</div>
                     </div>
                     <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      3 Days Submitted · 2 Approved
+                      4 Days Approved · 1 Day Draft
                     </span>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                    {['Mon Aug 24', 'Tue Aug 25', 'Wed Aug 26', 'Thu Aug 27', 'Fri Aug 28'].map((day, i) => (
+                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((day, i) => (
                       <div key={day} className="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs">
                         <div className="text-[11px] font-semibold text-slate-500">{day}</div>
                         <div className="mt-1 text-base font-bold text-slate-900">{i === 4 ? '6.5 h' : '8.0 h'}</div>
                         <div className="mt-2 flex items-center justify-between">
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${i < 2 ? 'bg-emerald-100 text-emerald-800' : i < 4 ? 'bg-sky-100 text-sky-800' : 'bg-slate-100 text-slate-700'
-                            }`}>
-                            {i < 2 ? 'APPROVED' : i < 4 ? 'SUBMITTED' : 'DRAFT'}
+                          <span
+                            className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${
+                              i < 4 ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'
+                            }`}
+                          >
+                            {i < 4 ? 'APPROVED' : 'DRAFT'}
                           </span>
                         </div>
                       </div>
@@ -183,14 +183,14 @@ export default function LandingPage() {
                         15m
                       </div>
                       <div>
-                        <div className="text-xs font-semibold text-slate-900">Precision Increments Enforced</div>
-                        <div className="text-[11px] text-slate-500">Quick-pick durations: 0.25h, 0.5h, 0.75h, 1.0h, 2.0h, 4.0h, 8.0h</div>
+                        <div className="text-xs font-semibold text-slate-900">Fast 15-Minute Increments</div>
+                        <div className="text-[11px] text-slate-500">Quick-picks: 15m, 30m, 45m, 1h, 2h, 4h, 8h or custom</div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-semibold text-slate-700">Project:</span>
                       <span className="text-xs bg-slate-100 px-2.5 py-1 rounded-md text-slate-800 border border-slate-200">
-                        Acme SaaS - Migration
+                        Acme Client · Web Platform
                       </span>
                     </div>
                   </div>
@@ -201,21 +201,21 @@ export default function LandingPage() {
                 <div className="space-y-4 animate-in fade-in duration-200">
                   <div className="flex items-center justify-between pb-3 border-b border-slate-200">
                     <div>
-                      <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Scoped Approval Queue</div>
-                      <div className="text-sm font-bold text-slate-900">4 Submissions awaiting decision</div>
+                      <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Manager Approvals</div>
+                      <div className="text-sm font-bold text-slate-900">3 Submissions waiting for review</div>
                     </div>
                     <div className="flex gap-2">
                       <span className="px-3 py-1 bg-slate-900 text-white text-xs font-semibold rounded-lg shadow-2xs">
-                        Bulk Approve All
+                        Approve All (110.5 hrs)
                       </span>
                     </div>
                   </div>
 
                   <div className="space-y-2.5">
                     {[
-                      { emp: 'Bob Martinez', proj: 'Cloud Infrastructure', hours: '40.0 h', period: 'Week of Aug 24' },
-                      { emp: 'Sarah Connor', proj: 'Mobile App Redesign', hours: '32.5 h', period: 'Week of Aug 24' },
-                      { emp: 'David Miller', proj: 'API Integration Hub', hours: '38.0 h', period: 'Week of Aug 24' },
+                      { emp: 'Bob Martinez', proj: 'Cloud Migration', hours: '40.0 h', period: 'Current Week' },
+                      { emp: 'Sarah Connor', proj: 'Mobile App Refresh', hours: '32.5 h', period: 'Current Week' },
+                      { emp: 'David Miller', proj: 'API Integration', hours: '38.0 h', period: 'Current Week' },
                     ].map((row, idx) => (
                       <div key={idx} className="bg-white p-3.5 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-3 shadow-2xs">
                         <div className="flex items-center gap-3">
@@ -235,7 +235,7 @@ export default function LandingPage() {
                             Approve
                           </span>
                           <span className="text-xs font-medium text-slate-600 bg-slate-100 px-2.5 py-1 rounded-md">
-                            Return...
+                            Return with note
                           </span>
                         </div>
                       </div>
@@ -248,23 +248,23 @@ export default function LandingPage() {
                 <div className="space-y-4 animate-in fade-in duration-200">
                   <div className="grid grid-cols-3 gap-3">
                     <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
-                      <div className="text-[11px] font-semibold text-slate-500">Total Approved</div>
+                      <div className="text-[11px] font-semibold text-slate-500">Approved This Month</div>
                       <div className="text-xl font-extrabold text-slate-900 mt-1">1,428.5 <span className="text-xs text-slate-400 font-normal">hrs</span></div>
                     </div>
                     <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
-                      <div className="text-[11px] font-semibold text-slate-500">Active Contributors</div>
-                      <div className="text-xl font-extrabold text-slate-900 mt-1">24 <span className="text-xs text-slate-400 font-normal">staff</span></div>
+                      <div className="text-[11px] font-semibold text-slate-500">Active Team</div>
+                      <div className="text-xl font-extrabold text-slate-900 mt-1">24 <span className="text-xs text-slate-400 font-normal">members</span></div>
                     </div>
                     <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
-                      <div className="text-[11px] font-semibold text-slate-500">Approval Rate</div>
+                      <div className="text-[11px] font-semibold text-slate-500">On-Time Submissions</div>
                       <div className="text-xl font-extrabold text-emerald-600 mt-1">98.2%</div>
                     </div>
                   </div>
 
                   <div className="bg-white p-4 rounded-xl border border-slate-200">
                     <div className="flex items-center justify-between text-xs font-semibold text-slate-700 mb-3">
-                      <span>Weekly Hours Momentum</span>
-                      <span className="text-indigo-600">SQL Database Aggregated</span>
+                      <span>Weekly Team Hours</span>
+                      <span className="text-indigo-600 font-medium">Live Activity</span>
                     </div>
                     <div className="h-24 flex items-end gap-2 pt-2 border-b border-slate-100">
                       {[40, 65, 80, 55, 90, 85, 95, 75, 88, 100].map((h, i) => (
@@ -284,128 +284,128 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Key Metrics Strip ── */}
+      {/* ── Key Highlights Strip ── */}
       <section className="border-b border-slate-200 bg-white py-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             <div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">0.25 h</div>
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-1">Precision Step</div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">15-Min</div>
+              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-1">Quick-Pick Increments</div>
             </div>
             <div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">100%</div>
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-1">Audit Trail Logging</div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">1-Click</div>
+              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-1">Manager Approvals</div>
             </div>
             <div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Dynamic</div>
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-1">Scoped Access Control</div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Synced</div>
+              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-1">Time Off &amp; Absences</div>
             </div>
             <div>
-              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Instant</div>
-              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-1">Automated Notifications</div>
+              <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Export</div>
+              <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mt-1">Ready CSV Reports</div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── Core Capabilities Grid ── */}
+      {/* ── Core Features Grid ── */}
       <section className="py-16 sm:py-24 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="text-center max-w-2xl mx-auto mb-14">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/60 mb-3">
             <Zap size={13} />
-            <span>Built For Production Scale</span>
+            <span>Built for Productive Teams</span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            Engineered for enterprise rigor
+            Everything your team needs to stay on schedule
           </h2>
           <p className="mt-3 text-sm sm:text-base text-slate-600">
-            From granular capability delegation to immutable financial reporting, every touchpoint is designed for reliability.
+            Clear time tracking that respects employees' time and gives managers complete clarity into project progress.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Card 1 */}
-          <div className="glow-card bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs hover:border-indigo-300">
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs hover:border-indigo-300 transition">
             <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 mb-5 shadow-2xs">
               <Clock className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-bold text-slate-900">15-Minute Precision Recording</h3>
+            <h3 className="text-base font-bold text-slate-900">Fast Daily Time Logging</h3>
             <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-              Enforce strict quarter-hour steps (0.25h, 0.5h, 0.75h) with project assignment verification, 24-hour daily limits, and draft/submitted status management.
+              Log work in seconds using convenient 15-minute quick-picks. Select from assigned projects, write clear descriptions, and edit draft entries anytime before submitting.
             </p>
           </div>
 
           {/* Card 2 */}
-          <div className="glow-card bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs hover:border-emerald-300">
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs hover:border-emerald-300 transition">
             <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mb-5 shadow-2xs">
-              <ShieldCheck className="w-6 h-6" />
+              <FileCheck className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-bold text-slate-900">Capability-Based Access Control</h3>
+            <h3 className="text-base font-bold text-slate-900">Weekly Timesheet Submissions</h3>
             <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-              Eliminate rigid roles. Administrators grant granular capabilities (review time, decide time off, view rates) with project scopes and auto-expiring dates.
+              View your whole week on a calendar grid. Check daily and weekly hour totals, verify every project entry, and submit your full timesheet for review in one click.
             </p>
           </div>
 
           {/* Card 3 */}
-          <div className="glow-card bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs hover:border-sky-300">
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs hover:border-sky-300 transition">
             <div className="w-12 h-12 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 mb-5 shadow-2xs">
               <ClipboardCheck className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-bold text-slate-900">Audited Review Queue</h3>
+            <h3 className="text-base font-bold text-slate-900">Straightforward Approvals</h3>
             <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-              Reviewers inspect time entries strictly within their scope. Approve days or entire weeks at once, or return entries with mandatory explanatory comments.
+              Managers easily review time logged on their assigned projects. Approve clean submissions with a single click, or return entries with clear feedback so employees can adjust.
             </p>
           </div>
 
           {/* Card 4 */}
-          <div className="glow-card bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs hover:border-amber-300">
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs hover:border-amber-300 transition">
             <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 mb-5 shadow-2xs">
               <CalendarDays className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-bold text-slate-900">Absence &amp; Leave Integration</h3>
+            <h3 className="text-base font-bold text-slate-900">Integrated Time Off &amp; Leave</h3>
             <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-              Differentiate genuine leave from forgotten timesheets. Approved absences display directly on weekly timesheet grids and are excluded from missing audits.
+              Request vacations, sick days, and personal leave within the app. Approved leave appears automatically on weekly timesheets so nobody is marked missing when on holiday.
             </p>
           </div>
 
           {/* Card 5 */}
-          <div className="glow-card bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs hover:border-violet-300">
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs hover:border-violet-300 transition">
             <div className="w-12 h-12 rounded-xl bg-violet-50 border border-violet-100 flex items-center justify-center text-violet-600 mb-5 shadow-2xs">
               <BarChart3 className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-bold text-slate-900">Interactive Analytics &amp; Charts</h3>
+            <h3 className="text-base font-bold text-slate-900">Project &amp; Client Reports</h3>
             <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-              Real-time Recharts visualizations: weekly hour momentum, client distribution donuts, and top project / contributor performance rankings.
+              Track hours by client, review employee workload splits, and check review queues. Export clean CSV reports anytime for client invoices, budgets, and payroll.
             </p>
           </div>
 
           {/* Card 6 */}
-          <div className="glow-card bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs hover:border-rose-300">
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs hover:border-rose-300 transition">
             <div className="w-12 h-12 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 mb-5 shadow-2xs">
               <Mail className="w-6 h-6" />
             </div>
-            <h3 className="text-base font-bold text-slate-900">Automated Audit &amp; Email Chases</h3>
+            <h3 className="text-base font-bold text-slate-900">Automated Reminders</h3>
             <p className="mt-2 text-xs text-slate-600 leading-relaxed">
-              Async email notifications for returned timesheets, time-off approvals, and administrative missing timesheet chases, logged in full in the email audit database.
+              Never chase unlogged hours manually. Check missing timesheets for any working day and dispatch friendly email reminders with a single button click.
             </p>
           </div>
         </div>
       </section>
 
-      {/* ── Workflow Lifecycle Stepper ── */}
+      {/* ── 3-Step Process ── */}
       <section className="bg-slate-900 text-white py-16 sm:py-20 relative overflow-hidden">
         <div className="absolute inset-0 bg-radial-[at_center_bottom] from-indigo-950/40 via-transparent to-transparent pointer-events-none" />
 
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center max-w-2xl mx-auto mb-12">
             <span className="text-xs font-bold uppercase tracking-widest text-indigo-400">
-              Lifecycle Architecture
+              Simple 3-Step Process
             </span>
             <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              From daily entry to locked financial record
+              From daily work log to accurate billing
             </h2>
             <p className="mt-2 text-xs sm:text-sm text-slate-400">
-              A disciplined, three-tier state machine guarantees data integrity.
+              A smooth workflow that keeps your whole team aligned and records audit-ready.
             </p>
           </div>
 
@@ -413,39 +413,39 @@ export default function LandingPage() {
             <div className="rounded-2xl bg-slate-800/80 border border-slate-700/80 p-6 backdrop-blur-md relative hover:border-slate-600 transition">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-mono font-bold text-indigo-400 bg-indigo-950/60 border border-indigo-800 px-2 py-0.5 rounded">
-                  STAGE 01
+                  STEP 01
                 </span>
                 <Clock className="w-5 h-5 text-slate-500" />
               </div>
-              <h3 className="text-base font-bold text-white">Record &amp; Edit</h3>
+              <h3 className="text-base font-bold text-white">Log Your Hours</h3>
               <p className="mt-2 text-xs text-slate-300 leading-relaxed">
-                Log daily hours in 15-minute increments against active assigned projects. Employees freely edit, adjust, and preview their week.
+                Staff record daily time against active projects with 15-minute quick-picks and concise task descriptions.
               </p>
             </div>
 
             <div className="rounded-2xl bg-slate-800/80 border border-slate-700/80 p-6 backdrop-blur-md relative hover:border-slate-600 transition">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-mono font-bold text-sky-400 bg-sky-950/60 border border-sky-800 px-2 py-0.5 rounded">
-                  STAGE 02
+                  STEP 02
                 </span>
                 <FileCheck className="w-5 h-5 text-slate-500" />
               </div>
-              <h3 className="text-base font-bold text-white">Submit for Review</h3>
+              <h3 className="text-base font-bold text-white">Submit the Week</h3>
               <p className="mt-2 text-xs text-slate-300 leading-relaxed">
-                Submit individual days or entire weeks. Entries immediately lock against employee modification and route to reviewers holding assigned project scopes.
+                Review weekly totals, verify completed days, and submit timesheets directly to project reviewers.
               </p>
             </div>
 
             <div className="rounded-2xl bg-slate-800/80 border border-slate-700/80 p-6 backdrop-blur-md relative hover:border-slate-600 transition">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800 px-2 py-0.5 rounded">
-                  STAGE 03
+                  STEP 03
                 </span>
-                <Lock className="w-5 h-5 text-slate-500" />
+                <CheckCircle2 className="w-5 h-5 text-slate-500" />
               </div>
-              <h3 className="text-base font-bold text-white">Approve &amp; Lock</h3>
+              <h3 className="text-base font-bold text-white">Review &amp; Approve</h3>
               <p className="mt-2 text-xs text-slate-300 leading-relaxed">
-                Approved entries become immutable billing data. Returned entries notify the employee immediately with reviewer comments to correct and resubmit.
+                Managers approve hours in seconds, locking entries for accurate payroll, client invoices, and financial reports.
               </p>
             </div>
           </div>
@@ -456,7 +456,7 @@ export default function LandingPage() {
               to={isAuthenticated ? "/dashboard" : "/login"}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold bg-white text-slate-900 hover:bg-slate-100 transition shadow-lg cursor-pointer"
             >
-              <span>{isAuthenticated ? 'Return to Dashboard' : 'Get Started with Work Log'}</span>
+              <span>{isAuthenticated ? 'Return to Workspace' : 'Sign in to Work Log'}</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -464,15 +464,18 @@ export default function LandingPage() {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="border-t border-slate-200 bg-white py-8 text-center text-xs text-slate-500">
+      <footer className="border-t border-slate-200 bg-white py-8 text-xs text-slate-500">
         <div className="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>&copy; {new Date().getFullYear()} Work Log &amp; Timesheet System. All rights reserved.</p>
-          <div className="flex items-center gap-4 text-slate-400 text-xs">
-            <span>Enterprise Edition</span>
+          <div className="flex items-center gap-2 text-slate-700 font-semibold">
+            <span>Work Log &amp; Timesheet Portal</span>
+          </div>
+          <p className="text-slate-500">&copy; {new Date().getFullYear()} Work Log. All rights reserved.</p>
+          <div className="flex items-center gap-4 text-slate-500 text-xs font-medium">
+            <Link to="/timesheet" className="hover:text-slate-900 transition">Timesheets</Link>
             <span>·</span>
-            <span>Security Compliant</span>
+            <Link to="/time-off" className="hover:text-slate-900 transition">Time Off</Link>
             <span>·</span>
-            <span>PostgreSQL &amp; Prisma</span>
+            <Link to="/reports" className="hover:text-slate-900 transition">Reports</Link>
           </div>
         </div>
       </footer>

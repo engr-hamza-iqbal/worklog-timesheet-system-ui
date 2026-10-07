@@ -24,6 +24,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useNotification } from '../context/NotificationContext.jsx';
 import Table, { TableHead, TableBody, TableRow, TableTd } from '../components/Table.jsx';
 import ResizableTh from '../components/ResizableTh.jsx';
+import Pagination from '../components/Pagination.jsx';
 
 /**
  * Universal CSV export utility
@@ -54,9 +55,11 @@ export function exportToCsv(filename, columns, rows) {
   URL.revokeObjectURL(url);
 }
 
-function MetricTable({ title, rows = [], columns = [], filename, onExport }) {
+function MetricTable({ title, rows = [], columns = [], filename, onExport, defaultPageSize = 10 }) {
   const [sortKey, setSortKey] = useState(null);
   const [sortOrder, setSortOrder] = useState('asc'); // 'asc' | 'desc'
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = defaultPageSize;
 
   const handleSort = (key) => {
     if (sortKey === key) {
@@ -65,7 +68,12 @@ function MetricTable({ title, rows = [], columns = [], filename, onExport }) {
       setSortKey(key);
       setSortOrder('asc');
     }
+    setCurrentPage(1);
   };
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [rows]);
 
   const sortedRows = useMemo(() => {
     if (!sortKey) return rows;
@@ -84,6 +92,14 @@ function MetricTable({ title, rows = [], columns = [], filename, onExport }) {
         : String(valB ?? '').localeCompare(String(valA ?? ''));
     });
   }, [rows, columns, sortKey, sortOrder]);
+
+  const totalPages = Math.max(1, Math.ceil((sortedRows?.length || 0) / pageSize));
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+
+  const paginatedRows = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return sortedRows.slice(start, start + pageSize);
+  }, [sortedRows, safePage, pageSize]);
 
   const handleCsvClick = () => {
     if (onExport) {
@@ -114,56 +130,124 @@ function MetricTable({ title, rows = [], columns = [], filename, onExport }) {
         </div>
       </div>
       {sortedRows && sortedRows.length ? (
-        <Table>
-          <TableHead className="bg-slate-50/40">
-            <tr>
-              {columns.map((column) => (
-                <ResizableTh
-                  key={column.key}
-                  onClick={() => handleSort(column.key)}
-                  className="px-5 py-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <span>{column.label}</span>
-                    {sortKey === column.key ? (
-                      sortOrder === 'asc' ? (
-                        <ArrowUp size={12} className="text-indigo-600 shrink-0" />
-                      ) : (
-                        <ArrowDown size={12} className="text-indigo-600 shrink-0" />
-                      )
-                    ) : (
-                      <ArrowUpDown size={12} className="text-slate-400 opacity-50 shrink-0" />
-                    )}
-                  </div>
-                </ResizableTh>
-              ))}
-            </tr>
-          </TableHead>
-          <TableBody>
-            {sortedRows.map((row, index) => (
-              <TableRow
-                key={row.projectId || row.clientId || row.userId || row.periodDate || row.status || index}
-              >
-                {columns.map((column, idx) => (
-                  <td
+        <>
+          <Table>
+            <TableHead className="bg-slate-50/40">
+              <tr>
+                {columns.map((column) => (
+                  <ResizableTh
                     key={column.key}
-                    className={`px-5 py-3 whitespace-nowrap ${
-                      idx === 0 ? 'font-medium text-slate-800' : 'text-slate-600'
-                    }`}
+                    onClick={() => handleSort(column.key)}
+                    className="px-5 py-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
                   >
-                    <div title={String(typeof column.value === 'function' ? column.value(row) : (row[column.key] ?? ''))}>
-                      {typeof column.value === 'function' ? column.value(row) : row[column.key]}
+                    <div className="flex items-center gap-1.5">
+                      <span>{column.label}</span>
+                      {sortKey === column.key ? (
+                        sortOrder === 'asc' ? (
+                          <ArrowUp size={12} className="text-indigo-600 shrink-0" />
+                        ) : (
+                          <ArrowDown size={12} className="text-indigo-600 shrink-0" />
+                        )
+                      ) : (
+                        <ArrowUpDown size={12} className="text-slate-400 opacity-50 shrink-0" />
+                      )}
                     </div>
-                  </td>
+                  </ResizableTh>
                 ))}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+              </tr>
+            </TableHead>
+            <TableBody>
+              {paginatedRows.map((row, index) => (
+                <TableRow
+                  key={row.projectId || row.clientId || row.userId || row.periodDate || row.status || index}
+                >
+                  {columns.map((column, idx) => (
+                    <td
+                      key={column.key}
+                      className={`px-5 py-3 whitespace-nowrap ${
+                        idx === 0 ? 'font-medium text-slate-800' : 'text-slate-600'
+                      }`}
+                    >
+                      <div title={String(typeof column.value === 'function' ? column.value(row) : (row[column.key] ?? ''))}>
+                        {typeof column.value === 'function' ? column.value(row) : row[column.key]}
+                      </div>
+                    </td>
+                  ))}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+          <Pagination
+            currentPage={safePage}
+            totalItems={sortedRows.length}
+            itemsPerPage={pageSize}
+            onPageChange={setCurrentPage}
+          />
+        </>
       ) : (
         <p className="px-5 py-10 text-center text-sm text-slate-500">No data found for this selection.</p>
       )}
     </section>
+  );
+}
+
+function ReviewerEntriesTable({ entries = [] }) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 8;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [entries]);
+
+  const totalPages = Math.max(1, Math.ceil(entries.length / pageSize));
+  const safePage = Math.min(Math.max(1, currentPage), totalPages);
+
+  const paginated = useMemo(() => {
+    const start = (safePage - 1) * pageSize;
+    return entries.slice(start, start + pageSize);
+  }, [entries, safePage, pageSize]);
+
+  if (!entries.length) {
+    return <p className="text-xs text-slate-500 py-3 text-center">No pending entries for this reviewer.</p>;
+  }
+
+  return (
+    <div className="rounded-lg border border-slate-200 overflow-hidden bg-white shadow-2xs">
+      <Table>
+        <TableHead>
+          <tr>
+            <ResizableTh className="px-4 py-2 text-xs"><span>Employee</span></ResizableTh>
+            <ResizableTh className="px-4 py-2 text-xs"><span>Project</span></ResizableTh>
+            <ResizableTh className="px-4 py-2 text-xs"><span>Work Date</span></ResizableTh>
+            <ResizableTh className="px-4 py-2 text-xs"><span>Hours</span></ResizableTh>
+            <ResizableTh className="px-4 py-2 text-xs"><span>Description</span></ResizableTh>
+          </tr>
+        </TableHead>
+        <TableBody>
+          {paginated.map((entry) => (
+            <TableRow key={entry.id}>
+              <TableTd className="text-xs font-medium text-slate-800">{entry.userName}</TableTd>
+              <TableTd className="text-xs text-slate-600">
+                {entry.projectName} <span className="text-slate-400">· {entry.clientName}</span>
+              </TableTd>
+              <TableTd className="text-xs text-slate-600">{entry.workDate}</TableTd>
+              <TableTd className="text-xs font-bold text-slate-900">{entry.hours} h</TableTd>
+              <TableTd className="text-xs text-slate-500 max-w-sm truncate" title={entry.description}>
+                {entry.description}
+              </TableTd>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      {entries.length > pageSize && (
+        <Pagination
+          currentPage={safePage}
+          totalItems={entries.length}
+          itemsPerPage={pageSize}
+          onPageChange={setCurrentPage}
+        />
+      )}
+    </div>
   );
 }
 
@@ -187,16 +271,22 @@ export default function ReportsPage() {
   const [loadingMissing, setLoadingMissing] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [chasing, setChasing] = useState(false);
+  const [missingPage, setMissingPage] = useState(1);
+  const missingPageSize = 10;
 
   // Who is Away State
   const [awayDate, setAwayDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [awayData, setAwayData] = useState(null);
   const [loadingAway, setLoadingAway] = useState(false);
+  const [awayPage, setAwayPage] = useState(1);
+  const awayPageSize = 10;
 
   // Review Queue by Reviewer State
   const [reviewQueueData, setReviewQueueData] = useState(null);
   const [loadingReviewQueue, setLoadingReviewQueue] = useState(false);
   const [expandedReviewerId, setExpandedReviewerId] = useState(null);
+  const [reviewerPage, setReviewerPage] = useState(1);
+  const reviewerPageSize = 5;
 
   // Employee Breakdown & Trend State
   const [employeeUsers, setEmployeeUsers] = useState([]);
@@ -720,60 +810,70 @@ export default function ReportsPage() {
                 Checking timesheets and approved leave...
               </div>
             ) : missingData?.employees?.length ? (
-              <Table>
-                <TableHead>
-                  <tr>
-                    {isAdmin && (
-                      <ResizableTh className="px-5 py-3 w-12">
-                        <span>Select</span>
-                      </ResizableTh>
-                    )}
-                    <ResizableTh className="px-5 py-3">
-                      <span>Employee</span>
-                    </ResizableTh>
-                    <ResizableTh className="px-5 py-3">
-                      <span>Email</span>
-                    </ResizableTh>
-                    <ResizableTh className="px-5 py-3">
-                      <span>Chase Status</span>
-                    </ResizableTh>
-                  </tr>
-                </TableHead>
-                <TableBody>
-                  {missingData.employees.map((emp) => (
-                    <TableRow key={emp.userId}>
+              <>
+                <Table>
+                  <TableHead>
+                    <tr>
                       {isAdmin && (
-                        <TableTd className="w-12">
-                          <input
-                            type="checkbox"
-                            disabled={emp.chasedToday}
-                            checked={selectedUsers.includes(emp.userId)}
-                            onChange={() => toggleSelectUser(emp.userId)}
-                            className="rounded border-slate-300 text-slate-900 focus:ring-slate-900 disabled:opacity-40"
-                          />
-                        </TableTd>
+                        <ResizableTh className="px-5 py-3 w-12">
+                          <span>Select</span>
+                        </ResizableTh>
                       )}
-                      <TableTd className="font-medium text-slate-800">
-                        <span title={emp.userName}>{emp.userName}</span>
-                      </TableTd>
-                      <TableTd className="text-slate-600">
-                        <span title={emp.email}>{emp.email}</span>
-                      </TableTd>
-                      <TableTd>
-                        {emp.chasedToday ? (
-                          <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
-                            Reminded today
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-amber-200">
-                            Unsent
-                          </span>
-                        )}
-                      </TableTd>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                      <ResizableTh className="px-5 py-3">
+                        <span>Employee</span>
+                      </ResizableTh>
+                      <ResizableTh className="px-5 py-3">
+                        <span>Email</span>
+                      </ResizableTh>
+                      <ResizableTh className="px-5 py-3">
+                        <span>Chase Status</span>
+                      </ResizableTh>
+                    </tr>
+                  </TableHead>
+                  <TableBody>
+                    {missingData.employees
+                      .slice((missingPage - 1) * missingPageSize, missingPage * missingPageSize)
+                      .map((emp) => (
+                        <TableRow key={emp.userId}>
+                          {isAdmin && (
+                            <TableTd className="w-12">
+                              <input
+                                type="checkbox"
+                                disabled={emp.chasedToday}
+                                checked={selectedUsers.includes(emp.userId)}
+                                onChange={() => toggleSelectUser(emp.userId)}
+                                className="rounded border-slate-300 text-slate-900 focus:ring-slate-900 disabled:opacity-40"
+                              />
+                            </TableTd>
+                          )}
+                          <TableTd className="font-medium text-slate-800">
+                            <span title={emp.userName}>{emp.userName}</span>
+                          </TableTd>
+                          <TableTd className="text-slate-600">
+                            <span title={emp.email}>{emp.email}</span>
+                          </TableTd>
+                          <TableTd>
+                            {emp.chasedToday ? (
+                              <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
+                                Reminded today
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-amber-200">
+                                Unsent
+                              </span>
+                            )}
+                          </TableTd>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+                <Pagination
+                  currentPage={missingPage}
+                  totalItems={missingData.employees.length}
+                  itemsPerPage={missingPageSize}
+                  onPageChange={setMissingPage}
+                />
+              </>
             ) : (
               <div className="py-12 text-center text-sm text-slate-500">
                 <CheckCircle2 className="mx-auto mb-2 text-emerald-500" size={28} />
@@ -864,44 +964,54 @@ export default function ReportsPage() {
                 Loading absences...
               </div>
             ) : awayData?.awayUsers?.length ? (
-              <Table>
-                <TableHead>
-                  <tr>
-                    <ResizableTh className="px-5 py-3"><span>Employee</span></ResizableTh>
-                    <ResizableTh className="px-5 py-3"><span>Email</span></ResizableTh>
-                    <ResizableTh className="px-5 py-3"><span>Leave Type</span></ResizableTh>
-                    <ResizableTh className="px-5 py-3"><span>Period</span></ResizableTh>
-                    <ResizableTh className="px-5 py-3"><span>Status</span></ResizableTh>
-                    <ResizableTh className="px-5 py-3"><span>Reason</span></ResizableTh>
-                  </tr>
-                </TableHead>
-                <TableBody>
-                  {awayData.awayUsers.map((item) => (
-                    <TableRow key={item.requestId + item.userId}>
-                      <TableTd className="font-medium text-slate-800">{item.userName}</TableTd>
-                      <TableTd className="text-slate-600">{item.userEmail}</TableTd>
-                      <TableTd className="font-semibold text-slate-700">{item.timeOffType}</TableTd>
-                      <TableTd className="text-slate-600 text-xs">
-                        {item.startDate} &rarr; {item.endDate}
-                      </TableTd>
-                      <TableTd>
-                        <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                            item.status === 'APPROVED'
-                              ? 'bg-sky-50 text-sky-800 border border-sky-200'
-                              : 'bg-amber-50 text-amber-800 border border-amber-200'
-                          }`}
-                        >
-                          {item.status}
-                        </span>
-                      </TableTd>
-                      <TableTd className="text-slate-500 text-xs max-w-xs truncate" title={item.reason}>
-                        {item.reason}
-                      </TableTd>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <>
+                <Table>
+                  <TableHead>
+                    <tr>
+                      <ResizableTh className="px-5 py-3"><span>Employee</span></ResizableTh>
+                      <ResizableTh className="px-5 py-3"><span>Email</span></ResizableTh>
+                      <ResizableTh className="px-5 py-3"><span>Leave Type</span></ResizableTh>
+                      <ResizableTh className="px-5 py-3"><span>Period</span></ResizableTh>
+                      <ResizableTh className="px-5 py-3"><span>Status</span></ResizableTh>
+                      <ResizableTh className="px-5 py-3"><span>Reason</span></ResizableTh>
+                    </tr>
+                  </TableHead>
+                  <TableBody>
+                    {awayData.awayUsers
+                      .slice((awayPage - 1) * awayPageSize, awayPage * awayPageSize)
+                      .map((item) => (
+                        <TableRow key={item.requestId + item.userId}>
+                          <TableTd className="font-medium text-slate-800">{item.userName}</TableTd>
+                          <TableTd className="text-slate-600">{item.userEmail}</TableTd>
+                          <TableTd className="font-semibold text-slate-700">{item.timeOffType}</TableTd>
+                          <TableTd className="text-slate-600 text-xs">
+                            {item.startDate} &rarr; {item.endDate}
+                          </TableTd>
+                          <TableTd>
+                            <span
+                              className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                                item.status === 'APPROVED'
+                                  ? 'bg-sky-50 text-sky-800 border border-sky-200'
+                                  : 'bg-amber-50 text-amber-800 border border-amber-200'
+                              }`}
+                            >
+                              {item.status}
+                            </span>
+                          </TableTd>
+                          <TableTd className="text-slate-500 text-xs max-w-xs truncate" title={item.reason}>
+                            {item.reason}
+                          </TableTd>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+                <Pagination
+                  currentPage={awayPage}
+                  totalItems={awayData.awayUsers.length}
+                  itemsPerPage={awayPageSize}
+                  onPageChange={setAwayPage}
+                />
+              </>
             ) : (
               <div className="py-12 text-center text-sm text-slate-500">
                 <CheckCircle2 className="mx-auto mb-2 text-emerald-500" size={28} />
@@ -974,87 +1084,68 @@ export default function ReportsPage() {
             </div>
           ) : reviewQueueData?.reviewers?.length ? (
             <div className="space-y-4">
-              {reviewQueueData.reviewers.map((rev) => {
-                const isExpanded = expandedReviewerId === rev.reviewerId;
-                return (
-                  <div
-                    key={rev.reviewerId}
-                    className="rounded-xl border border-slate-200 bg-white shadow-xs overflow-hidden"
-                  >
+              {reviewQueueData.reviewers
+                .slice((reviewerPage - 1) * reviewerPageSize, reviewerPage * reviewerPageSize)
+                .map((rev) => {
+                  const isExpanded = expandedReviewerId === rev.reviewerId;
+                  return (
                     <div
-                      onClick={() => setExpandedReviewerId(isExpanded ? null : rev.reviewerId)}
-                      className="px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/70 hover:bg-slate-100/60 cursor-pointer transition border-b border-slate-200"
+                      key={rev.reviewerId}
+                      className="rounded-xl border border-slate-200 bg-white shadow-xs overflow-hidden"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="h-9 w-9 rounded-full bg-slate-200 text-slate-700 font-bold text-sm flex items-center justify-center">
-                          {rev.reviewerName.charAt(0).toUpperCase()}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-sm font-semibold text-slate-900">{rev.reviewerName}</h3>
-                            <span
-                              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                                rev.role === 'ADMIN'
-                                  ? 'bg-purple-100 text-purple-800'
-                                  : 'bg-emerald-100 text-emerald-800'
-                              }`}
-                            >
-                              {rev.role}
-                            </span>
-                            <span className="text-[10px] font-medium text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded">
-                              {rev.scopeType}
-                            </span>
+                      <div
+                        onClick={() => setExpandedReviewerId(isExpanded ? null : rev.reviewerId)}
+                        className="px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/70 hover:bg-slate-100/60 cursor-pointer transition border-b border-slate-200"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="h-9 w-9 rounded-full bg-slate-200 text-slate-700 font-bold text-sm flex items-center justify-center">
+                            {rev.reviewerName.charAt(0).toUpperCase()}
                           </div>
-                          <p className="text-xs text-slate-500">{rev.reviewerEmail}</p>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-sm font-semibold text-slate-900">{rev.reviewerName}</h3>
+                              <span
+                                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                                  rev.role === 'ADMIN'
+                                    ? 'bg-purple-100 text-purple-800'
+                                    : 'bg-emerald-100 text-emerald-800'
+                                }`}
+                              >
+                                {rev.role}
+                              </span>
+                              <span className="text-[10px] font-medium text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded">
+                                {rev.scopeType}
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-500">{rev.reviewerEmail}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <p className="text-sm font-bold text-slate-900">{rev.waitingEntryCount} entries</p>
+                            <p className="text-xs text-slate-500">{rev.waitingHours} hours waiting</p>
+                          </div>
+                          {isExpanded ? <ChevronUp size={18} className="text-slate-400" /> : <ChevronDown size={18} className="text-slate-400" />}
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <p className="text-sm font-bold text-slate-900">{rev.waitingEntryCount} entries</p>
-                          <p className="text-xs text-slate-500">{rev.waitingHours} hours waiting</p>
+                      {isExpanded && (
+                        <div className="p-4 sm:p-5 bg-slate-50/40">
+                          <ReviewerEntriesTable entries={rev.entries} />
                         </div>
-                        {isExpanded ? <ChevronUp size={18} className="text-slate-400" /> : <ChevronDown size={18} className="text-slate-400" />}
-                      </div>
+                      )}
                     </div>
+                  );
+                })}
 
-                    {isExpanded && (
-                      <div className="p-4 sm:p-5">
-                        {rev.entries.length > 0 ? (
-                          <Table>
-                            <TableHead>
-                              <tr>
-                                <ResizableTh className="px-4 py-2 text-xs"><span>Employee</span></ResizableTh>
-                                <ResizableTh className="px-4 py-2 text-xs"><span>Project</span></ResizableTh>
-                                <ResizableTh className="px-4 py-2 text-xs"><span>Work Date</span></ResizableTh>
-                                <ResizableTh className="px-4 py-2 text-xs"><span>Hours</span></ResizableTh>
-                                <ResizableTh className="px-4 py-2 text-xs"><span>Description</span></ResizableTh>
-                              </tr>
-                            </TableHead>
-                            <TableBody>
-                              {rev.entries.map((entry) => (
-                                <TableRow key={entry.id}>
-                                  <TableTd className="text-xs font-medium text-slate-800">{entry.userName}</TableTd>
-                                  <TableTd className="text-xs text-slate-600">
-                                    {entry.projectName} <span className="text-slate-400">· {entry.clientName}</span>
-                                  </TableTd>
-                                  <TableTd className="text-xs text-slate-600">{entry.workDate}</TableTd>
-                                  <TableTd className="text-xs font-bold text-slate-900">{entry.hours} h</TableTd>
-                                  <TableTd className="text-xs text-slate-500 max-w-sm truncate" title={entry.description}>
-                                    {entry.description}
-                                  </TableTd>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        ) : (
-                          <p className="text-xs text-slate-500 py-3 text-center">No pending entries for this reviewer.</p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              <Pagination
+                currentPage={reviewerPage}
+                totalItems={reviewQueueData.reviewers.length}
+                itemsPerPage={reviewerPageSize}
+                onPageChange={setReviewerPage}
+                className="rounded-xl border border-slate-200"
+              />
             </div>
           ) : (
             <div className="p-12 text-center text-sm text-slate-500 bg-white border border-slate-200 rounded-lg">

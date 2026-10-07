@@ -105,16 +105,11 @@ export default function Sidebar({
             }
           >
             {({ isActive }) => (
-              <>
-                <Icon
-                  className={`w-5 h-5 shrink-0 transition-transform group-hover:scale-105 ${
-                    isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'
-                  }`}
-                />
-                {isActive && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-indigo-400 rounded-r shadow-xs" />
-                )}
-              </>
+              <Icon
+                className={`w-5 h-5 shrink-0 transition-transform group-hover:scale-105 ${
+                  isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'
+                }`}
+              />
             )}
           </NavLink>
         );
