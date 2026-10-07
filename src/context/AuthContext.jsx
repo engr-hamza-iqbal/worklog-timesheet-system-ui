@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import api from '../api/client.js';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import api, { setCsrfToken } from '../api/client.js';
 
 const AuthContext = createContext(null);
 
@@ -8,11 +8,13 @@ export function AuthProvider({ children }) {
   const [capabilities, setCapabilities] = useState({});
   const [token, setToken] = useState('cookie');
   const [loading, setLoading] = useState(true);
+  const isLoggingOutRef = useRef(false);
 
   // Validate session on mount or token change
   useEffect(() => {
     async function loadUser() {
       if (!token) {
+        setCsrfToken(null);
         setUser(null);
         setCapabilities({});
         setLoading(false);
@@ -21,16 +23,22 @@ export function AuthProvider({ children }) {
 
       try {
         const res = await api.get('/api/auth/me');
+        if (isLoggingOutRef.current) return;
         if (res.success && res.data) {
+          if (res.data.csrfToken) {
+            setCsrfToken(res.data.csrfToken);
+          }
           setUser(res.data.user);
           setCapabilities(res.data.capabilities || {});
         } else {
           // Token invalid or expired
+          setCsrfToken(null);
           setToken(null);
           setUser(null);
         }
       } catch (err) {
         console.error('Session verification failed:', err.message);
+        setCsrfToken(null);
         setToken(null);
         setUser(null);
       } finally {
@@ -41,6 +49,7 @@ export function AuthProvider({ children }) {
     loadUser();
 
     const handleUnauthorized = () => {
+      setCsrfToken(null);
       setToken(null);
       setUser(null);
       setCapabilities({});
@@ -53,7 +62,10 @@ export function AuthProvider({ children }) {
   async function login(email, password) {
     const res = await api.post('/api/auth/login', { email, password });
     if (res.success && res.data) {
-      const { user: newUser, capabilities: newCaps } = res.data;
+      const { user: newUser, capabilities: newCaps, csrfToken } = res.data;
+      if (csrfToken) {
+        setCsrfToken(csrfToken);
+      }
       setToken('cookie');
       setUser(newUser);
       setCapabilities(newCaps || {});
@@ -65,7 +77,10 @@ export function AuthProvider({ children }) {
   async function register(data) {
     const res = await api.post('/api/auth/register', data);
     if (res.success && res.data) {
-      const { user: newUser, capabilities: newCaps } = res.data;
+      const { user: newUser, capabilities: newCaps, csrfToken } = res.data;
+      if (csrfToken) {
+        setCsrfToken(csrfToken);
+      }
       setToken('cookie');
       setUser(newUser);
       setCapabilities(newCaps || {});
@@ -75,21 +90,40 @@ export function AuthProvider({ children }) {
   }
 
   async function logout() {
+    isLoggingOutRef.current = true;
     try {
       await api.post('/api/auth/logout');
     } catch (e) {
-      // Ignore network errors on logout
+      console.warn('Logout API completed with notice:', e?.message);
     } finally {
+      setCsrfToken(null);
       setToken(null);
       setUser(null);
       setCapabilities({});
+
+      // Synchronize logout across browser tabs
+      try {
+        const channel = new BroadcastChannel('worklog_auth_sync');
+        channel.postMessage({ type: 'LOGOUT' });
+        channel.close();
+      } catch {}
+
+      // Keep guard active briefly to avoid in-flight promises resurrecting the session
+      setTimeout(() => {
+        isLoggingOutRef.current = false;
+      }, 800);
     }
   }
 
   const refreshUser = useCallback(async () => {
+    if (isLoggingOutRef.current || !token) return null;
     try {
       const res = await api.get('/api/auth/me');
+      if (isLoggingOutRef.current) return null;
       if (res.success && res.data) {
+        if (res.data.csrfToken) {
+          setCsrfToken(res.data.csrfToken);
+        }
         setUser(res.data.user);
         setCapabilities(res.data.capabilities || {});
         return res.data;
@@ -98,7 +132,7 @@ export function AuthProvider({ children }) {
       console.error('Failed to refresh user capabilities:', err);
     }
     return null;
-  }, []);
+  }, [token]);
 
   // Real-time permission & capability synchronization via SSE and BroadcastChannel
   useEffect(() => {
@@ -109,7 +143,12 @@ export function AuthProvider({ children }) {
     try {
       channel = new BroadcastChannel('worklog_auth_sync');
       channel.onmessage = (event) => {
-        if (event.data?.type === 'REFRESH_CAPABILITIES') {
+        if (event.data?.type === 'LOGOUT') {
+          setCsrfToken(null);
+          setToken(null);
+          setUser(null);
+          setCapabilities({});
+        } else if (event.data?.type === 'REFRESH_CAPABILITIES') {
           refreshUser();
         }
       };
@@ -128,7 +167,9 @@ export function AuthProvider({ children }) {
 
     // 4. API 403 / permission-denied event listener
     const handlePermissionDenied = () => {
-      refreshUser();
+      if (!isLoggingOutRef.current) {
+        refreshUser();
+      }
     };
     window.addEventListener('auth:permission-denied', handlePermissionDenied);
 

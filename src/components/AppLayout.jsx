@@ -100,8 +100,11 @@ export default function AppLayout({ children }) {
   const handleLogout = async () => {
     setLogoutOpen(false);
     setMobileOpen(false);
-    await logout();
-    navigate('/login');
+    try {
+      await logout();
+    } finally {
+      navigate('/login', { replace: true });
+    }
   };
 
   // If on landing, login/register pages OR not authenticated, NEVER show sidebar. Render clean top header and content.

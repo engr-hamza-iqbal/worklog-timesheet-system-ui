@@ -19,10 +19,30 @@ function wait(milliseconds) {
   return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-function getCsrfToken() {
-  if (typeof document === 'undefined') return null;
-  const match = document.cookie.match(/(?:^|;\s*)worklog_csrf_token=([^;]+)/);
-  return match ? decodeURIComponent(match[1]) : null;
+export function getCsrfToken() {
+  if (typeof window === 'undefined') return null;
+  // 1. Check localStorage first (persists across decoupled/cross-domain deployments such as Netlify -> Render)
+  try {
+    const stored = localStorage.getItem('worklog_csrf_token');
+    if (stored) return stored;
+  } catch {}
+  // 2. Check document.cookie (same-domain environments)
+  try {
+    const match = document.cookie?.match(/(?:^|;\s*)worklog_csrf_token=([^;]+)/);
+    if (match) return decodeURIComponent(match[1]);
+  } catch {}
+  return null;
+}
+
+export function setCsrfToken(token) {
+  if (typeof window === 'undefined') return;
+  try {
+    if (token) {
+      localStorage.setItem('worklog_csrf_token', token);
+    } else {
+      localStorage.removeItem('worklog_csrf_token');
+    }
+  } catch {}
 }
 
 // Browser sessions use the HttpOnly worklog_session cookie. Bearer tokens remain supported by the server for API clients.
@@ -42,6 +62,12 @@ api.interceptors.request.use(
 // Response Interceptor: Standardize responses & handle 401 session expiration
 api.interceptors.response.use(
   (response) => {
+    // If backend returned a CSRF synchronizer token, store it for subsequent mutations
+    const payload = response.data;
+    const returnedToken = payload?.data?.csrfToken || payload?.csrfToken;
+    if (returnedToken) {
+      setCsrfToken(returnedToken);
+    }
     // Backend wraps response in { success: true, data: ..., message: ... }
     return response.data;
   },
@@ -56,6 +82,8 @@ api.interceptors.response.use(
       return api(request);
     }
 
+    const isLogoutRequest = Boolean(request?.url && String(request.url).includes('/api/auth/logout'));
+    const isCsrfError = error.response?.data?.error?.code === 'CSRF_REJECTED';
     const isUnauthorized = error.response?.status === 401;
     const isDeactivated =
       error.response?.status === 403 &&
@@ -85,7 +113,7 @@ api.interceptors.response.use(
           );
         }
       }
-    } else if (error.response?.status === 403) {
+    } else if (error.response?.status === 403 && !isLogoutRequest && !isCsrfError) {
       // Permission denied or capability revoked - dispatch signal to re-sync capabilities in background
       window.dispatchEvent(new Event('auth:permission-denied'));
     }
