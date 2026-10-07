@@ -50,8 +50,28 @@ function InviteUserForm({ onCancel, existingEmails = [] }) {
   const [customRevokeToken, setCustomRevokeToken] = useState('');
   const [revokingCustom, setRevokingCustom] = useState(false);
 
+  // Filters & sorting for invitations list
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [sortField, setSortField] = useState('createdAt');
+  const [sortOrder, setSortOrder] = useState('desc');
+
+  const toggleSort = (field) => {
+    if (sortField === field) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortOrder(field === 'createdAt' ? 'desc' : 'asc');
+    }
+  };
+
   const handleRevokeCustom = async () => {
-    const raw = customRevokeToken.trim();
+    let raw = customRevokeToken.trim();
+    if (raw.includes('invite=')) {
+      raw = raw.split('invite=')[1].split('&')[0];
+    } else if (raw.includes('token=')) {
+      raw = raw.split('token=')[1].split('&')[0];
+    }
     if (!raw) return;
     setRevokingCustom(true);
     setActionFeedback('');
@@ -99,6 +119,52 @@ function InviteUserForm({ onCancel, existingEmails = [] }) {
     if (!email.trim()) return false;
     return existingEmails.includes(email.trim().toLowerCase());
   }, [email, existingEmails]);
+
+  // Live status counts for filter badges
+  const statusCounts = useMemo(() => {
+    const counts = { ALL: invitations.length, PENDING: 0, ACCEPTED: 0, REVOKED: 0, EXPIRED: 0 };
+    invitations.forEach((inv) => {
+      if (counts[inv.status] !== undefined) {
+        counts[inv.status]++;
+      }
+    });
+    return counts;
+  }, [invitations]);
+
+  // Filtered and sorted invitations list
+  const filteredInvitations = useMemo(() => {
+    return invitations
+      .filter((inv) => {
+        if (statusFilter !== 'ALL' && inv.status !== statusFilter) return false;
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase().trim();
+          const emailMatch = inv.email?.toLowerCase().includes(q);
+          const inviterMatch =
+            inv.invitedBy?.name?.toLowerCase().includes(q) ||
+            inv.invitedBy?.email?.toLowerCase().includes(q);
+          if (!emailMatch && !inviterMatch) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        let aVal = '';
+        let bVal = '';
+        if (sortField === 'email') {
+          aVal = (a.email || '').toLowerCase();
+          bVal = (b.email || '').toLowerCase();
+        } else if (sortField === 'status') {
+          aVal = (a.status || '').toLowerCase();
+          bVal = (b.status || '').toLowerCase();
+        } else if (sortField === 'createdAt') {
+          const aTime = new Date(a.createdAt || a.expiresAt || 0).getTime();
+          const bTime = new Date(b.createdAt || b.expiresAt || 0).getTime();
+          return sortOrder === 'asc' ? aTime - bTime : bTime - aTime;
+        }
+        if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
+  }, [invitations, statusFilter, searchQuery, sortField, sortOrder]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -380,6 +446,85 @@ function InviteUserForm({ onCancel, existingEmails = [] }) {
             </button>
           </div>
 
+          {/* Table Filters Bar */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 pt-1">
+            {/* Search Input */}
+            <div className="relative flex-1 max-w-xs">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Filter by email or inviter..."
+                className="w-full pl-8 pr-7 py-1.5 text-xs border border-slate-300 rounded focus:outline-none focus:border-slate-900 focus:ring-1 focus:ring-slate-900 transition bg-white"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs cursor-pointer"
+                  title="Clear search"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Status Filter Pills */}
+            <div className="flex overflow-x-auto rounded border border-slate-200 text-xs shrink-0 whitespace-nowrap bg-slate-50">
+              {[
+                { key: 'ALL', label: 'All' },
+                { key: 'PENDING', label: 'Active' },
+                { key: 'ACCEPTED', label: 'Registered' },
+                { key: 'REVOKED', label: 'Revoked' },
+                { key: 'EXPIRED', label: 'Expired' },
+              ].map((tab) => {
+                const count = statusCounts[tab.key] || 0;
+                const isActive = statusFilter === tab.key;
+                return (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setStatusFilter(tab.key)}
+                    className={`px-2.5 py-1 text-[11px] font-medium transition cursor-pointer flex items-center gap-1.5 ${
+                      isActive
+                        ? 'bg-slate-900 text-white'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    <span
+                      className={`px-1 py-0.2 rounded-full text-[10px] font-mono ${
+                        isActive ? 'bg-slate-700 text-white' : 'bg-slate-200 text-slate-600'
+                      }`}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Active Filter Status & Reset */}
+          {(searchQuery || statusFilter !== 'ALL') && (
+            <div className="flex items-center justify-between text-[11px] text-slate-500 px-0.5">
+              <span>
+                Showing {filteredInvitations.length} of {invitations.length} invitation{invitations.length === 1 ? '' : 's'}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setStatusFilter('ALL');
+                }}
+                className="text-blue-600 hover:text-blue-800 font-medium cursor-pointer underline"
+              >
+                Reset filters
+              </button>
+            </div>
+          )}
+
           {loadingList && invitations.length === 0 ? (
             <div className="py-8 flex flex-col items-center justify-center text-slate-400 gap-2">
               <Loader2 className="animate-spin" size={20} />
@@ -389,19 +534,69 @@ function InviteUserForm({ onCancel, existingEmails = [] }) {
             <div className="py-8 text-center text-slate-500 text-xs bg-slate-50 rounded border border-slate-200">
               No invitations have been generated yet.
             </div>
+          ) : filteredInvitations.length === 0 ? (
+            <div className="py-8 text-center text-slate-500 text-xs bg-slate-50 rounded border border-slate-200 space-y-2">
+              <p>No invitations match your selected filters.</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setStatusFilter('ALL');
+                }}
+                className="px-2.5 py-1 text-[11px] bg-white border border-slate-300 rounded font-medium hover:bg-slate-50 cursor-pointer"
+              >
+                Clear Filters
+              </button>
+            </div>
           ) : (
             <div className="border border-slate-200 rounded overflow-hidden">
               <table className="w-full text-left text-xs">
-                <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200">
+                <thead className="bg-slate-50 text-slate-600 font-medium border-b border-slate-200 select-none">
                   <tr>
-                    <th className="py-2 px-3">Invitee Email</th>
-                    <th className="py-2 px-3">Status</th>
-                    <th className="py-2 px-3">Expires / Created</th>
+                    <th
+                      onClick={() => toggleSort('email')}
+                      className="py-2 px-3 cursor-pointer hover:bg-slate-100 transition"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>Invitee Email</span>
+                        {sortField === 'email' ? (
+                          sortOrder === 'asc' ? <ArrowUp size={11} className="text-slate-900" /> : <ArrowDown size={11} className="text-slate-900" />
+                        ) : (
+                          <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => toggleSort('status')}
+                      className="py-2 px-3 cursor-pointer hover:bg-slate-100 transition"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>Status</span>
+                        {sortField === 'status' ? (
+                          sortOrder === 'asc' ? <ArrowUp size={11} className="text-slate-900" /> : <ArrowDown size={11} className="text-slate-900" />
+                        ) : (
+                          <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
+                        )}
+                      </div>
+                    </th>
+                    <th
+                      onClick={() => toggleSort('createdAt')}
+                      className="py-2 px-3 cursor-pointer hover:bg-slate-100 transition"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>Expires / Created</span>
+                        {sortField === 'createdAt' ? (
+                          sortOrder === 'asc' ? <ArrowUp size={11} className="text-slate-900" /> : <ArrowDown size={11} className="text-slate-900" />
+                        ) : (
+                          <ArrowUpDown size={11} className="text-slate-400 opacity-60" />
+                        )}
+                      </div>
+                    </th>
                     <th className="py-2 px-3 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white">
-                  {invitations.map((inv) => {
+                  {filteredInvitations.map((inv) => {
                     const isPending = inv.status === 'PENDING';
                     const isAccepted = inv.status === 'ACCEPTED';
                     const isRevoked = inv.status === 'REVOKED';
