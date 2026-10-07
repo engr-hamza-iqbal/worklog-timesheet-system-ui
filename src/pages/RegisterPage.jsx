@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Loader2, Eye, EyeOff, Check, Key, ShieldCheck, Mail, Clock, AlertCircle, Sparkles, X } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Check, Key, ShieldCheck, Mail, Clock, AlertCircle, X, UserCheck, CheckCircle2, CalendarCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import AppLogo from '../components/AppLogo.jsx';
 import api from '../api/client.js';
@@ -294,8 +294,8 @@ export default function RegisterPage() {
 
           <div className="mt-7 space-y-4">
             <div className="flex items-start gap-3.5">
-              <div className="w-7 h-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                <Check size={16} strokeWidth={2.5} />
+              <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                <ShieldCheck size={17} strokeWidth={2} />
               </div>
               <div>
                 <h2 className="text-sm font-semibold text-slate-900">Verified &amp; Secure Access</h2>
@@ -306,8 +306,8 @@ export default function RegisterPage() {
             </div>
 
             <div className="flex items-start gap-3.5">
-              <div className="w-7 h-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                <Check size={16} strokeWidth={2.5} />
+              <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                <Clock size={17} strokeWidth={2} />
               </div>
               <div>
                 <h2 className="text-sm font-semibold text-slate-900">Daily Work Logging</h2>
@@ -318,8 +318,8 @@ export default function RegisterPage() {
             </div>
 
             <div className="flex items-start gap-3.5">
-              <div className="w-7 h-7 rounded-lg bg-emerald-500 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                <Check size={16} strokeWidth={2.5} />
+              <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                <CalendarCheck size={17} strokeWidth={2} />
               </div>
               <div>
                 <h2 className="text-sm font-semibold text-slate-900">Weekly Timesheets &amp; Leave</h2>
@@ -349,31 +349,34 @@ export default function RegisterPage() {
 
             {/* Invitation Recognition Banner */}
             {isInvited && (
-              <div className="mb-4 p-3.5 rounded-xl bg-gradient-to-r from-blue-50/90 via-indigo-50/80 to-blue-50/90 border border-blue-200 text-slate-800 shadow-2xs">
+              <div className="mb-4 p-3.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-800 shadow-2xs">
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                    <Sparkles size={16} />
+                  <div className="w-8 h-8 rounded-md bg-slate-900 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                    <UserCheck size={16} strokeWidth={2} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <h3 className="text-xs font-bold text-blue-900 uppercase tracking-wide">
-                        Team Invitation Accepted
-                      </h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-xs font-semibold text-slate-900 tracking-tight">
+                          Team Invitation Active
+                        </h3>
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/80">
+                          <CheckCircle2 size={11} className="text-emerald-600" />
+                          Pre-Authorized
+                        </span>
+                      </div>
                       <button
                         type="button"
                         onClick={handleClearInvitation}
-                        className="text-[11px] font-medium text-slate-500 hover:text-rose-600 inline-flex items-center gap-0.5 cursor-pointer transition"
+                        className="text-[11px] font-medium text-slate-400 hover:text-rose-600 inline-flex items-center gap-0.5 cursor-pointer transition"
+                        title="Remove invitation"
                       >
                         <X size={12} />
-                        <span>Clear invite</span>
+                        <span>Clear</span>
                       </button>
                     </div>
-                    <p className="text-xs text-slate-700 mt-1">
-                      Welcome! You were invited to register with <strong className="text-slate-950 font-semibold">{invitationPayload.email}</strong>.
-                    </p>
-                    <p className="text-[11px] text-emerald-700 font-medium mt-1 flex items-center gap-1.5">
-                      <ShieldCheck size={14} className="text-emerald-600 shrink-0" />
-                      <span>Pre-verified by administrator &bull; Email verification code waived</span>
+                    <p className="text-xs text-slate-600 mt-1">
+                      Registering as <strong className="text-slate-900 font-medium">{invitationPayload.email}</strong>. Email verification code is waived.
                     </p>
                   </div>
                 </div>
@@ -427,15 +430,15 @@ export default function RegisterPage() {
                           required
                           value={email}
                           disabled
-                          className="w-full h-9 px-3 py-1.5 text-sm rounded-md border border-emerald-300 bg-emerald-50/50 text-slate-900 font-medium cursor-not-allowed"
+                          className="w-full h-9 px-3 py-1.5 text-sm rounded-md border border-slate-200 bg-slate-100 text-slate-800 font-medium cursor-not-allowed"
                         />
                       </div>
-                      <div className="h-9 px-3 text-xs font-semibold rounded-md border border-emerald-300 bg-emerald-100 text-emerald-800 shrink-0 inline-flex items-center gap-1.5 shadow-2xs">
-                        <ShieldCheck size={14} className="text-emerald-700" />
+                      <div className="h-9 px-3 text-xs font-medium rounded-md border border-slate-200 bg-slate-100 text-slate-700 shrink-0 inline-flex items-center gap-1.5 shadow-2xs">
+                        <CheckCircle2 size={13} className="text-emerald-600" />
                         <span>Pre-verified</span>
                       </div>
                     </div>
-                    <p className="text-[11px] text-emerald-700 mt-1 flex items-center gap-1 font-medium">
+                    <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1 font-medium">
                       <span>Email locked to invitation recipient. Verification code is waived.</span>
                     </p>
                   </div>
@@ -468,10 +471,10 @@ export default function RegisterPage() {
                           {otpSending
                             ? 'Sending...'
                             : !otpSent
-                            ? 'Send Code'
-                            : resendCooldown > 0
-                            ? `Resend in ${resendCooldown}s`
-                            : 'Resend Code'}
+                              ? 'Send Code'
+                              : resendCooldown > 0
+                                ? `Resend in ${resendCooldown}s`
+                                : 'Resend Code'}
                         </span>
                       </button>
                     </div>
@@ -591,11 +594,10 @@ export default function RegisterPage() {
                       {[1, 2, 3, 4].map((step) => (
                         <div
                           key={step}
-                          className={`rounded-full transition-colors ${
-                            passwordCriteria.passedCount >= step
+                          className={`rounded-full transition-colors ${passwordCriteria.passedCount >= step
                               ? passwordCriteria.strength.color
                               : 'bg-slate-200'
-                          }`}
+                            }`}
                         />
                       ))}
                     </div>
@@ -605,14 +607,12 @@ export default function RegisterPage() {
                       {passwordCriteria.checks.map((criterion, idx) => (
                         <div
                           key={idx}
-                          className={`flex items-center gap-1.5 text-[11px] ${
-                            criterion.met ? 'text-emerald-700 font-medium' : 'text-slate-400'
-                          }`}
+                          className={`flex items-center gap-1.5 text-[11px] ${criterion.met ? 'text-emerald-700 font-medium' : 'text-slate-400'
+                            }`}
                         >
                           <span
-                            className={`w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 ${
-                              criterion.met ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'
-                            }`}
+                            className={`w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 ${criterion.met ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'
+                              }`}
                           >
                             <Check size={10} strokeWidth={3} />
                           </span>
@@ -692,8 +692,8 @@ export default function RegisterPage() {
                   {loading
                     ? 'Creating account...'
                     : isInvited
-                    ? 'Accept Invitation & Complete Registration'
-                    : 'Create Account'}
+                      ? 'Accept Invitation & Complete Registration'
+                      : 'Create Account'}
                 </span>
               </button>
             </form>
