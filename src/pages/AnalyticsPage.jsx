@@ -649,14 +649,14 @@ export default function AnalyticsPage() {
               <div className="overflow-x-auto pb-1 [scrollbar-width:thin] touch-pan-x">
                 <div style={{ minWidth: `${Math.max(260, weeklyData.length * 32)}px`, height: '260px' }}>
                   {weeklyData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%" minWidth={240} minHeight={240}>
+                    <ResponsiveContainer width="100%" height="100%" minWidth={240} minHeight={240} debounce={50}>
                       <AreaChart data={weeklyData} margin={{ top: 12, right: 12, left: -22, bottom: 4 }}>
                         <defs>
                           {/* Luminous multi-stop gradient fill */}
                           <linearGradient id="stunningAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#6366f1" stopOpacity={0.42} />
-                            <stop offset="45%" stopColor="#818cf8" stopOpacity={0.16} />
-                            <stop offset="85%" stopColor="#c7d2fe" stopOpacity={0.03} />
+                            <stop offset="0%" stopColor="#6366f1" stopOpacity={0.38} />
+                            <stop offset="45%" stopColor="#818cf8" stopOpacity={0.14} />
+                            <stop offset="85%" stopColor="#c7d2fe" stopOpacity={0.02} />
                             <stop offset="100%" stopColor="#ffffff" stopOpacity={0.0} />
                           </linearGradient>
 
@@ -667,11 +667,6 @@ export default function AnalyticsPage() {
                             <stop offset="70%" stopColor="#8b5cf6" />
                             <stop offset="100%" stopColor="#06b6d4" />
                           </linearGradient>
-
-                          {/* Neon glow drop shadow for the curve */}
-                          <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
-                            <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#6366f1" floodOpacity="0.32" />
-                          </filter>
                         </defs>
 
                         <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.7} vertical={false} />
@@ -707,11 +702,10 @@ export default function AnalyticsPage() {
                           activeDot={{
                             stroke: '#4f46e5',
                             strokeWidth: 3,
-                            r: 6.5,
+                            r: 6,
                             fill: '#ffffff',
-                            filter: 'url(#neonGlow)',
                           }}
-                          animationDuration={700}
+                          animationDuration={300}
                           animationEasing="ease-out"
                         />
                       </AreaChart>
@@ -769,8 +763,8 @@ export default function AnalyticsPage() {
                   clientChartMode === 'donut' ? (
                     donutClientsData.length > 0 ? (
                       <div className="flex flex-col items-center">
-                        <div className="h-56 w-full relative">
-                          <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={200}>
+                        <div className="h-56 w-full relative animate-in fade-in zoom-in-95 duration-200">
+                          <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={200} debounce={50}>
                             <PieChart>
                               <Pie
                                 data={donutClientsData}
@@ -781,9 +775,7 @@ export default function AnalyticsPage() {
                                 innerRadius={54}
                                 outerRadius={80}
                                 paddingAngle={3}
-                                isAnimationActive={true}
-                                animationDuration={600}
-                                animationEasing="ease-out"
+                                isAnimationActive={false}
                                 stroke="#ffffff"
                                 strokeWidth={2}
                               >
@@ -791,7 +783,7 @@ export default function AnalyticsPage() {
                                   <Cell
                                     key={`cell-${entry.name}-${index}`}
                                     fill={CHART_COLORS[index % CHART_COLORS.length]}
-                                    className="transition-all duration-200 hover:opacity-80 cursor-pointer"
+                                    className="transition-all duration-150 hover:opacity-80 cursor-pointer"
                                   />
                                 ))}
                               </Pie>
@@ -801,7 +793,7 @@ export default function AnalyticsPage() {
                                 y="47%"
                                 textAnchor="middle"
                                 dominantBaseline="middle"
-                                className="font-extrabold font-mono text-xl fill-slate-900"
+                                className="font-extrabold font-mono text-xl fill-slate-900 select-none"
                               >
                                 {totalDonutHours.toFixed(1)}h
                               </text>
@@ -810,7 +802,7 @@ export default function AnalyticsPage() {
                                 y="57%"
                                 textAnchor="middle"
                                 dominantBaseline="middle"
-                                className="text-[10px] font-semibold uppercase tracking-wider fill-slate-400"
+                                className="text-[10px] font-semibold uppercase tracking-wider fill-slate-400 select-none"
                               >
                                 Total Effort
                               </text>
@@ -863,7 +855,7 @@ export default function AnalyticsPage() {
                     /* 2-Layer Bar View for Clients */
                     <div className="overflow-y-auto max-h-64 [scrollbar-width:thin] pr-1">
                       <div style={{ height: `${Math.max(220, allClientsData.length * 32)}px` }}>
-                        <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={200}>
+                        <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={200} debounce={50}>
                           <BarChart
                             data={allClientsData}
                             layout="vertical"
@@ -892,7 +884,7 @@ export default function AnalyticsPage() {
                               radius={[0, 8, 8, 0]}
                               barSize={16}
                               background={{ fill: '#f1f5f9', radius: [0, 8, 8, 0] }}
-                              animationDuration={600}
+                              animationDuration={280}
                               animationEasing="ease-out"
                             />
                           </BarChart>
@@ -933,7 +925,7 @@ export default function AnalyticsPage() {
               <div className="overflow-y-auto max-h-72 [scrollbar-width:thin] pr-1">
                 <div style={{ height: `${Math.max(240, displayedProjectsData.length * 32)}px` }}>
                   {displayedProjectsData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" debounce={50}>
                       <BarChart
                         data={displayedProjectsData}
                         layout="vertical"
@@ -962,7 +954,7 @@ export default function AnalyticsPage() {
                           radius={[0, 8, 8, 0]}
                           barSize={16}
                           background={{ fill: '#f1f5f9', radius: [0, 8, 8, 0] }}
-                          animationDuration={600}
+                          animationDuration={280}
                           animationEasing="ease-out"
                         />
                       </BarChart>
@@ -1006,7 +998,7 @@ export default function AnalyticsPage() {
                   }}
                 >
                   {displayedEmployeesData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" debounce={50}>
                       <BarChart
                         data={displayedEmployeesData}
                         margin={{ top: 10, right: 10, left: -25, bottom: 45 }}
@@ -1036,7 +1028,7 @@ export default function AnalyticsPage() {
                           radius={[8, 8, 0, 0]}
                           maxBarSize={32}
                           background={{ fill: '#f1f5f9', radius: [8, 8, 0, 0] }}
-                          animationDuration={600}
+                          animationDuration={280}
                           animationEasing="ease-out"
                         />
                       </BarChart>
