@@ -39,6 +39,7 @@ import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import Table, { TableHead, TableBody, TableRow, TableTd } from '../components/Table.jsx';
 import ResizableTh from '../components/ResizableTh.jsx';
+import Pagination from '../components/Pagination.jsx';
 
 // Curated sleek palette for charts
 const CHART_COLORS = [
@@ -409,7 +410,7 @@ export default function AnalyticsPage() {
   return (
     <main className="mx-auto w-full max-w-auto px-4 py-6 sm:px-6">
       {/* ── Page Header ── */}
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
             Analytics Dashboard
@@ -422,7 +423,7 @@ export default function AnalyticsPage() {
           type="button"
           onClick={() => load(filters)}
           disabled={loading}
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition cursor-pointer disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition cursor-pointer disabled:opacity-50 w-full sm:w-auto"
         >
           <RefreshCw size={14} className={loading ? 'animate-spin text-slate-900' : 'text-slate-500'} />
           <span>Refresh Data</span>
@@ -430,10 +431,10 @@ export default function AnalyticsPage() {
       </div>
 
       {/* ── Quick Filter Bar ── */}
-      <div className="mb-6 rounded-xl border border-slate-200/80 bg-white p-4 shadow-xs">
-        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+      <div className="mb-6 rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-4 shadow-xs">
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3.5 sm:gap-4">
           {/* Preset Buttons */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 lg:pb-0 scrollbar-none">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1.5 lg:pb-0 [scrollbar-width:none] touch-pan-x">
             <span className="text-xs font-medium text-slate-500 mr-1 flex items-center gap-1 shrink-0">
               <Calendar size={13} />
               Preset:
@@ -448,7 +449,7 @@ export default function AnalyticsPage() {
                 key={preset.id}
                 type="button"
                 onClick={() => setDatePreset(preset.id)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition whitespace-nowrap cursor-pointer shrink-0 ${activePreset === preset.id
+                className={`px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-lg transition whitespace-nowrap cursor-pointer shrink-0 ${activePreset === preset.id
                     ? 'bg-slate-900 text-white shadow-xs'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
@@ -459,47 +460,49 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Custom Date Form */}
-          <form onSubmit={handleFilterSubmit} className="flex flex-wrap items-center gap-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <label className="text-xs text-slate-500 flex items-center gap-1">
-                From
+          <form onSubmit={handleFilterSubmit} className="flex flex-col sm:flex-row flex-wrap sm:items-center gap-2 w-full lg:w-auto">
+            <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
+              <label className="text-xs text-slate-500 flex flex-col sm:flex-row sm:items-center gap-1">
+                <span className="shrink-0 font-medium">From:</span>
                 <input
                   type="date"
                   max={filters.endDate || undefined}
                   value={filters.startDate}
                   onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
-                  className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs focus:border-slate-900 focus:outline-none"
+                  className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs focus:border-slate-900 focus:outline-none"
                 />
               </label>
-              <label className="text-xs text-slate-500 flex items-center gap-1">
-                To
+              <label className="text-xs text-slate-500 flex flex-col sm:flex-row sm:items-center gap-1">
+                <span className="shrink-0 font-medium">To:</span>
                 <input
                   type="date"
                   min={filters.startDate || undefined}
                   value={filters.endDate}
                   onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-                  className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs focus:border-slate-900 focus:outline-none"
+                  className="w-full rounded-lg border border-slate-300 px-2 py-1.5 text-xs focus:border-slate-900 focus:outline-none"
                 />
               </label>
             </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-indigo-700 transition cursor-pointer disabled:opacity-50"
-            >
-              <Filter size={13} />
-              Filter
-            </button>
-            {(filters.startDate || filters.endDate) && (
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <button
-                type="button"
-                onClick={clearFilters}
-                className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+                type="submit"
+                disabled={loading}
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-indigo-700 transition cursor-pointer disabled:opacity-50"
               >
-                <X size={13} />
-                Reset
+                <Filter size={13} />
+                <span>Filter</span>
               </button>
-            )}
+              {(filters.startDate || filters.endDate) && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+                >
+                  <X size={13} />
+                  <span>Reset</span>
+                </button>
+              )}
+            </div>
           </form>
         </div>
       </div>
@@ -605,21 +608,21 @@ export default function AnalyticsPage() {
         <div className="relative space-y-6">
           <div className="grid gap-6 lg:grid-cols-2">
             {/* 1. Weekly Hours Trend (Area Chart) */}
-            <section className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs flex flex-col justify-between">
-              <div className="mb-4 flex items-center justify-between">
+            <section className="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-xs flex flex-col justify-between">
+              <div className="mb-3.5 sm:mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <h2 className="text-sm font-semibold text-slate-900">Weekly Hours Trend</h2>
                   <p className="text-[11px] text-slate-500">Aggregated approved hours by week start</p>
                 </div>
-                <span className="text-xs font-mono font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
+                <span className="self-start sm:self-auto text-xs font-mono font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
                   {weeklyData.length} weeks
                 </span>
               </div>
-              <div className="overflow-x-auto pb-1 scrollbar-thin">
-                <div style={{ minWidth: `${Math.max(280, weeklyData.length * 32)}px`, height: '260px' }}>
+              <div className="overflow-x-auto pb-1 [scrollbar-width:thin] touch-pan-x">
+                <div style={{ minWidth: `${Math.max(260, weeklyData.length * 32)}px`, height: '260px' }}>
                   {weeklyData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={weeklyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <AreaChart data={weeklyData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
                         <defs>
                           <linearGradient id="hoursGrad" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.4} />
@@ -627,8 +630,8 @@ export default function AnalyticsPage() {
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                        <XAxis dataKey="week" stroke="#94a3b8" fontSize={11} tickLine={false} />
-                        <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} unit="h" />
+                        <XAxis dataKey="week" stroke="#94a3b8" fontSize={10} tickLine={false} />
+                        <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} unit="h" />
                         <Tooltip content={<CustomTooltip unit="h" />} />
                         <Area
                           type="monotone"
@@ -650,13 +653,13 @@ export default function AnalyticsPage() {
             </section>
 
             {/* 2. Hours by Client (Donut Pie Chart or Bar View) */}
-            <section className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs flex flex-col justify-between">
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <section className="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-xs flex flex-col justify-between">
+              <div className="mb-3.5 sm:mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <h2 className="text-sm font-semibold text-slate-900">Hours by Client</h2>
                   <p className="text-[11px] text-slate-500">Distribution across active client portfolios</p>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center justify-between sm:justify-end gap-1.5 w-full sm:w-auto">
                   <span className="text-xs font-mono font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
                     {allClientsData.length} clients
                   </span>
@@ -670,7 +673,7 @@ export default function AnalyticsPage() {
                         }`}
                     >
                       <PieIcon size={12} />
-                      <span className="hidden sm:inline">Donut</span>
+                      <span className="inline">Donut</span>
                     </button>
                     <button
                       type="button"
@@ -681,7 +684,7 @@ export default function AnalyticsPage() {
                         }`}
                     >
                       <BarChart2 size={12} />
-                      <span className="hidden sm:inline">Bars</span>
+                      <span className="inline">Bars</span>
                     </button>
                   </div>
                 </div>
@@ -696,9 +699,9 @@ export default function AnalyticsPage() {
                           dataKey="value"
                           nameKey="name"
                           cx="50%"
-                          cy="46%"
-                          innerRadius={50}
-                          outerRadius={80}
+                          cy="44%"
+                          innerRadius={44}
+                          outerRadius={72}
                           paddingAngle={3}
                         >
                           {donutClientsData.map((entry, index) => (
@@ -720,7 +723,7 @@ export default function AnalyticsPage() {
                             borderRadius: '8px',
                             border: 'none',
                             color: '#fff',
-                            fontSize: '12px',
+                            fontSize: '11px',
                           }}
                           itemStyle={{ color: '#38bdf8' }}
                         />
@@ -728,7 +731,7 @@ export default function AnalyticsPage() {
                           verticalAlign="bottom"
                           height={44}
                           formatter={(val) => (
-                            <span className="text-[11px] text-slate-600 truncate max-w-[110px] inline-block align-middle">
+                            <span className="text-[10px] sm:text-[11px] text-slate-600 truncate max-w-[100px] sm:max-w-[120px] inline-block align-middle">
                               {val}
                             </span>
                           )}
@@ -736,26 +739,26 @@ export default function AnalyticsPage() {
                       </PieChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="overflow-y-auto max-h-64 scrollbar-thin pr-1">
-                      <div style={{ height: `${Math.max(240, allClientsData.length * 32)}px` }}>
+                    <div className="overflow-y-auto max-h-64 [scrollbar-width:thin] pr-1">
+                      <div style={{ height: `${Math.max(220, allClientsData.length * 30)}px` }}>
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart
                             data={allClientsData}
                             layout="vertical"
-                            margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                            margin={{ top: 5, right: 15, left: 0, bottom: 5 }}
                           >
                             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-                            <XAxis type="number" stroke="#94a3b8" fontSize={11} unit="h" />
+                            <XAxis type="number" stroke="#94a3b8" fontSize={10} unit="h" />
                             <YAxis
                               type="category"
                               dataKey="name"
                               stroke="#64748b"
-                              fontSize={11}
+                              fontSize={10}
                               tickLine={false}
-                              width={95}
+                              width={85}
                             />
                             <Tooltip content={<CustomTooltip unit="h" />} />
-                            <Bar dataKey="hours" fill="#10b981" radius={[0, 6, 6, 0]} barSize={16} />
+                            <Bar dataKey="hours" fill="#10b981" radius={[0, 6, 6, 0]} barSize={14} />
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
@@ -770,13 +773,13 @@ export default function AnalyticsPage() {
             </section>
 
             {/* 3. Hours by Project (Bar Chart with dynamic scaling and scroll) */}
-            <section className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs flex flex-col justify-between">
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <section className="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-xs flex flex-col justify-between">
+              <div className="mb-3.5 sm:mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <h2 className="text-sm font-semibold text-slate-900">Hours by Project</h2>
                   <p className="text-[11px] text-slate-500">Top project initiatives by approved volume</p>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center justify-between sm:justify-end gap-1.5 w-full sm:w-auto">
                   <span className="text-xs font-mono font-medium text-sky-600 bg-sky-50 px-2 py-0.5 rounded">
                     {displayedProjectsData.length} shown
                   </span>
@@ -791,27 +794,27 @@ export default function AnalyticsPage() {
                   )}
                 </div>
               </div>
-              <div className="overflow-y-auto max-h-72 scrollbar-thin pr-1">
-                <div style={{ height: `${Math.max(250, displayedProjectsData.length * 34)}px` }}>
+              <div className="overflow-y-auto max-h-72 [scrollbar-width:thin] pr-1">
+                <div style={{ height: `${Math.max(240, displayedProjectsData.length * 32)}px` }}>
                   {displayedProjectsData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         data={displayedProjectsData}
                         layout="vertical"
-                        margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                        margin={{ top: 5, right: 15, left: 0, bottom: 5 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
-                        <XAxis type="number" stroke="#94a3b8" fontSize={11} unit="h" />
+                        <XAxis type="number" stroke="#94a3b8" fontSize={10} unit="h" />
                         <YAxis
                           type="category"
                           dataKey="name"
                           stroke="#64748b"
-                          fontSize={11}
+                          fontSize={10}
                           tickLine={false}
-                          width={110}
+                          width={90}
                         />
                         <Tooltip content={<CustomTooltip unit="h" />} />
-                        <Bar dataKey="hours" fill="#0ea5e9" radius={[0, 6, 6, 0]} barSize={16} />
+                        <Bar dataKey="hours" fill="#0ea5e9" radius={[0, 6, 6, 0]} barSize={14} />
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
@@ -824,13 +827,13 @@ export default function AnalyticsPage() {
             </section>
 
             {/* 4. Hours by Employee (Bar Chart with horizontal scroll when many team members) */}
-            <section className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs flex flex-col justify-between">
-              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <section className="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-xs flex flex-col justify-between">
+              <div className="mb-3.5 sm:mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <h2 className="text-sm font-semibold text-slate-900">Hours by Team Member</h2>
                   <p className="text-[11px] text-slate-500">Approved effort across individual contributors</p>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center justify-between sm:justify-end gap-1.5 w-full sm:w-auto">
                   <span className="text-xs font-mono font-medium text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
                     {displayedEmployeesData.length} members
                   </span>
@@ -845,10 +848,10 @@ export default function AnalyticsPage() {
                   )}
                 </div>
               </div>
-              <div className="overflow-x-auto pb-2 scrollbar-thin">
+              <div className="overflow-x-auto pb-2 [scrollbar-width:thin] touch-pan-x">
                 <div
                   style={{
-                    minWidth: `${Math.max(300, displayedEmployeesData.length * 56)}px`,
+                    minWidth: `${Math.max(280, displayedEmployeesData.length * 52)}px`,
                     height: '280px',
                   }}
                 >
@@ -856,22 +859,22 @@ export default function AnalyticsPage() {
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         data={displayedEmployeesData}
-                        margin={{ top: 10, right: 10, left: -20, bottom: 45 }}
+                        margin={{ top: 10, right: 10, left: -25, bottom: 45 }}
                       >
                         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                         <XAxis
                           dataKey="name"
                           stroke="#64748b"
-                          fontSize={11}
+                          fontSize={10}
                           tickLine={false}
                           interval={0}
                           angle={-30}
                           textAnchor="end"
                           height={55}
                         />
-                        <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} unit="h" />
+                        <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} unit="h" />
                         <Tooltip content={<CustomTooltip unit="h" />} />
-                        <Bar dataKey="hours" fill="#334155" radius={[6, 6, 0, 0]} maxBarSize={36} />
+                        <Bar dataKey="hours" fill="#334155" radius={[6, 6, 0, 0]} maxBarSize={32} />
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
@@ -887,21 +890,21 @@ export default function AnalyticsPage() {
           {/* ── Status Breakdown, Time-Off & Timeliness Row ── */}
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Review Status & Time-Off Card */}
-            <section className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs flex flex-col justify-between">
-              <div className="mb-4 flex items-center justify-between">
+            <section className="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-xs flex flex-col justify-between">
+              <div className="mb-3.5 sm:mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <h2 className="text-sm font-semibold text-slate-900">Review Status &amp; Time-Off</h2>
                   <p className="text-[11px] text-slate-500">Lifecycle state distribution of recorded hours and leave</p>
                 </div>
                 {analytics.timeOff?.length > 0 && (
-                  <span className="text-xs font-mono font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/60">
+                  <span className="self-start sm:self-auto text-xs font-mono font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200/60">
                     {analytics.timeOff.reduce((acc, t) => acc + (t.days || 0), 0)} leave days
                   </span>
                 )}
               </div>
 
               {/* Status pills / progress meters */}
-              <div className="space-y-3">
+              <div className="space-y-2.5 sm:space-y-3">
                 {(analytics.statusBreakdown || []).map((sb) => {
                   const statusColors = {
                     APPROVED: { bg: 'bg-emerald-500', light: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
@@ -914,12 +917,12 @@ export default function AnalyticsPage() {
                   const pct = totalHrs > 0 ? ((Number(sb.hours || 0) / totalHrs) * 100).toFixed(1) : 0;
 
                   return (
-                    <div key={sb.status} className="p-2.5 rounded-lg border border-slate-100 bg-slate-50/50">
-                      <div className="flex items-center justify-between text-xs mb-1.5">
+                    <div key={sb.status} className="p-2 sm:p-2.5 rounded-lg border border-slate-100 bg-slate-50/50">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs mb-1.5 gap-1">
                         <span className="font-semibold text-slate-800">{sb.status}</span>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center justify-between sm:justify-end gap-2">
                           <span className="font-mono text-slate-900 font-bold">{Number(sb.hours || 0).toFixed(1)} hrs</span>
-                          <span className="text-slate-400 text-[11px]">({sb.entries || 0} entries &bull; {pct}%)</span>
+                          <span className="text-slate-400 text-[10px] sm:text-[11px]">({sb.entries || 0} entries &bull; {pct}%)</span>
                         </div>
                       </div>
                       <div className="w-full bg-slate-200/70 h-2 rounded-full overflow-hidden">
@@ -931,9 +934,9 @@ export default function AnalyticsPage() {
 
                 {/* Time Off breakdown */}
                 {analytics.timeOff && analytics.timeOff.length > 0 && (
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
+                  <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-xs text-slate-600">
                     <span className="font-medium text-slate-700">Time-Off Requests:</span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                       {analytics.timeOff.map((t) => (
                         <span key={t.status} className="inline-flex items-center gap-1 font-mono text-[11px] px-2 py-0.5 rounded bg-slate-100 text-slate-700">
                           {t.status}: <strong className="text-slate-900">{t.days}d</strong>
@@ -946,13 +949,13 @@ export default function AnalyticsPage() {
             </section>
 
             {/* Submission Timeliness Card */}
-            <section className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-xs flex flex-col justify-between">
-              <div className="mb-4 flex items-center justify-between">
+            <section className="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-xs flex flex-col justify-between">
+              <div className="mb-3.5 sm:mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <h2 className="text-sm font-semibold text-slate-900">Submission Timeliness</h2>
                   <p className="text-[11px] text-slate-500">How promptly work logs are submitted after execution</p>
                 </div>
-                <span className={`text-xs font-mono font-bold px-2 py-0.5 rounded border ${(analytics.submissionTimeliness?.overall?.onTimePercentage ?? 100) >= 80
+                <span className={`self-start sm:self-auto text-xs font-mono font-bold px-2 py-0.5 rounded border ${(analytics.submissionTimeliness?.overall?.onTimePercentage ?? 100) >= 80
                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                     : 'bg-amber-50 text-amber-700 border-amber-200'
                   }`}>
@@ -960,34 +963,34 @@ export default function AnalyticsPage() {
                 </span>
               </div>
 
-              <div className="grid grid-cols-3 gap-3 mb-4">
-                <div className="p-3 rounded-lg border border-slate-100 bg-slate-50 text-center">
-                  <div className="text-[11px] text-slate-500 uppercase font-semibold">Avg Lag</div>
-                  <div className="mt-1 text-xl font-bold text-slate-900 font-mono">
-                    {analytics.submissionTimeliness?.overall?.avgLagDays ?? 0} <span className="text-xs font-normal text-slate-500">days</span>
+              <div className="grid grid-cols-3 gap-1.5 sm:gap-3 mb-4">
+                <div className="p-2 sm:p-3 rounded-lg border border-slate-100 bg-slate-50 text-center">
+                  <div className="text-[10px] sm:text-[11px] text-slate-500 uppercase font-semibold">Avg Lag</div>
+                  <div className="mt-1 text-base sm:text-xl font-bold text-slate-900 font-mono">
+                    {analytics.submissionTimeliness?.overall?.avgLagDays ?? 0} <span className="text-[10px] sm:text-xs font-normal text-slate-500">days</span>
                   </div>
                 </div>
-                <div className="p-3 rounded-lg border border-slate-100 bg-slate-50 text-center">
-                  <div className="text-[11px] text-slate-500 uppercase font-semibold">On-Time</div>
-                  <div className="mt-1 text-xl font-bold text-emerald-600 font-mono">
+                <div className="p-2 sm:p-3 rounded-lg border border-slate-100 bg-slate-50 text-center">
+                  <div className="text-[10px] sm:text-[11px] text-slate-500 uppercase font-semibold">On-Time</div>
+                  <div className="mt-1 text-base sm:text-xl font-bold text-emerald-600 font-mono">
                     {analytics.submissionTimeliness?.overall?.onTimeCount ?? 0}
                   </div>
                 </div>
-                <div className="p-3 rounded-lg border border-slate-100 bg-slate-50 text-center">
-                  <div className="text-[11px] text-slate-500 uppercase font-semibold">Late (&gt;2d)</div>
-                  <div className="mt-1 text-xl font-bold text-rose-600 font-mono">
+                <div className="p-2 sm:p-3 rounded-lg border border-slate-100 bg-slate-50 text-center">
+                  <div className="text-[10px] sm:text-[11px] text-slate-500 uppercase font-semibold">Late (&gt;2d)</div>
+                  <div className="mt-1 text-base sm:text-xl font-bold text-rose-600 font-mono">
                     {analytics.submissionTimeliness?.overall?.lateCount ?? 0}
                   </div>
                 </div>
               </div>
 
               {/* By-person top late submitters */}
-              <div className="overflow-y-auto max-h-40 scrollbar-thin space-y-1.5">
+              <div className="overflow-y-auto max-h-40 [scrollbar-width:thin] space-y-1.5">
                 {(analytics.submissionTimeliness?.byPerson || []).slice(0, 5).map((person) => (
-                  <div key={person.userId} className="flex items-center justify-between text-xs py-1 px-2 rounded hover:bg-slate-50">
-                    <span className="font-medium text-slate-800 truncate max-w-[140px]">{person.name}</span>
-                    <div className="flex items-center gap-3 font-mono text-[11px]">
-                      <span className="text-slate-500">{person.avgLagDays}d avg lag</span>
+                  <div key={person.userId} className="flex items-center justify-between text-xs py-1 px-1.5 sm:px-2 rounded hover:bg-slate-50 gap-2">
+                    <span className="font-medium text-slate-800 truncate max-w-[120px] sm:max-w-[140px]">{person.name}</span>
+                    <div className="flex items-center gap-2 sm:gap-3 font-mono text-[10px] sm:text-[11px] shrink-0">
+                      <span className="text-slate-500">{person.avgLagDays}d lag</span>
                       <span className={person.lateCount > 0 ? 'text-rose-600 font-semibold' : 'text-emerald-600 font-semibold'}>
                         {person.onTimePercentage}% on-time
                       </span>
@@ -1003,10 +1006,10 @@ export default function AnalyticsPage() {
 
           {/* ── Detailed Analytics Breakdown Table (With click-to-sort headers and search filter) ── */}
           <section className="rounded-xl border border-slate-200/80 bg-white shadow-xs overflow-hidden">
-            <div className="border-b border-slate-200 bg-slate-50/50 p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="border-b border-slate-200 bg-slate-50/50 p-3.5 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-3.5">
               <div>
                 <div className="flex items-center gap-2">
-                  <TableIcon size={16} className="text-indigo-600" />
+                  <TableIcon size={16} className="text-indigo-600 shrink-0" />
                   <h2 className="text-sm font-bold text-slate-900">Detailed Performance Breakdown</h2>
                 </div>
                 <p className="text-xs text-slate-500 mt-0.5">
@@ -1015,12 +1018,12 @@ export default function AnalyticsPage() {
               </div>
 
               {/* Tab Selector & Search Filter */}
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center rounded-lg border border-slate-200 bg-slate-100 p-0.5 text-xs">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full lg:w-auto">
+                <div className="flex items-center rounded-lg border border-slate-200 bg-slate-100 p-0.5 text-xs overflow-x-auto [scrollbar-width:none] touch-pan-x w-full sm:w-auto shrink-0">
                   <button
                     type="button"
                     onClick={() => handleTabChange('employees')}
-                    className={`px-3 py-1 rounded-md font-semibold transition cursor-pointer ${breakdownTab === 'employees'
+                    className={`flex-1 sm:flex-initial text-center whitespace-nowrap px-2.5 sm:px-3 py-1.5 rounded-md font-semibold transition cursor-pointer text-xs ${breakdownTab === 'employees'
                         ? 'bg-white text-slate-900 shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                       }`}
@@ -1030,7 +1033,7 @@ export default function AnalyticsPage() {
                   <button
                     type="button"
                     onClick={() => handleTabChange('projects')}
-                    className={`px-3 py-1 rounded-md font-semibold transition cursor-pointer ${breakdownTab === 'projects'
+                    className={`flex-1 sm:flex-initial text-center whitespace-nowrap px-2.5 sm:px-3 py-1.5 rounded-md font-semibold transition cursor-pointer text-xs ${breakdownTab === 'projects'
                         ? 'bg-white text-slate-900 shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                       }`}
@@ -1040,7 +1043,7 @@ export default function AnalyticsPage() {
                   <button
                     type="button"
                     onClick={() => handleTabChange('clients')}
-                    className={`px-3 py-1 rounded-md font-semibold transition cursor-pointer ${breakdownTab === 'clients'
+                    className={`flex-1 sm:flex-initial text-center whitespace-nowrap px-2.5 sm:px-3 py-1.5 rounded-md font-semibold transition cursor-pointer text-xs ${breakdownTab === 'clients'
                         ? 'bg-white text-slate-900 shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                       }`}
@@ -1050,7 +1053,7 @@ export default function AnalyticsPage() {
                   <button
                     type="button"
                     onClick={() => handleTabChange('timeliness')}
-                    className={`px-3 py-1 rounded-md font-semibold transition cursor-pointer ${breakdownTab === 'timeliness'
+                    className={`flex-1 sm:flex-initial text-center whitespace-nowrap px-2.5 sm:px-3 py-1.5 rounded-md font-semibold transition cursor-pointer text-xs ${breakdownTab === 'timeliness'
                         ? 'bg-white text-slate-900 shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                       }`}
@@ -1059,7 +1062,7 @@ export default function AnalyticsPage() {
                   </button>
                 </div>
 
-                <div className="relative">
+                <div className="relative w-full sm:w-48 shrink-0">
                   <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
@@ -1069,202 +1072,177 @@ export default function AnalyticsPage() {
                       setCurrentPage(1);
                     }}
                     placeholder={`Filter ${breakdownTab}...`}
-                    className="pl-8 pr-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-slate-900 w-40 sm:w-48"
+                    className="w-full pl-8 pr-7 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-slate-900"
                   />
-                </div>
-              </div>
-            </div>
-
-            {/* Table with Clickable Headers */}
-            <Table>
-              <TableHead>
-                <tr>
-                  <ResizableTh
-                    onClick={() => handleTableSort('label')}
-                    className="py-3 px-5 cursor-pointer hover:bg-slate-100 hover:text-slate-900 transition"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span>
-                        {breakdownTab === 'employees'
-                          ? 'Contributor Name'
-                          : breakdownTab === 'projects'
-                            ? 'Project Initiative'
-                            : breakdownTab === 'timeliness'
-                              ? 'Team Member'
-                              : 'Client Organization'}
-                      </span>
-                      {sortColumn === 'label' ? (
-                        sortDirection === 'asc' ? (
-                          <ArrowUp size={12} className="text-indigo-600 shrink-0" />
-                        ) : (
-                          <ArrowDown size={12} className="text-indigo-600 shrink-0" />
-                        )
-                      ) : (
-                        <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
-                      )}
-                    </div>
-                  </ResizableTh>
-                  <ResizableTh
-                    onClick={() => handleTableSort('hours')}
-                    className="py-3 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-900 transition text-right sm:text-left"
-                  >
-                    <div className="flex items-center justify-end sm:justify-start gap-1.5">
-                      <span>
-                        {breakdownTab === 'timeliness' ? 'Avg Lag (Days)' : 'Approved Hours'}
-                      </span>
-                      {sortColumn === 'hours' ? (
-                        sortDirection === 'asc' ? (
-                          <ArrowUp size={12} className="text-indigo-600 shrink-0" />
-                        ) : (
-                          <ArrowDown size={12} className="text-indigo-600 shrink-0" />
-                        )
-                      ) : (
-                        <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
-                      )}
-                    </div>
-                  </ResizableTh>
-                  <ResizableTh
-                    onClick={() => handleTableSort('share')}
-                    className="py-3 px-4 hidden sm:table-cell cursor-pointer hover:bg-slate-100 hover:text-slate-900 transition"
-                  >
-                    <div className="flex items-center gap-1.5">
-                      <span>
-                        {breakdownTab === 'timeliness' ? 'On-Time Submission Rate' : 'Share of Total Effort'}
-                      </span>
-                      {sortColumn === 'share' ? (
-                        sortDirection === 'asc' ? (
-                          <ArrowUp size={12} className="text-indigo-600 shrink-0" />
-                        ) : (
-                          <ArrowDown size={12} className="text-indigo-600 shrink-0" />
-                        )
-                      ) : (
-                        <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
-                      )}
-                    </div>
-                  </ResizableTh>
-                  <ResizableTh
-                    onClick={() => handleTableSort('badge')}
-                    className="py-3 px-5 text-right cursor-pointer hover:bg-slate-100 hover:text-slate-900 transition"
-                  >
-                    <div className="flex items-center justify-end gap-1.5">
-                      <span>Status / Tier</span>
-                      {sortColumn === 'badge' ? (
-                        sortDirection === 'asc' ? (
-                          <ArrowUp size={12} className="text-indigo-600 shrink-0" />
-                        ) : (
-                          <ArrowDown size={12} className="text-indigo-600 shrink-0" />
-                        )
-                      ) : (
-                        <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
-                      )}
-                    </div>
-                  </ResizableTh>
-                </tr>
-              </TableHead>
-              <TableBody>
-                {currentTableRows.map((row) => (
-                  <TableRow key={row.id}>
-                    <TableTd className="px-5 font-medium text-slate-900">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-6 h-6 rounded-md bg-slate-100 text-slate-600 font-bold text-[10px] flex items-center justify-center shrink-0">
-                          {row.label.charAt(0).toUpperCase()}
-                        </div>
-                        <span title={row.label}>{row.label}</span>
-                      </div>
-                    </TableTd>
-                    <TableTd className="px-4 font-mono font-semibold text-slate-800 text-right sm:text-left">
-                      {breakdownTab === 'timeliness' ? (
-                        <>
-                          {row.hours.toFixed(1)} <span className="text-[10px] font-sans text-slate-400">days</span>
-                        </>
-                      ) : (
-                        <>
-                          {row.hours.toFixed(2)} <span className="text-[10px] font-sans text-slate-400">h</span>
-                        </>
-                      )}
-                    </TableTd>
-                    <TableTd className="px-4 hidden sm:table-cell text-slate-600">
-                      <div className="flex items-center gap-2.5">
-                        <span className="font-mono text-xs w-11 text-right">{row.share.toFixed(1)}%</span>
-                        <div className="w-24 bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                          <div
-                            className={`h-full ${breakdownTab === 'timeliness' ? (row.share >= 80 ? 'bg-emerald-600' : 'bg-amber-500') : 'bg-indigo-600'} rounded-full transition-all duration-300`}
-                            style={{ width: `${Math.min(100, Math.max(2, row.share))}%` }}
-                          />
-                        </div>
-                      </div>
-                    </TableTd>
-                    <TableTd className="px-5 text-right">
-                      <span
-                        className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${row.badgeColor}`}
-                      >
-                        {row.badge}
-                      </span>
-                    </TableTd>
-                  </TableRow>
-                ))}
-                {currentTableRows.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="py-10 text-center text-xs text-slate-500">
-                      No entries found matching your query "{tableSearch}".
-                    </td>
-                  </tr>
-                )}
-              </TableBody>
-            </Table>
-
-            {/* Pagination Controls (Max 10 per page, dynamic navigation) */}
-            <div className="px-5 py-3 border-t border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-600">
-              <div>
-                Showing{' '}
-                <span className="font-semibold text-slate-900">
-                  {sortedAndFilteredRows.length === 0 ? 0 : (currentPage - 1) * pageSize + 1}
-                </span>{' '}
-                to{' '}
-                <span className="font-semibold text-slate-900">
-                  {Math.min(currentPage * pageSize, sortedAndFilteredRows.length)}
-                </span>{' '}
-                of <span className="font-semibold text-slate-900">{sortedAndFilteredRows.length}</span> entries
-              </div>
-
-              {totalTablePages > 1 && (
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition cursor-pointer"
-                    aria-label="Previous page"
-                  >
-                    <ChevronLeft size={14} />
-                  </button>
-
-                  {Array.from({ length: totalTablePages }, (_, idx) => idx + 1).map((pg) => (
+                  {tableSearch && (
                     <button
-                      key={pg}
                       type="button"
-                      onClick={() => setCurrentPage(pg)}
-                      className={`w-7 h-7 rounded-md text-xs font-semibold transition cursor-pointer ${currentPage === pg
-                          ? 'bg-slate-900 text-white shadow-xs'
-                          : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
-                        }`}
+                      onClick={() => {
+                        setTableSearch('');
+                        setCurrentPage(1);
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                      title="Clear search"
                     >
-                      {pg}
+                      <X size={12} />
                     </button>
-                  ))}
-
-                  <button
-                    type="button"
-                    onClick={() => setCurrentPage((p) => Math.min(totalTablePages, p + 1))}
-                    disabled={currentPage === totalTablePages}
-                    className="p-1.5 rounded-md border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition cursor-pointer"
-                    aria-label="Next page"
-                  >
-                    <ChevronRight size={14} />
-                  </button>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
+
+            {/* Table with Clickable Headers inside horizontal scroll wrapper */}
+            <div className="overflow-x-auto flex-1 min-w-0">
+              <Table>
+                <TableHead>
+                  <tr>
+                    <ResizableTh
+                      onClick={() => handleTableSort('label')}
+                      className="py-2.5 sm:py-3 px-3.5 sm:px-5 cursor-pointer hover:bg-slate-100 hover:text-slate-900 transition text-xs"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>
+                          {breakdownTab === 'employees'
+                            ? 'Contributor Name'
+                            : breakdownTab === 'projects'
+                              ? 'Project Initiative'
+                              : breakdownTab === 'timeliness'
+                                ? 'Team Member'
+                                : 'Client Organization'}
+                        </span>
+                        {sortColumn === 'label' ? (
+                          sortDirection === 'asc' ? (
+                            <ArrowUp size={12} className="text-indigo-600 shrink-0" />
+                          ) : (
+                            <ArrowDown size={12} className="text-indigo-600 shrink-0" />
+                          )
+                        ) : (
+                          <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
+                        )}
+                      </div>
+                    </ResizableTh>
+                    <ResizableTh
+                      onClick={() => handleTableSort('hours')}
+                      className="py-2.5 sm:py-3 px-3 sm:px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-900 transition text-right sm:text-left text-xs"
+                    >
+                      <div className="flex items-center justify-end sm:justify-start gap-1.5">
+                        <span>
+                          {breakdownTab === 'timeliness' ? 'Avg Lag (Days)' : 'Approved Hours'}
+                        </span>
+                        {sortColumn === 'hours' ? (
+                          sortDirection === 'asc' ? (
+                            <ArrowUp size={12} className="text-indigo-600 shrink-0" />
+                          ) : (
+                            <ArrowDown size={12} className="text-indigo-600 shrink-0" />
+                          )
+                        ) : (
+                          <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
+                        )}
+                      </div>
+                    </ResizableTh>
+                    <ResizableTh
+                      onClick={() => handleTableSort('share')}
+                      className="py-2.5 sm:py-3 px-3 sm:px-4 hidden sm:table-cell cursor-pointer hover:bg-slate-100 hover:text-slate-900 transition text-xs"
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span>
+                          {breakdownTab === 'timeliness' ? 'On-Time Submission Rate' : 'Share of Total Effort'}
+                        </span>
+                        {sortColumn === 'share' ? (
+                          sortDirection === 'asc' ? (
+                            <ArrowUp size={12} className="text-indigo-600 shrink-0" />
+                          ) : (
+                            <ArrowDown size={12} className="text-indigo-600 shrink-0" />
+                          )
+                        ) : (
+                          <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
+                        )}
+                      </div>
+                    </ResizableTh>
+                    <ResizableTh
+                      onClick={() => handleTableSort('badge')}
+                      className="py-2.5 sm:py-3 px-3.5 sm:px-5 text-right cursor-pointer hover:bg-slate-100 hover:text-slate-900 transition text-xs"
+                    >
+                      <div className="flex items-center justify-end gap-1.5">
+                        <span>Status / Tier</span>
+                        {sortColumn === 'badge' ? (
+                          sortDirection === 'asc' ? (
+                            <ArrowUp size={12} className="text-indigo-600 shrink-0" />
+                          ) : (
+                            <ArrowDown size={12} className="text-indigo-600 shrink-0" />
+                          )
+                        ) : (
+                          <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
+                        )}
+                      </div>
+                    </ResizableTh>
+                  </tr>
+                </TableHead>
+                <TableBody>
+                  {currentTableRows.map((row) => (
+                    <TableRow key={row.id}>
+                      <TableTd className="px-3.5 sm:px-5 py-2.5 sm:py-3 font-medium text-slate-900">
+                        <div className="flex items-center gap-2 sm:gap-2.5">
+                          <div className="w-6 h-6 rounded-md bg-slate-100 text-slate-600 font-bold text-[10px] flex items-center justify-center shrink-0">
+                            {row.label.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <span className="truncate block max-w-[130px] sm:max-w-none text-xs" title={row.label}>{row.label}</span>
+                            <span className="block sm:hidden text-[10px] text-slate-400 font-mono">
+                              {breakdownTab === 'timeliness' ? `${row.share.toFixed(1)}% on-time` : `${row.share.toFixed(1)}% share`}
+                            </span>
+                          </div>
+                        </div>
+                      </TableTd>
+                      <TableTd className="px-3 sm:px-4 py-2.5 sm:py-3 font-mono font-semibold text-slate-800 text-right sm:text-left text-xs whitespace-nowrap">
+                        {breakdownTab === 'timeliness' ? (
+                          <>
+                            {row.hours.toFixed(1)} <span className="text-[10px] font-sans text-slate-400">days</span>
+                          </>
+                        ) : (
+                          <>
+                            {row.hours.toFixed(2)} <span className="text-[10px] font-sans text-slate-400">h</span>
+                          </>
+                        )}
+                      </TableTd>
+                      <TableTd className="px-3 sm:px-4 py-2.5 sm:py-3 hidden sm:table-cell text-slate-600">
+                        <div className="flex items-center gap-2.5">
+                          <span className="font-mono text-xs w-11 text-right">{row.share.toFixed(1)}%</span>
+                          <div className="w-20 lg:w-24 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                            <div
+                              className={`h-full ${breakdownTab === 'timeliness' ? (row.share >= 80 ? 'bg-emerald-600' : 'bg-amber-500') : 'bg-indigo-600'} rounded-full transition-all duration-300`}
+                              style={{ width: `${Math.min(100, Math.max(2, row.share))}%` }}
+                            />
+                          </div>
+                        </div>
+                      </TableTd>
+                      <TableTd className="px-3.5 sm:px-5 py-2.5 sm:py-3 text-right whitespace-nowrap">
+                        <span
+                          className={`inline-block px-2 sm:px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${row.badgeColor}`}
+                        >
+                          {row.badge}
+                        </span>
+                      </TableTd>
+                    </TableRow>
+                  ))}
+                  {currentTableRows.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="py-10 text-center text-xs text-slate-500">
+                        No entries found matching your query "{tableSearch}".
+                      </td>
+                    </tr>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+
+            {/* Pagination Controls */}
+            <Pagination
+              currentPage={currentPage}
+              totalItems={sortedAndFilteredRows.length}
+              itemsPerPage={pageSize}
+              onPageChange={setCurrentPage}
+            />
           </section>
 
           {loading && (

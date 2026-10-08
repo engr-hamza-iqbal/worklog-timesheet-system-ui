@@ -114,10 +114,10 @@ function MetricTable({ title, rows = [], columns = [], filename, onExport, defau
 
   return (
     <section className="flex flex-col rounded-xl border border-slate-200/90 bg-white shadow-xs overflow-hidden">
-      <div className="border-b border-slate-200 bg-slate-50/70 px-5 py-3.5 flex items-center justify-between shrink-0">
-        <h2 className="text-sm font-bold text-slate-900">{title}</h2>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-slate-400 font-medium">{rows.length} rows</span>
+      <div className="border-b border-slate-200 bg-slate-50/70 px-3.5 sm:px-5 py-3 sm:py-3.5 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 shrink-0">
+        <h2 className="text-xs sm:text-sm font-bold text-slate-900 truncate max-w-[200px] sm:max-w-none">{title}</h2>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-[11px] sm:text-xs text-slate-400 font-medium">{rows.length} rows</span>
           {rows.length > 0 && (
             <button
               type="button"
@@ -133,7 +133,7 @@ function MetricTable({ title, rows = [], columns = [], filename, onExport, defau
       </div>
       {sortedRows && sortedRows.length ? (
         <>
-          <div className="overflow-x-auto flex-1 min-w-0">
+          <div className="overflow-x-auto flex-1 min-w-0 [scrollbar-width:thin] touch-pan-x">
             <Table>
               <TableHead className="bg-slate-50/40">
                 <tr>
@@ -141,7 +141,7 @@ function MetricTable({ title, rows = [], columns = [], filename, onExport, defau
                     <ResizableTh
                       key={column.key}
                       onClick={() => handleSort(column.key)}
-                      className="px-5 py-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                      className="px-3.5 sm:px-5 py-2.5 sm:py-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition text-xs whitespace-nowrap"
                     >
                       <div className="flex items-center gap-1.5">
                         <span>{column.label}</span>
@@ -167,7 +167,7 @@ function MetricTable({ title, rows = [], columns = [], filename, onExport, defau
                     {columns.map((column, idx) => (
                       <td
                         key={column.key}
-                        className={`px-5 py-3 whitespace-nowrap ${
+                        className={`px-3.5 sm:px-5 py-2.5 sm:py-3 whitespace-nowrap text-xs ${
                           idx === 0 ? 'font-medium text-slate-800' : 'text-slate-600'
                         }`}
                       >
@@ -192,7 +192,7 @@ function MetricTable({ title, rows = [], columns = [], filename, onExport, defau
           </div>
         </>
       ) : (
-        <p className="px-5 py-10 text-center text-sm text-slate-500">No data found for this selection.</p>
+        <p className="px-5 py-10 text-center text-xs sm:text-sm text-slate-500">No data found for this selection.</p>
       )}
     </section>
   );
@@ -220,27 +220,27 @@ function ReviewerEntriesTable({ entries = [] }) {
 
   return (
     <div className="rounded-lg border border-slate-200 overflow-hidden bg-white shadow-2xs flex flex-col">
-      <div className="overflow-x-auto flex-1 min-w-0">
+      <div className="overflow-x-auto flex-1 min-w-0 [scrollbar-width:thin] touch-pan-x">
         <Table>
           <TableHead>
             <tr>
-              <ResizableTh className="px-4 py-2 text-xs"><span>Employee</span></ResizableTh>
-              <ResizableTh className="px-4 py-2 text-xs"><span>Project</span></ResizableTh>
-              <ResizableTh className="px-4 py-2 text-xs"><span>Work Date</span></ResizableTh>
-              <ResizableTh className="px-4 py-2 text-xs"><span>Hours</span></ResizableTh>
-              <ResizableTh className="px-4 py-2 text-xs"><span>Description</span></ResizableTh>
+              <ResizableTh className="px-3 sm:px-4 py-2 text-xs whitespace-nowrap"><span>Employee</span></ResizableTh>
+              <ResizableTh className="px-3 sm:px-4 py-2 text-xs whitespace-nowrap"><span>Project</span></ResizableTh>
+              <ResizableTh className="px-3 sm:px-4 py-2 text-xs whitespace-nowrap"><span>Work Date</span></ResizableTh>
+              <ResizableTh className="px-3 sm:px-4 py-2 text-xs whitespace-nowrap"><span>Hours</span></ResizableTh>
+              <ResizableTh className="px-3 sm:px-4 py-2 text-xs whitespace-nowrap"><span>Description</span></ResizableTh>
             </tr>
           </TableHead>
           <TableBody>
             {paginated.map((entry) => (
               <TableRow key={entry.id}>
-                <TableTd className="text-xs font-medium text-slate-800">{entry.userName}</TableTd>
-                <TableTd className="text-xs text-slate-600">
+                <TableTd className="px-3 sm:px-4 py-2 text-xs font-medium text-slate-800 whitespace-nowrap">{entry.userName}</TableTd>
+                <TableTd className="px-3 sm:px-4 py-2 text-xs text-slate-600 whitespace-nowrap">
                   {entry.projectName} <span className="text-slate-400">· {entry.clientName}</span>
                 </TableTd>
-                <TableTd className="text-xs text-slate-600">{entry.workDate}</TableTd>
-                <TableTd className="text-xs font-bold text-slate-900">{entry.hours} h</TableTd>
-                <TableTd className="text-xs text-slate-500 max-w-sm truncate" title={entry.description}>
+                <TableTd className="px-3 sm:px-4 py-2 text-xs text-slate-600 whitespace-nowrap">{entry.workDate}</TableTd>
+                <TableTd className="px-3 sm:px-4 py-2 text-xs font-bold text-slate-900 whitespace-nowrap">{entry.hours} h</TableTd>
+                <TableTd className="px-3 sm:px-4 py-2 text-xs text-slate-500 max-w-[200px] sm:max-w-sm truncate" title={entry.description}>
                   {entry.description}
                 </TableTd>
               </TableRow>
@@ -350,7 +350,7 @@ function SearchableEmployeeSelect({
       </button>
 
       {isOpen && (
-        <div className="absolute left-0 top-full mt-1.5 w-full sm:w-96 rounded-xl border border-slate-200 bg-white shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+        <div className="absolute left-0 top-full mt-1.5 w-full sm:w-96 max-w-[calc(100vw-2rem)] rounded-xl border border-slate-200 bg-white shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
           <div className="p-2 border-b border-slate-100 bg-slate-50/80">
             <div className="relative">
               <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -667,13 +667,13 @@ export default function ReportsPage() {
   return (
     <main className="mx-auto w-full max-w-auto px-4 py-6">
       {/* Page Header */}
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
             Financial & Operational summaries
           </p>
-          <h1 className="text-2xl font-semibold text-slate-900">Reports</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">Reports</h1>
+          <p className="mt-1 text-xs sm:text-sm text-slate-500">
             Database-aggregated hours, financial values, absences, and review backlog auditing.
           </p>
         </div>
@@ -688,10 +688,10 @@ export default function ReportsPage() {
               else if (activeTab === 'employee') loadEmployeeDetails();
             }}
             disabled={loading || loadingMissing || loadingAway || loadingReviewQueue || loadingEmp}
-            className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50 cursor-pointer w-full sm:w-auto"
           >
             <RefreshCw
-              size={15}
+              size={14}
               className={
                 loading || loadingMissing || loadingAway || loadingReviewQueue || loadingEmp
                   ? 'animate-spin'
@@ -704,11 +704,11 @@ export default function ReportsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="mb-6 flex border-b border-slate-200 overflow-x-auto no-scrollbar whitespace-nowrap gap-1">
+      <div className="mb-6 flex border-b border-slate-200 overflow-x-auto [scrollbar-width:none] touch-pan-x whitespace-nowrap gap-1 pb-px">
         <button
           type="button"
           onClick={() => setActiveTab('summary')}
-          className={`border-b-2 px-4 py-2.5 text-sm font-medium transition shrink-0 cursor-pointer ${
+          className={`border-b-2 px-3.5 sm:px-4 py-2.5 text-xs sm:text-sm font-medium transition shrink-0 cursor-pointer ${
             activeTab === 'summary'
               ? 'border-slate-900 text-slate-900 font-semibold'
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -719,7 +719,7 @@ export default function ReportsPage() {
         <button
           type="button"
           onClick={() => setActiveTab('missing')}
-          className={`border-b-2 px-4 py-2.5 text-sm font-medium transition shrink-0 cursor-pointer ${
+          className={`border-b-2 px-3.5 sm:px-4 py-2.5 text-xs sm:text-sm font-medium transition shrink-0 cursor-pointer ${
             activeTab === 'missing'
               ? 'border-slate-900 text-slate-900 font-semibold'
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -730,7 +730,7 @@ export default function ReportsPage() {
         <button
           type="button"
           onClick={() => setActiveTab('away')}
-          className={`border-b-2 px-4 py-2.5 text-sm font-medium transition shrink-0 cursor-pointer ${
+          className={`border-b-2 px-3.5 sm:px-4 py-2.5 text-xs sm:text-sm font-medium transition shrink-0 cursor-pointer ${
             activeTab === 'away'
               ? 'border-slate-900 text-slate-900 font-semibold'
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -741,7 +741,7 @@ export default function ReportsPage() {
         <button
           type="button"
           onClick={() => setActiveTab('reviewQueue')}
-          className={`border-b-2 px-4 py-2.5 text-sm font-medium transition shrink-0 cursor-pointer ${
+          className={`border-b-2 px-3.5 sm:px-4 py-2.5 text-xs sm:text-sm font-medium transition shrink-0 cursor-pointer ${
             activeTab === 'reviewQueue'
               ? 'border-slate-900 text-slate-900 font-semibold'
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -752,7 +752,7 @@ export default function ReportsPage() {
         <button
           type="button"
           onClick={() => setActiveTab('employee')}
-          className={`border-b-2 px-4 py-2.5 text-sm font-medium transition shrink-0 cursor-pointer ${
+          className={`border-b-2 px-3.5 sm:px-4 py-2.5 text-xs sm:text-sm font-medium transition shrink-0 cursor-pointer ${
             activeTab === 'employee'
               ? 'border-slate-900 text-slate-900 font-semibold'
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -767,45 +767,49 @@ export default function ReportsPage() {
         <>
           <form
             onSubmit={handleFilterSubmit}
-            className="mb-6 flex flex-col sm:flex-row flex-wrap sm:items-end gap-3 rounded-lg border border-slate-200 bg-white p-4 shadow-sm"
+            className="mb-6 flex flex-col sm:flex-row flex-wrap sm:items-end gap-3 rounded-lg border border-slate-200 bg-white p-3.5 sm:p-4 shadow-sm"
           >
-            <label className="text-xs font-medium text-slate-600 w-full sm:w-auto">
-              Start date
-              <input
-                type="date"
-                max={filters.endDate || undefined}
-                value={filters.startDate}
-                onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
-                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
-              />
-            </label>
-            <label className="text-xs font-medium text-slate-600 w-full sm:w-auto">
-              End date
-              <input
-                type="date"
-                min={filters.startDate || undefined}
-                value={filters.endDate}
-                onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
-                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
-              />
-            </label>
-            <button
-              type="submit"
-              disabled={loading}
-              className="inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-slate-800 disabled:opacity-50 w-full sm:w-auto cursor-pointer"
-            >
-              <BarChart3 size={15} className={loading ? 'animate-pulse' : ''} />
-              {loading ? 'Updating report...' : 'Run report'}
-            </button>
-            <button
-              type="button"
-              onClick={clearFilters}
-              disabled={loading}
-              className="inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 w-full sm:w-auto cursor-pointer"
-            >
-              <X size={15} />
-              Clear
-            </button>
+            <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
+              <label className="text-xs font-medium text-slate-600 flex flex-col gap-1">
+                <span>Start date</span>
+                <input
+                  type="date"
+                  max={filters.endDate || undefined}
+                  value={filters.startDate}
+                  onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+                  className="block w-full rounded-md border border-slate-300 px-2.5 py-1.5 sm:py-2 text-xs sm:text-sm focus:border-slate-900 focus:outline-none"
+                />
+              </label>
+              <label className="text-xs font-medium text-slate-600 flex flex-col gap-1">
+                <span>End date</span>
+                <input
+                  type="date"
+                  min={filters.startDate || undefined}
+                  value={filters.endDate}
+                  onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+                  className="block w-full rounded-md border border-slate-300 px-2.5 py-1.5 sm:py-2 text-xs sm:text-sm focus:border-slate-900 focus:outline-none"
+                />
+              </label>
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-md bg-slate-900 px-4 py-2 text-xs sm:text-sm font-medium text-white shadow-sm hover:bg-slate-800 disabled:opacity-50 cursor-pointer"
+              >
+                <BarChart3 size={15} className={loading ? 'animate-pulse' : ''} />
+                {loading ? 'Updating...' : 'Run report'}
+              </button>
+              <button
+                type="button"
+                onClick={clearFilters}
+                disabled={loading}
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs sm:text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 cursor-pointer"
+              >
+                <X size={15} />
+                Clear
+              </button>
+            </div>
           </form>
 
           {loading && !report ? (
@@ -894,34 +898,34 @@ export default function ReportsPage() {
       {/* ─── TAB 2: MISSING TIMESHEETS & REMINDERS ─── */}
       {activeTab === 'missing' && (
         <section className="space-y-6">
-          <div className="flex flex-col sm:flex-row flex-wrap sm:items-end justify-between gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-col sm:flex-row flex-wrap sm:items-end justify-between gap-3.5 sm:gap-4 rounded-lg border border-slate-200 bg-white p-3.5 sm:p-4 shadow-sm">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 loadMissing(missingDate);
               }}
-              className="flex flex-col sm:flex-row sm:items-end gap-3 w-full sm:w-auto"
+              className="flex flex-col sm:flex-row sm:items-end gap-2.5 sm:gap-3 w-full sm:w-auto"
             >
               <label className="text-xs font-medium text-slate-600 w-full sm:w-auto">
-                Working Day
+                <span>Working Day</span>
                 <input
                   type="date"
                   value={missingDate}
                   onChange={(e) => setMissingDate(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
+                  className="mt-1 block w-full rounded-md border border-slate-300 px-2.5 py-1.5 sm:py-2 text-xs sm:text-sm focus:border-slate-900 focus:outline-none"
                 />
               </label>
               <button
                 type="submit"
                 disabled={loadingMissing || !missingDate}
-                className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto font-medium"
+                className="rounded-md border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed w-full sm:w-auto font-medium"
               >
                 {loadingMissing && <Loader2 size={13} className="animate-spin shrink-0" />}
                 Check date
               </button>
             </form>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
               {missingData?.employees?.length > 0 && (
                 <button
                   type="button"
@@ -936,7 +940,7 @@ export default function ReportsPage() {
                       missingData.employees
                     )
                   }
-                  className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 cursor-pointer"
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 cursor-pointer"
                 >
                   <Download size={13} />
                   Export CSV
@@ -948,19 +952,19 @@ export default function ReportsPage() {
                   type="button"
                   onClick={handleChaseSubmit}
                   disabled={chasing || !selectedUsers.length}
-                  className="inline-flex items-center justify-center gap-2 rounded-md bg-red-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-red-800 disabled:opacity-40 transition cursor-pointer disabled:cursor-not-allowed w-full sm:w-auto"
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-md bg-red-700 px-3.5 sm:px-4 py-2 text-xs sm:text-sm font-medium text-white shadow-sm hover:bg-red-800 disabled:opacity-40 transition cursor-pointer disabled:cursor-not-allowed"
                 >
                   {chasing ? <Loader2 size={15} className="animate-spin shrink-0" /> : <Send size={15} />}
-                  {chasing ? 'Sending reminders...' : `Chase Selected (${selectedUsers.length})`}
+                  {chasing ? 'Sending...' : `Chase Selected (${selectedUsers.length})`}
                 </button>
               )}
             </div>
           </div>
 
           <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-5 py-4 shrink-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 bg-slate-50 px-3.5 sm:px-5 py-3.5 sm:py-4 gap-2 shrink-0">
               <div>
-                <h2 className="text-base font-semibold text-slate-900">
+                <h2 className="text-sm sm:text-base font-semibold text-slate-900">
                   Employees with Missing Timesheets
                 </h2>
                 <p className="mt-0.5 text-xs text-slate-500">
@@ -971,7 +975,7 @@ export default function ReportsPage() {
                 <button
                   type="button"
                   onClick={toggleSelectAll}
-                  className="text-xs font-semibold text-slate-700 underline hover:text-slate-900 shrink-0 ml-2 cursor-pointer"
+                  className="text-xs font-semibold text-slate-700 underline hover:text-slate-900 shrink-0 self-start sm:self-auto cursor-pointer"
                 >
                   {selectedUsers.length > 0 ? 'Deselect all' : 'Select all eligible'}
                 </button>
@@ -985,22 +989,22 @@ export default function ReportsPage() {
               </div>
             ) : missingData?.employees?.length ? (
               <>
-                <div className="overflow-x-auto flex-1 min-w-0">
+                <div className="overflow-x-auto flex-1 min-w-0 [scrollbar-width:thin] touch-pan-x">
                   <Table>
                     <TableHead>
                       <tr>
                         {isAdmin && (
-                          <ResizableTh className="px-5 py-3 w-12">
+                          <ResizableTh className="px-3.5 sm:px-5 py-2.5 sm:py-3 w-12 text-xs">
                             <span>Select</span>
                           </ResizableTh>
                         )}
-                        <ResizableTh className="px-5 py-3">
+                        <ResizableTh className="px-3.5 sm:px-5 py-2.5 sm:py-3 text-xs whitespace-nowrap">
                           <span>Employee</span>
                         </ResizableTh>
-                        <ResizableTh className="px-5 py-3">
+                        <ResizableTh className="px-3.5 sm:px-5 py-2.5 sm:py-3 text-xs whitespace-nowrap">
                           <span>Email</span>
                         </ResizableTh>
-                        <ResizableTh className="px-5 py-3">
+                        <ResizableTh className="px-3.5 sm:px-5 py-2.5 sm:py-3 text-xs whitespace-nowrap">
                           <span>Chase Status</span>
                         </ResizableTh>
                       </tr>
@@ -1011,7 +1015,7 @@ export default function ReportsPage() {
                         .map((emp) => (
                           <TableRow key={emp.userId}>
                             {isAdmin && (
-                              <TableTd className="w-12">
+                              <TableTd className="px-3.5 sm:px-5 py-2.5 sm:py-3 w-12">
                                 <input
                                   type="checkbox"
                                   disabled={emp.chasedToday}
@@ -1021,13 +1025,13 @@ export default function ReportsPage() {
                                 />
                               </TableTd>
                             )}
-                            <TableTd className="font-medium text-slate-800">
+                            <TableTd className="px-3.5 sm:px-5 py-2.5 sm:py-3 font-medium text-slate-800 text-xs whitespace-nowrap">
                               <span title={emp.userName}>{emp.userName}</span>
                             </TableTd>
-                            <TableTd className="text-slate-600">
+                            <TableTd className="px-3.5 sm:px-5 py-2.5 sm:py-3 text-slate-600 text-xs whitespace-nowrap">
                               <span title={emp.email}>{emp.email}</span>
                             </TableTd>
-                            <TableTd>
+                            <TableTd className="px-3.5 sm:px-5 py-2.5 sm:py-3 text-xs whitespace-nowrap">
                               {emp.chasedToday ? (
                                 <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
                                   Reminded today
@@ -1066,40 +1070,42 @@ export default function ReportsPage() {
       {/* ─── TAB 3: WHO IS AWAY ─── */}
       {activeTab === 'away' && (
         <section className="space-y-6">
-          <div className="flex flex-col sm:flex-row flex-wrap sm:items-end justify-between gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-col sm:flex-row flex-wrap sm:items-end justify-between gap-3.5 sm:gap-4 rounded-lg border border-slate-200 bg-white p-3.5 sm:p-4 shadow-sm">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 loadWhoIsAway(awayDate);
               }}
-              className="flex flex-col sm:flex-row sm:items-end gap-3 w-full sm:w-auto"
+              className="flex flex-col sm:flex-row sm:items-end gap-2.5 sm:gap-3 w-full sm:w-auto"
             >
               <label className="text-xs font-medium text-slate-600 w-full sm:w-auto">
-                Target Date
+                <span>Target Date</span>
                 <input
                   type="date"
                   value={awayDate}
                   onChange={(e) => setAwayDate(e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none"
+                  className="mt-1 block w-full rounded-md border border-slate-300 px-2.5 py-1.5 sm:py-2 text-xs sm:text-sm focus:border-slate-900 focus:outline-none"
                 />
               </label>
               <button
                 type="submit"
                 disabled={loadingAway || !awayDate}
-                className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-50 font-medium"
+                className="rounded-md border border-slate-200 bg-white px-3.5 py-2 text-xs sm:text-sm text-slate-700 hover:bg-slate-50 inline-flex items-center justify-center gap-1.5 transition cursor-pointer disabled:opacity-50 font-medium w-full sm:w-auto"
               >
                 {loadingAway && <Loader2 size={13} className="animate-spin shrink-0" />}
                 View Absences
               </button>
             </form>
 
-            <div className="flex items-center gap-2">
-              <span className="inline-flex items-center rounded-full bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-800 border border-sky-200">
-                Approved: {awayData?.totalAway ?? 0}
-              </span>
-              <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 border border-amber-200">
-                Pending: {awayData?.totalPending ?? 0}
-              </span>
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <span className="inline-flex items-center rounded-full bg-sky-50 px-2.5 py-1 text-xs font-semibold text-sky-800 border border-sky-200">
+                  Approved: {awayData?.totalAway ?? 0}
+                </span>
+                <span className="inline-flex items-center rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 border border-amber-200">
+                  Pending: {awayData?.totalPending ?? 0}
+                </span>
+              </div>
               {awayData?.awayUsers?.length > 0 && (
                 <button
                   type="button"
@@ -1118,7 +1124,7 @@ export default function ReportsPage() {
                       awayData.awayUsers
                     )
                   }
-                  className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 sm:py-2 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 cursor-pointer"
                 >
                   <Download size={13} />
                   Export CSV
@@ -1128,8 +1134,8 @@ export default function ReportsPage() {
           </div>
 
           <div className="rounded-lg border border-slate-200 bg-white shadow-sm overflow-hidden flex flex-col">
-            <div className="border-b border-slate-200 bg-slate-50 px-5 py-4 shrink-0">
-              <h2 className="text-base font-semibold text-slate-900">
+            <div className="border-b border-slate-200 bg-slate-50 px-3.5 sm:px-5 py-3.5 sm:py-4 shrink-0">
+              <h2 className="text-sm sm:text-base font-semibold text-slate-900">
                 Employees Away on {awayDate}
               </h2>
               <p className="mt-0.5 text-xs text-slate-500">
@@ -1144,16 +1150,16 @@ export default function ReportsPage() {
               </div>
             ) : awayData?.awayUsers?.length ? (
               <>
-                <div className="overflow-x-auto flex-1 min-w-0">
+                <div className="overflow-x-auto flex-1 min-w-0 [scrollbar-width:thin] touch-pan-x">
                   <Table>
                     <TableHead>
                       <tr>
-                        <ResizableTh className="px-5 py-3"><span>Employee</span></ResizableTh>
-                        <ResizableTh className="px-5 py-3"><span>Email</span></ResizableTh>
-                        <ResizableTh className="px-5 py-3"><span>Leave Type</span></ResizableTh>
-                        <ResizableTh className="px-5 py-3"><span>Period</span></ResizableTh>
-                        <ResizableTh className="px-5 py-3"><span>Status</span></ResizableTh>
-                        <ResizableTh className="px-5 py-3"><span>Reason</span></ResizableTh>
+                        <ResizableTh className="px-3.5 sm:px-5 py-2.5 sm:py-3 text-xs whitespace-nowrap"><span>Employee</span></ResizableTh>
+                        <ResizableTh className="px-3.5 sm:px-5 py-2.5 sm:py-3 text-xs whitespace-nowrap"><span>Email</span></ResizableTh>
+                        <ResizableTh className="px-3.5 sm:px-5 py-2.5 sm:py-3 text-xs whitespace-nowrap"><span>Leave Type</span></ResizableTh>
+                        <ResizableTh className="px-3.5 sm:px-5 py-2.5 sm:py-3 text-xs whitespace-nowrap"><span>Period</span></ResizableTh>
+                        <ResizableTh className="px-3.5 sm:px-5 py-2.5 sm:py-3 text-xs whitespace-nowrap"><span>Status</span></ResizableTh>
+                        <ResizableTh className="px-3.5 sm:px-5 py-2.5 sm:py-3 text-xs whitespace-nowrap"><span>Reason</span></ResizableTh>
                       </tr>
                     </TableHead>
                     <TableBody>
@@ -1161,13 +1167,13 @@ export default function ReportsPage() {
                         .slice((awayPage - 1) * awayPageSize, awayPage * awayPageSize)
                         .map((item) => (
                           <TableRow key={item.requestId + item.userId}>
-                            <TableTd className="font-medium text-slate-800">{item.userName}</TableTd>
-                            <TableTd className="text-slate-600">{item.userEmail}</TableTd>
-                            <TableTd className="font-semibold text-slate-700">{item.timeOffType}</TableTd>
-                            <TableTd className="text-slate-600 text-xs">
+                            <TableTd className="px-3.5 sm:px-5 py-2.5 sm:py-3 font-medium text-slate-800 text-xs whitespace-nowrap">{item.userName}</TableTd>
+                            <TableTd className="px-3.5 sm:px-5 py-2.5 sm:py-3 text-slate-600 text-xs whitespace-nowrap">{item.userEmail}</TableTd>
+                            <TableTd className="px-3.5 sm:px-5 py-2.5 sm:py-3 font-semibold text-slate-700 text-xs whitespace-nowrap">{item.timeOffType}</TableTd>
+                            <TableTd className="px-3.5 sm:px-5 py-2.5 sm:py-3 text-slate-600 text-xs whitespace-nowrap">
                               {item.startDate} &rarr; {item.endDate}
                             </TableTd>
-                            <TableTd>
+                            <TableTd className="px-3.5 sm:px-5 py-2.5 sm:py-3 text-xs whitespace-nowrap">
                               <span
                                 className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
                                   item.status === 'APPROVED'
@@ -1178,7 +1184,7 @@ export default function ReportsPage() {
                                 {item.status}
                               </span>
                             </TableTd>
-                            <TableTd className="text-slate-500 text-xs max-w-xs truncate" title={item.reason}>
+                            <TableTd className="px-3.5 sm:px-5 py-2.5 sm:py-3 text-slate-500 text-xs max-w-xs truncate" title={item.reason}>
                               {item.reason}
                             </TableTd>
                           </TableRow>
@@ -1209,17 +1215,17 @@ export default function ReportsPage() {
       {/* ─── TAB 4: REVIEW QUEUE BY REVIEWER ─── */}
       {activeTab === 'reviewQueue' && (
         <section className="space-y-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3.5 sm:gap-4 rounded-lg border border-slate-200 bg-white p-3.5 sm:p-4 shadow-sm">
             <div>
-              <h2 className="text-base font-semibold text-slate-900">
+              <h2 className="text-sm sm:text-base font-semibold text-slate-900">
                 Entries Waiting for Review by Reviewer
               </h2>
               <p className="mt-0.5 text-xs text-slate-500">
                 Submitted work entries grouped by managers and administrators authorized to review them.
               </p>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-xs font-semibold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-md">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
+              <span className="text-xs font-semibold text-slate-700 bg-slate-100 px-2.5 sm:px-3 py-1.5 rounded-md">
                 Total Pending Work: {reviewQueueData?.totalPendingEntries ?? 0} entries
               </span>
               {reviewQueueData?.reviewers?.length > 0 && (
@@ -1279,15 +1285,15 @@ export default function ReportsPage() {
                     >
                       <div
                         onClick={() => setExpandedReviewerId(isExpanded ? null : rev.reviewerId)}
-                        className="px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/70 hover:bg-slate-100/60 cursor-pointer transition border-b border-slate-200"
+                        className="p-3.5 sm:px-5 sm:py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/70 hover:bg-slate-100/60 cursor-pointer transition border-b border-slate-200"
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-full bg-slate-200 text-slate-700 font-bold text-sm flex items-center justify-center">
+                        <div className="flex items-center gap-2.5 sm:gap-3">
+                          <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-full bg-slate-200 text-slate-700 font-bold text-xs sm:text-sm flex items-center justify-center shrink-0">
                             {rev.reviewerName.charAt(0).toUpperCase()}
                           </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="text-sm font-semibold text-slate-900">{rev.reviewerName}</h3>
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                              <h3 className="text-xs sm:text-sm font-semibold text-slate-900 truncate">{rev.reviewerName}</h3>
                               <span
                                 className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                                   rev.role === 'ADMIN'
@@ -1297,25 +1303,25 @@ export default function ReportsPage() {
                               >
                                 {rev.role}
                               </span>
-                              <span className="text-[10px] font-medium text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded">
+                              <span className="text-[10px] font-medium text-slate-500 bg-white border border-slate-200 px-1.5 py-0.5 rounded">
                                 {rev.scopeType}
                               </span>
                             </div>
-                            <p className="text-xs text-slate-500">{rev.reviewerEmail}</p>
+                            <p className="text-[11px] sm:text-xs text-slate-500 truncate">{rev.reviewerEmail}</p>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-4">
-                          <div className="text-right">
-                            <p className="text-sm font-bold text-slate-900">{rev.waitingEntryCount} entries</p>
-                            <p className="text-xs text-slate-500">{rev.waitingHours} hours waiting</p>
+                        <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-200/60">
+                          <div className="text-left sm:text-right">
+                            <p className="text-xs sm:text-sm font-bold text-slate-900">{rev.waitingEntryCount} entries</p>
+                            <p className="text-[10px] sm:text-xs text-slate-500">{rev.waitingHours} hours waiting</p>
                           </div>
-                          {isExpanded ? <ChevronUp size={18} className="text-slate-400" /> : <ChevronDown size={18} className="text-slate-400" />}
+                          {isExpanded ? <ChevronUp size={18} className="text-slate-400 shrink-0" /> : <ChevronDown size={18} className="text-slate-400 shrink-0" />}
                         </div>
                       </div>
 
                       {isExpanded && (
-                        <div className="p-4 sm:p-5 bg-slate-50/40">
+                        <div className="p-2.5 sm:p-5 bg-slate-50/40">
                           <ReviewerEntriesTable entries={rev.entries} />
                         </div>
                       )}
@@ -1343,9 +1349,9 @@ export default function ReportsPage() {
       {/* ─── TAB 5: EMPLOYEE BREAKDOWN & TIME TRENDS ─── */}
       {activeTab === 'employee' && (
         <section className="space-y-6">
-          <div className="flex flex-col sm:flex-row flex-wrap sm:items-end justify-between gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-end gap-4 w-full sm:w-auto">
-              <div>
+          <div className="flex flex-col sm:flex-row flex-wrap sm:items-end justify-between gap-3.5 sm:gap-4 rounded-lg border border-slate-200 bg-white p-3.5 sm:p-4 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4 w-full sm:w-auto">
+              <div className="w-full sm:w-auto">
                 <label className="text-xs font-medium text-slate-600 mb-1 block">
                   Select Employee
                 </label>
@@ -1357,7 +1363,7 @@ export default function ReportsPage() {
                 />
               </div>
 
-              <div>
+              <div className="w-full sm:w-auto">
                 <label className="text-xs font-medium text-slate-600 mb-1 block">
                   Trend Period
                 </label>
@@ -1368,7 +1374,7 @@ export default function ReportsPage() {
                     setEmpFilters(next);
                     loadEmployeeDetails(selectedEmployeeId, next);
                   }}
-                  className="block w-full sm:w-36 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-2xs hover:bg-slate-50 focus:border-slate-900 focus:outline-none cursor-pointer"
+                  className="block w-full sm:w-36 rounded-md border border-slate-300 bg-white px-3 py-2 text-xs sm:text-sm text-slate-800 shadow-2xs hover:bg-slate-50 focus:border-slate-900 focus:outline-none cursor-pointer"
                 >
                   <option value="week">Weekly</option>
                   <option value="month">Monthly</option>
@@ -1376,7 +1382,7 @@ export default function ReportsPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between sm:justify-end gap-2 w-full sm:w-auto">
               <span className="text-xs font-semibold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-md">
                 Total Logged: {empBreakdown?.totalHours ?? 0} h
               </span>
