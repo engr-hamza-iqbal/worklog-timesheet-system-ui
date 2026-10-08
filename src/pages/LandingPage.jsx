@@ -311,21 +311,23 @@ export default function LandingPage() {
                             <span className="text-[10px] sm:text-[11px] font-bold text-slate-700 mb-1 group-hover:text-indigo-600 transition">
                               {col.total}h
                             </span>
-                            {/* Stacked Bar with Project Breakdown */}
-                            <div
-                              className="w-full max-w-[32px] sm:max-w-[42px] bg-slate-100 rounded-t-lg overflow-hidden flex flex-col justify-end transition-all group-hover:brightness-105"
-                              style={{ height: `${col.heightPct}%` }}
-                            >
+                            {/* 2-Layer Bar: Inactive Full-Height Grey Pillar with Colored Progress Inside */}
+                            <div className="w-full max-w-[32px] sm:max-w-[42px] h-full bg-slate-100 rounded-t-lg p-0.5 flex flex-col justify-end transition-all group-hover:bg-slate-200/70 border border-slate-200/50 shadow-inner">
                               <div
-                                className="w-full bg-sky-400"
-                                style={{ height: `${(col.internalHours / col.total) * 100}%` }}
-                                title={`Internal & Approvals: ${col.internalHours}h`}
-                              />
-                              <div
-                                className="w-full bg-indigo-600"
-                                style={{ height: `${(col.clientHours / col.total) * 100}%` }}
-                                title={`Client Billable: ${col.clientHours}h`}
-                              />
+                                className="w-full rounded-t-md overflow-hidden flex flex-col justify-end transition-all duration-500 shadow-xs"
+                                style={{ height: `${col.heightPct}%` }}
+                              >
+                                <div
+                                  className="w-full bg-sky-400"
+                                  style={{ height: `${(col.internalHours / col.total) * 100}%` }}
+                                  title={`Internal & Approvals: ${col.internalHours}h`}
+                                />
+                                <div
+                                  className="w-full bg-indigo-600"
+                                  style={{ height: `${(col.clientHours / col.total) * 100}%` }}
+                                  title={`Client Billable: ${col.clientHours}h`}
+                                />
+                              </div>
                             </div>
                             {/* X-axis Day & Date Labels */}
                             <div className="mt-1.5 sm:mt-2 text-center select-none">

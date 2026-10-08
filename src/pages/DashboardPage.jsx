@@ -179,11 +179,14 @@ export default function DashboardPage() {
                 <span className="text-xl font-bold text-white">{grantedCount} / {SYSTEM_CAPABILITIES.length}</span>
                 <span className="text-xs text-indigo-300 font-semibold">{percentageGranted}%</span>
               </div>
-              <div className="mt-2 h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
+              {/* 2-Layer Progress Meter: Inactive dark track with glowing gradient active line */}
+              <div className="mt-2.5 h-2.5 w-full bg-slate-900/60 rounded-full p-0.5 border border-white/10 overflow-hidden shadow-inner">
                 <div
-                  className="h-full bg-gradient-to-r from-indigo-400 to-emerald-400 rounded-full transition-all duration-500"
-                  style={{ width: `${percentageGranted}%` }}
-                />
+                  className="h-full bg-gradient-to-r from-indigo-400 via-sky-400 to-emerald-400 rounded-full transition-all duration-700 shadow-xs relative"
+                  style={{ width: `${Math.max(percentageGranted, 4)}%` }}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full" />
+                </div>
               </div>
             </div>
 

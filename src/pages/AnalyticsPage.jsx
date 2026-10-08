@@ -34,6 +34,7 @@ import {
   Tooltip,
   CartesianGrid,
   Legend,
+  ReferenceLine,
 } from 'recharts';
 import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -56,13 +57,16 @@ const CHART_COLORS = [
 function CustomTooltip({ active, payload, label, unit = 'h' }) {
   if (active && payload && payload.length) {
     const data = payload[0];
+    const val = Number(data.value || 0).toFixed(2);
     return (
-      <div className="rounded-lg border border-slate-700/60 bg-slate-900/95 px-3 py-2 text-xs text-white shadow-xl backdrop-blur-md">
-        <p className="font-semibold text-slate-200">{label || data.name}</p>
-        <p className="mt-1 flex items-center gap-1.5 font-mono text-emerald-400">
-          <span>{Number(data.value).toFixed(2)}</span>
-          <span className="text-slate-400 font-sans">{unit}</span>
-        </p>
+      <div className="rounded-xl border border-slate-700/80 bg-slate-900/95 px-3.5 py-2.5 text-xs text-white shadow-2xl backdrop-blur-md ring-1 ring-white/10 animate-in fade-in zoom-in-95 duration-150">
+        <p className="font-semibold text-slate-300 text-[11px] uppercase tracking-wider">{label || data.name}</p>
+        <div className="mt-1 flex items-baseline gap-2">
+          <span className="text-base font-bold font-mono text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">
+            {val}
+          </span>
+          <span className="text-slate-400 font-sans font-medium text-xs">{unit} approved</span>
+        </div>
       </div>
     );
   }
@@ -183,6 +187,12 @@ export default function AnalyticsPage() {
     }));
   }, [analytics]);
 
+  const avgWeeklyHours = useMemo(() => {
+    if (!weeklyData || weeklyData.length === 0) return 0;
+    const sum = weeklyData.reduce((acc, row) => acc + row.hours, 0);
+    return sum / weeklyData.length;
+  }, [weeklyData]);
+
   // Formatted data for Projects Chart
   const allProjectsData = useMemo(() => {
     if (!analytics?.projects) return [];
@@ -213,14 +223,20 @@ export default function AnalyticsPage() {
 
   const donutClientsData = useMemo(() => {
     if (!analytics?.clients || analytics.clients.length === 0) return [];
-    const total = analytics.clients.reduce((sum, r) => sum + (Number(r.hours) || 0), 0);
-    const sorted = [...analytics.clients].sort((a, b) => (Number(b.hours) || 0) - (Number(a.hours) || 0));
+    // Filter out zero-hour records to prevent NaN arc angles in Recharts Pie
+    const activeClients = analytics.clients.filter((r) => Number(r.hours) > 0);
+    if (activeClients.length === 0) return [];
+
+    const total = activeClients.reduce((sum, r) => sum + (Number(r.hours) || 0), 0);
+    if (total <= 0) return [];
+
+    const sorted = [...activeClients].sort((a, b) => (Number(b.hours) || 0) - (Number(a.hours) || 0));
 
     // If more than 6 clients, bundle the rest into an "Other" slice so pie chart doesn't mess up
     if (sorted.length > 6) {
       const top5 = sorted.slice(0, 5).map((row) => ({
         name: row.label,
-        value: Number(row.hours) || 0,
+        value: Number(Number(row.hours).toFixed(2)),
         percentage: total > 0 ? ((Number(row.hours) / total) * 100).toFixed(1) : '0.0',
       }));
       const otherHours = sorted.slice(5).reduce((sum, r) => sum + (Number(r.hours) || 0), 0);
@@ -235,10 +251,14 @@ export default function AnalyticsPage() {
 
     return sorted.map((row) => ({
       name: row.label,
-      value: Number(row.hours) || 0,
+      value: Number(Number(row.hours).toFixed(2)),
       percentage: total > 0 ? ((Number(row.hours) / total) * 100).toFixed(1) : '0.0',
     }));
   }, [analytics]);
+
+  const totalDonutHours = useMemo(() => {
+    return donutClientsData.reduce((acc, curr) => acc + (curr.value || 0), 0);
+  }, [donutClientsData]);
 
   // Formatted data for Employees Chart (robust scrolling / display for many team members)
   const allEmployeesData = useMemo(() => {
@@ -614,32 +634,85 @@ export default function AnalyticsPage() {
                   <h2 className="text-sm font-semibold text-slate-900">Weekly Hours Trend</h2>
                   <p className="text-[11px] text-slate-500">Aggregated approved hours by week start</p>
                 </div>
-                <span className="self-start sm:self-auto text-xs font-mono font-medium text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
-                  {weeklyData.length} weeks
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="self-start sm:self-auto text-xs font-mono font-semibold text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-md border border-indigo-100 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                    {weeklyData.length} weeks
+                  </span>
+                  {avgWeeklyHours > 0 && (
+                    <span className="text-xs font-mono font-medium text-slate-600 bg-slate-50 px-2 py-0.5 rounded border border-slate-200">
+                      Avg: <strong className="text-slate-900">{avgWeeklyHours.toFixed(1)}h</strong>/wk
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="overflow-x-auto pb-1 [scrollbar-width:thin] touch-pan-x">
                 <div style={{ minWidth: `${Math.max(260, weeklyData.length * 32)}px`, height: '260px' }}>
                   {weeklyData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={weeklyData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                    <ResponsiveContainer width="100%" height="100%" minWidth={240} minHeight={240}>
+                      <AreaChart data={weeklyData} margin={{ top: 12, right: 12, left: -22, bottom: 4 }}>
                         <defs>
-                          <linearGradient id="hoursGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.4} />
-                            <stop offset="95%" stopColor="#4f46e5" stopOpacity={0.0} />
+                          {/* Luminous multi-stop gradient fill */}
+                          <linearGradient id="stunningAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#6366f1" stopOpacity={0.42} />
+                            <stop offset="45%" stopColor="#818cf8" stopOpacity={0.16} />
+                            <stop offset="85%" stopColor="#c7d2fe" stopOpacity={0.03} />
+                            <stop offset="100%" stopColor="#ffffff" stopOpacity={0.0} />
                           </linearGradient>
+
+                          {/* Glowing multi-stop gradient for line stroke */}
+                          <linearGradient id="stunningLineGrad" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%" stopColor="#4338ca" />
+                            <stop offset="35%" stopColor="#6366f1" />
+                            <stop offset="70%" stopColor="#8b5cf6" />
+                            <stop offset="100%" stopColor="#06b6d4" />
+                          </linearGradient>
+
+                          {/* Neon glow drop shadow for the curve */}
+                          <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+                            <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#6366f1" floodOpacity="0.32" />
+                          </filter>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                        <XAxis dataKey="week" stroke="#94a3b8" fontSize={10} tickLine={false} />
+
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.7} vertical={false} />
+                        <XAxis dataKey="week" stroke="#94a3b8" fontSize={10} tickLine={false} dy={4} />
                         <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} unit="h" />
                         <Tooltip content={<CustomTooltip unit="h" />} />
+
+                        {avgWeeklyHours > 0 && (
+                          <ReferenceLine
+                            y={Number(avgWeeklyHours.toFixed(1))}
+                            stroke="#94a3b8"
+                            strokeDasharray="4 4"
+                            strokeWidth={1.5}
+                            label={{
+                              value: `Avg ${avgWeeklyHours.toFixed(1)}h`,
+                              position: 'insideTopRight',
+                              fill: '#64748b',
+                              fontSize: 10,
+                              fontWeight: 600,
+                              offset: 8,
+                            }}
+                          />
+                        )}
+
                         <Area
                           type="monotone"
                           dataKey="hours"
-                          stroke="#4f46e5"
-                          strokeWidth={2.5}
+                          stroke="url(#stunningLineGrad)"
+                          strokeWidth={3}
                           fillOpacity={1}
-                          fill="url(#hoursGrad)"
+                          fill="url(#stunningAreaGrad)"
+                          dot={{ stroke: '#6366f1', strokeWidth: 2, r: 3.5, fill: '#ffffff' }}
+                          activeDot={{
+                            stroke: '#4f46e5',
+                            strokeWidth: 3,
+                            r: 6.5,
+                            fill: '#ffffff',
+                            filter: 'url(#neonGlow)',
+                          }}
+                          animationDuration={700}
+                          animationEasing="ease-out"
                         />
                       </AreaChart>
                     </ResponsiveContainer>
@@ -652,7 +725,7 @@ export default function AnalyticsPage() {
               </div>
             </section>
 
-            {/* 2. Hours by Client (Donut Pie Chart or Bar View) */}
+            {/* 2. Hours by Client (Donut Pie Chart or 2-Layer Bar View) */}
             <section className="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-xs flex flex-col justify-between">
               <div className="mb-3.5 sm:mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
@@ -667,10 +740,11 @@ export default function AnalyticsPage() {
                     <button
                       type="button"
                       onClick={() => setClientChartMode('donut')}
-                      className={`px-2 py-0.5 rounded-md font-medium transition cursor-pointer flex items-center gap-1 ${clientChartMode === 'donut'
+                      className={`px-2 py-0.5 rounded-md font-medium transition cursor-pointer flex items-center gap-1 ${
+                        clientChartMode === 'donut'
                           ? 'bg-white text-slate-900 shadow-xs'
                           : 'text-slate-500 hover:text-slate-800'
-                        }`}
+                      }`}
                     >
                       <PieIcon size={12} />
                       <span className="inline">Donut</span>
@@ -678,10 +752,11 @@ export default function AnalyticsPage() {
                     <button
                       type="button"
                       onClick={() => setClientChartMode('bar')}
-                      className={`px-2 py-0.5 rounded-md font-medium transition cursor-pointer flex items-center gap-1 ${clientChartMode === 'bar'
+                      className={`px-2 py-0.5 rounded-md font-medium transition cursor-pointer flex items-center gap-1 ${
+                        clientChartMode === 'bar'
                           ? 'bg-white text-slate-900 shadow-xs'
                           : 'text-slate-500 hover:text-slate-800'
-                        }`}
+                      }`}
                     >
                       <BarChart2 size={12} />
                       <span className="inline">Bars</span>
@@ -689,64 +764,117 @@ export default function AnalyticsPage() {
                   </div>
                 </div>
               </div>
-              <div className="h-64 w-full">
+              <div className="min-h-64 w-full flex flex-col justify-center">
                 {allClientsData.length > 0 ? (
                   clientChartMode === 'donut' ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={donutClientsData}
-                          dataKey="value"
-                          nameKey="name"
-                          cx="50%"
-                          cy="44%"
-                          innerRadius={44}
-                          outerRadius={72}
-                          paddingAngle={3}
-                        >
+                    donutClientsData.length > 0 ? (
+                      <div className="flex flex-col items-center">
+                        <div className="h-56 w-full relative">
+                          <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={200}>
+                            <PieChart>
+                              <Pie
+                                data={donutClientsData}
+                                dataKey="value"
+                                nameKey="name"
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={54}
+                                outerRadius={80}
+                                paddingAngle={3}
+                                isAnimationActive={true}
+                                animationDuration={600}
+                                animationEasing="ease-out"
+                                stroke="#ffffff"
+                                strokeWidth={2}
+                              >
+                                {donutClientsData.map((entry, index) => (
+                                  <Cell
+                                    key={`cell-${entry.name}-${index}`}
+                                    fill={CHART_COLORS[index % CHART_COLORS.length]}
+                                    className="transition-all duration-200 hover:opacity-80 cursor-pointer"
+                                  />
+                                ))}
+                              </Pie>
+                              {/* Central Donut Hole Metric Indicator */}
+                              <text
+                                x="50%"
+                                y="47%"
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                                className="font-extrabold font-mono text-xl fill-slate-900"
+                              >
+                                {totalDonutHours.toFixed(1)}h
+                              </text>
+                              <text
+                                x="50%"
+                                y="57%"
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                                className="text-[10px] font-semibold uppercase tracking-wider fill-slate-400"
+                              >
+                                Total Effort
+                              </text>
+                              <Tooltip
+                                formatter={(value, name, item) => [
+                                  `${Number(value).toFixed(2)} h (${item.payload.percentage}%)`,
+                                  name,
+                                ]}
+                                contentStyle={{
+                                  backgroundColor: '#0f172a',
+                                  borderRadius: '10px',
+                                  border: '1px solid rgba(255,255,255,0.1)',
+                                  color: '#fff',
+                                  fontSize: '11px',
+                                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
+                                }}
+                                itemStyle={{ color: '#38bdf8', fontWeight: 600 }}
+                              />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                        {/* Fluent Auto-Wrapping HTML Legend (No clipping / jitter) */}
+                        <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 px-2 max-h-20 overflow-y-auto [scrollbar-width:thin]">
                           {donutClientsData.map((entry, index) => (
-                            <Cell
-                              key={`cell-${entry.name}`}
-                              fill={CHART_COLORS[index % CHART_COLORS.length]}
-                              stroke="#fff"
-                              strokeWidth={2}
-                            />
+                            <div
+                              key={entry.name}
+                              className="flex items-center gap-1.5 text-[11px] text-slate-600 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100"
+                            >
+                              <span
+                                className="w-2 h-2 rounded-full shrink-0 shadow-2xs"
+                                style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
+                              />
+                              <span className="font-medium text-slate-700 truncate max-w-[110px] sm:max-w-[130px]">
+                                {entry.name}
+                              </span>
+                              <span className="font-mono text-slate-400 text-[10px]">({entry.percentage}%)</span>
+                            </div>
                           ))}
-                        </Pie>
-                        <Tooltip
-                          formatter={(value, name, item) => [
-                            `${Number(value).toFixed(2)} h (${item.payload.percentage}%)`,
-                            name,
-                          ]}
-                          contentStyle={{
-                            backgroundColor: '#0f172a',
-                            borderRadius: '8px',
-                            border: 'none',
-                            color: '#fff',
-                            fontSize: '11px',
-                          }}
-                          itemStyle={{ color: '#38bdf8' }}
-                        />
-                        <Legend
-                          verticalAlign="bottom"
-                          height={44}
-                          formatter={(val) => (
-                            <span className="text-[10px] sm:text-[11px] text-slate-600 truncate max-w-[100px] sm:max-w-[120px] inline-block align-middle">
-                              {val}
-                            </span>
-                          )}
-                        />
-                      </PieChart>
-                    </ResponsiveContainer>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col h-56 items-center justify-center text-xs text-slate-400 gap-2">
+                        <div className="w-14 h-14 rounded-full border-2 border-dashed border-slate-200 flex items-center justify-center text-slate-300">
+                          <PieIcon size={20} />
+                        </div>
+                        <span>No approved client hours logged in selected period.</span>
+                      </div>
+                    )
                   ) : (
+                    /* 2-Layer Bar View for Clients */
                     <div className="overflow-y-auto max-h-64 [scrollbar-width:thin] pr-1">
-                      <div style={{ height: `${Math.max(220, allClientsData.length * 30)}px` }}>
-                        <ResponsiveContainer width="100%" height="100%">
+                      <div style={{ height: `${Math.max(220, allClientsData.length * 32)}px` }}>
+                        <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={200}>
                           <BarChart
                             data={allClientsData}
                             layout="vertical"
                             margin={{ top: 5, right: 15, left: 0, bottom: 5 }}
                           >
+                            <defs>
+                              <linearGradient id="clientBarGrad" x1="0" y1="0" x2="1" y2="0">
+                                <stop offset="0%" stopColor="#10b981" />
+                                <stop offset="100%" stopColor="#059669" />
+                              </linearGradient>
+                            </defs>
                             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
                             <XAxis type="number" stroke="#94a3b8" fontSize={10} unit="h" />
                             <YAxis
@@ -758,14 +886,22 @@ export default function AnalyticsPage() {
                               width={85}
                             />
                             <Tooltip content={<CustomTooltip unit="h" />} />
-                            <Bar dataKey="hours" fill="#10b981" radius={[0, 6, 6, 0]} barSize={14} />
+                            <Bar
+                              dataKey="hours"
+                              fill="url(#clientBarGrad)"
+                              radius={[0, 8, 8, 0]}
+                              barSize={16}
+                              background={{ fill: '#f1f5f9', radius: [0, 8, 8, 0] }}
+                              animationDuration={600}
+                              animationEasing="ease-out"
+                            />
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
                     </div>
                   )
                 ) : (
-                  <div className="flex h-full items-center justify-center text-xs text-slate-400">
+                  <div className="flex h-56 items-center justify-center text-xs text-slate-400">
                     No client hours logged in selected period.
                   </div>
                 )}
@@ -803,6 +939,12 @@ export default function AnalyticsPage() {
                         layout="vertical"
                         margin={{ top: 5, right: 15, left: 0, bottom: 5 }}
                       >
+                        <defs>
+                          <linearGradient id="projectBarGrad" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%" stopColor="#0ea5e9" />
+                            <stop offset="100%" stopColor="#2563eb" />
+                          </linearGradient>
+                        </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
                         <XAxis type="number" stroke="#94a3b8" fontSize={10} unit="h" />
                         <YAxis
@@ -814,7 +956,15 @@ export default function AnalyticsPage() {
                           width={90}
                         />
                         <Tooltip content={<CustomTooltip unit="h" />} />
-                        <Bar dataKey="hours" fill="#0ea5e9" radius={[0, 6, 6, 0]} barSize={14} />
+                        <Bar
+                          dataKey="hours"
+                          fill="url(#projectBarGrad)"
+                          radius={[0, 8, 8, 0]}
+                          barSize={16}
+                          background={{ fill: '#f1f5f9', radius: [0, 8, 8, 0] }}
+                          animationDuration={600}
+                          animationEasing="ease-out"
+                        />
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
@@ -861,6 +1011,12 @@ export default function AnalyticsPage() {
                         data={displayedEmployeesData}
                         margin={{ top: 10, right: 10, left: -25, bottom: 45 }}
                       >
+                        <defs>
+                          <linearGradient id="employeeBarGrad" x1="0" y1="1" x2="0" y2="0">
+                            <stop offset="0%" stopColor="#4f46e5" />
+                            <stop offset="100%" stopColor="#818cf8" />
+                          </linearGradient>
+                        </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                         <XAxis
                           dataKey="name"
@@ -874,7 +1030,15 @@ export default function AnalyticsPage() {
                         />
                         <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} unit="h" />
                         <Tooltip content={<CustomTooltip unit="h" />} />
-                        <Bar dataKey="hours" fill="#334155" radius={[6, 6, 0, 0]} maxBarSize={32} />
+                        <Bar
+                          dataKey="hours"
+                          fill="url(#employeeBarGrad)"
+                          radius={[8, 8, 0, 0]}
+                          maxBarSize={32}
+                          background={{ fill: '#f1f5f9', radius: [8, 8, 0, 0] }}
+                          animationDuration={600}
+                          animationEasing="ease-out"
+                        />
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
@@ -907,12 +1071,12 @@ export default function AnalyticsPage() {
               <div className="space-y-2.5 sm:space-y-3">
                 {(analytics.statusBreakdown || []).map((sb) => {
                   const statusColors = {
-                    APPROVED: { bg: 'bg-emerald-500', light: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-                    SUBMITTED: { bg: 'bg-indigo-500', light: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
-                    DRAFT: { bg: 'bg-slate-400', light: 'bg-slate-50 text-slate-700 border-slate-200' },
-                    RETURNED: { bg: 'bg-rose-500', light: 'bg-rose-50 text-rose-700 border-rose-200' },
+                    APPROVED: { bg: 'bg-gradient-to-r from-emerald-500 to-teal-500', light: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+                    SUBMITTED: { bg: 'bg-gradient-to-r from-indigo-500 to-blue-500', light: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+                    DRAFT: { bg: 'bg-gradient-to-r from-slate-400 to-slate-500', light: 'bg-slate-50 text-slate-700 border-slate-200' },
+                    RETURNED: { bg: 'bg-gradient-to-r from-rose-500 to-red-500', light: 'bg-rose-50 text-rose-700 border-rose-200' },
                   };
-                  const colors = statusColors[sb.status] || { bg: 'bg-slate-400', light: 'bg-slate-50 text-slate-700 border-slate-200' };
+                  const colors = statusColors[sb.status] || { bg: 'bg-gradient-to-r from-slate-400 to-slate-500', light: 'bg-slate-50 text-slate-700 border-slate-200' };
                   const totalHrs = (analytics.statusBreakdown || []).reduce((acc, x) => acc + Number(x.hours || 0), 0);
                   const pct = totalHrs > 0 ? ((Number(sb.hours || 0) / totalHrs) * 100).toFixed(1) : 0;
 
@@ -925,8 +1089,14 @@ export default function AnalyticsPage() {
                           <span className="text-slate-400 text-[10px] sm:text-[11px]">({sb.entries || 0} entries &bull; {pct}%)</span>
                         </div>
                       </div>
-                      <div className="w-full bg-slate-200/70 h-2 rounded-full overflow-hidden">
-                        <div className={`h-full ${colors.bg} rounded-full transition-all duration-500`} style={{ width: `${pct}%` }} />
+                      {/* 2-Layer Progress Bar: Inactive Grey Track with Vibrant Gradient Active Line */}
+                      <div className="relative w-full bg-slate-100 rounded-full h-2.5 p-0.5 overflow-hidden border border-slate-200/60 shadow-inner">
+                        <div
+                          className={`h-full ${colors.bg} rounded-full transition-all duration-700 shadow-xs relative`}
+                          style={{ width: `${Math.max(pct, pct > 0 ? 3 : 0)}%` }}
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent rounded-full" />
+                        </div>
                       </div>
                     </div>
                   );
