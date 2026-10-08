@@ -21,15 +21,15 @@ function wait(milliseconds) {
 
 export function getCsrfToken() {
   if (typeof window === 'undefined') return null;
-  // 1. Check localStorage first (persists across decoupled/cross-domain deployments such as Netlify -> Render)
-  try {
-    const stored = localStorage.getItem('worklog_csrf_token');
-    if (stored) return stored;
-  } catch {}
-  // 2. Check document.cookie (same-domain environments)
+  // 1. Check document.cookie first because this reflects the exact cookie the browser sends to the server
   try {
     const match = document.cookie?.match(/(?:^|;\s*)worklog_csrf_token=([^;]+)/);
     if (match) return decodeURIComponent(match[1]);
+  } catch {}
+  // 2. Fallback to localStorage (persists across decoupled/cross-domain deployments such as Netlify -> Render)
+  try {
+    const stored = localStorage.getItem('worklog_csrf_token');
+    if (stored) return stored;
   } catch {}
   return null;
 }
@@ -39,8 +39,13 @@ export function setCsrfToken(token) {
   try {
     if (token) {
       localStorage.setItem('worklog_csrf_token', token);
+      document.cookie = `worklog_csrf_token=${encodeURIComponent(token)}; Path=/; Max-Age=86400; SameSite=Lax`;
     } else {
       localStorage.removeItem('worklog_csrf_token');
+      try {
+        sessionStorage.removeItem('worklog_csrf_token');
+      } catch {}
+      document.cookie = 'worklog_csrf_token=; Path=/; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
     }
   } catch {}
 }

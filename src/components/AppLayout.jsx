@@ -14,16 +14,18 @@ export default function AppLayout({ children }) {
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
   const isLandingPage = location.pathname === '/';
 
+  const [isLoggingOutLocal, setIsLoggingOutLocal] = useState(false);
+
   // When navigating between pages, silently sync access capabilities in background so UI stays strictly updated
   useEffect(() => {
-    if (isAuthenticated && !isLandingPage && !isAuthPage && refreshUser) {
+    if (isAuthenticated && !isLandingPage && !isAuthPage && !isLoggingOutLocal && refreshUser) {
       refreshUser().catch(() => {});
     }
-  }, [location.pathname, isAuthenticated, isLandingPage, isAuthPage, refreshUser]);
+  }, [location.pathname, isAuthenticated, isLandingPage, isAuthPage, isLoggingOutLocal, refreshUser]);
 
   // If user is on an open page whose capability was revoked, automatically fall back to default tab (dashboard)
   useEffect(() => {
-    if (!isAuthenticated || isLandingPage || isAuthPage || isAdmin) return;
+    if (!isAuthenticated || isLandingPage || isAuthPage || isAdmin || isLoggingOutLocal) return;
 
     const path = location.pathname;
     let unauthorized = false;
@@ -61,7 +63,7 @@ export default function AppLayout({ children }) {
       );
       navigate('/dashboard', { replace: true });
     }
-  }, [location.pathname, capabilities, isAdmin, isAuthenticated, isLandingPage, isAuthPage, navigate]);
+  }, [location.pathname, capabilities, isAdmin, isAuthenticated, isLandingPage, isAuthPage, isLoggingOutLocal, navigate]);
 
   // Default navbar/sidebar is EXPANDED (true), persisted to localStorage
   const [sidebarOpen, setSidebarOpen] = useState(() => {
@@ -98,12 +100,13 @@ export default function AppLayout({ children }) {
   }, []);
 
   const handleLogout = async () => {
+    setIsLoggingOutLocal(true);
     setLogoutOpen(false);
     setMobileOpen(false);
     try {
       await logout();
     } finally {
-      navigate('/login', { replace: true });
+      window.location.href = '/login';
     }
   };
 

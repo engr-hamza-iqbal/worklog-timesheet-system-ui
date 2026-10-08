@@ -23,6 +23,7 @@ const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage.jsx'));
 const EmailLogPage = lazy(() => import('./pages/EmailLogPage.jsx'));
 const AuditLogsPage = lazy(() => import('./pages/AuditLogsPage.jsx'));
 const NotAuthorisedPage = lazy(() => import('./pages/NotAuthorisedPage.jsx'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage.jsx'));
 
 function PageLoader() {
   return (
@@ -64,6 +65,15 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
                 </ProtectedRoute>
               }
             />

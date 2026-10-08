@@ -7,6 +7,7 @@ import {
   LogOut,
   Calendar,
   LayoutDashboard,
+  User,
 } from 'lucide-react';
 import AppLogo from './AppLogo.jsx';
 
@@ -23,6 +24,7 @@ const ROUTE_TITLES = {
   '/audit-logs': { title: 'Access Audit Logs', category: 'Administration' },
   '/access-logs': { title: 'Access Audit Logs', category: 'Administration' },
   '/emails': { title: 'Email Audit Log', category: 'Administration' },
+  '/profile': { title: 'User Profile', category: 'Account' },
   '/unauthorized': { title: 'Not Authorised', category: 'Security' },
 };
 
@@ -54,7 +56,7 @@ function HeaderProfileDropdown({ user, isAdmin, onLogout }) {
           <div className="text-xs font-semibold text-slate-900 max-w-[120px] truncate">{user.name}</div>
           <div className="text-[10px] text-slate-500 font-medium">{isAdmin ? 'Administrator' : 'Employee'}</div>
         </div>
-        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 hidden sm:block transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
@@ -81,6 +83,14 @@ function HeaderProfileDropdown({ user, isAdmin, onLogout }) {
             >
               <LayoutDashboard className="w-3.5 h-3.5 text-slate-500" />
               <span>Dashboard</span>
+            </Link>
+            <Link
+              to="/profile"
+              onClick={() => setOpen(false)}
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition"
+            >
+              <User className="w-3.5 h-3.5 text-slate-500" />
+              <span>Profile</span>
             </Link>
             <div className="my-1 border-t border-slate-100" />
             <button

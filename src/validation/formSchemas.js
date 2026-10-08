@@ -44,6 +44,34 @@ export const registerSchema = z
     }
   });
 
+export const resetPasswordOtpSchema = z
+  .object({
+    email,
+    otp: z.string().trim().regex(/^\d{6}$/, 'Verification code must be exactly 6 digits.'),
+    newPassword: passwordStrengthSchema,
+    confirmPassword: z.string().min(1, 'Confirm your new password.'),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    path: ['confirmPassword'],
+    message: 'Passwords do not match.',
+  });
+
+export const resetPasswordOldSchema = z
+  .object({
+    email,
+    oldPassword: z.string().min(1, 'Current password is required.'),
+    newPassword: passwordStrengthSchema,
+    confirmPassword: z.string().min(1, 'Confirm your new password.'),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    path: ['confirmPassword'],
+    message: 'Passwords do not match.',
+  })
+  .refine((data) => data.oldPassword !== data.newPassword, {
+    path: ['newPassword'],
+    message: 'New password must be different from current password.',
+  });
+
 export const clientSchema = z.object({ name: nonEmpty('Client name') });
 export const projectSchema = z.object({
   clientId: id,

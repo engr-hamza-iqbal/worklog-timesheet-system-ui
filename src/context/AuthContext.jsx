@@ -13,7 +13,12 @@ export function AuthProvider({ children }) {
   // Validate session on mount or token change
   useEffect(() => {
     async function loadUser() {
-      if (!token) {
+      let isExplicitlyLoggedOut = false;
+      try {
+        isExplicitlyLoggedOut = sessionStorage.getItem('worklog_logged_out') === '1';
+      } catch {}
+
+      if (!token || isExplicitlyLoggedOut) {
         setCsrfToken(null);
         setUser(null);
         setCapabilities({});
@@ -60,6 +65,7 @@ export function AuthProvider({ children }) {
   }, [token]);
 
   async function login(email, password) {
+    try { sessionStorage.removeItem('worklog_logged_out'); } catch {}
     const res = await api.post('/api/auth/login', { email, password });
     if (res.success && res.data) {
       const { user: newUser, capabilities: newCaps, csrfToken } = res.data;
@@ -75,6 +81,7 @@ export function AuthProvider({ children }) {
   }
 
   async function register(data) {
+    try { sessionStorage.removeItem('worklog_logged_out'); } catch {}
     const res = await api.post('/api/auth/register', data);
     if (res.success && res.data) {
       const { user: newUser, capabilities: newCaps, csrfToken } = res.data;
@@ -91,9 +98,13 @@ export function AuthProvider({ children }) {
 
   async function logout() {
     isLoggingOutRef.current = true;
+    try { sessionStorage.setItem('worklog_logged_out', '1'); } catch {}
     try {
       await api.post('/api/auth/logout');
     } catch (e) {
+      try {
+        await api.get('/api/auth/logout');
+      } catch {}
       console.warn('Logout API completed with notice:', e?.message);
     } finally {
       setCsrfToken(null);
@@ -111,15 +122,15 @@ export function AuthProvider({ children }) {
       // Keep guard active briefly to avoid in-flight promises resurrecting the session
       setTimeout(() => {
         isLoggingOutRef.current = false;
-      }, 800);
+      }, 1500);
     }
   }
 
   const refreshUser = useCallback(async () => {
-    if (isLoggingOutRef.current || !token) return null;
+    if (isLoggingOutRef.current || !token || !user) return null;
     try {
       const res = await api.get('/api/auth/me');
-      if (isLoggingOutRef.current) return null;
+      if (isLoggingOutRef.current || !token) return null;
       if (res.success && res.data) {
         if (res.data.csrfToken) {
           setCsrfToken(res.data.csrfToken);
@@ -132,7 +143,7 @@ export function AuthProvider({ children }) {
       console.error('Failed to refresh user capabilities:', err);
     }
     return null;
-  }, [token]);
+  }, [token, user]);
 
   // Real-time permission & capability synchronization via SSE and BroadcastChannel
   useEffect(() => {
