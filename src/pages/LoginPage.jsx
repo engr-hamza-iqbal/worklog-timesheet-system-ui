@@ -244,16 +244,16 @@ export default function LoginPage() {
   const passHasSpecial = /[^A-Za-z0-9]/.test(resetNewPassword);
 
   return (
-    <div className="flex-1 min-h-[calc(100vh-3.5rem)] flex items-center justify-center p-4 sm:p-6 bg-slate-50 relative overflow-hidden">
+    <div className="flex-1 min-h-[calc(100vh-3.5rem)] flex flex-col items-center justify-center py-6 sm:py-10 px-3.5 sm:px-6 bg-slate-50 relative overflow-y-auto">
       {/* Ambient background glows */}
       <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-blue-100/40 rounded-full blur-3xl pointer-events-none -z-10" />
       <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-80 h-80 bg-indigo-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
 
-      <div className="w-full max-w-md bg-white rounded-2xl border border-slate-100/90 shadow-xl p-6 sm:p-8 relative">
+      <div className="w-full max-w-md bg-white rounded-2xl border border-slate-100/90 shadow-xl p-4 sm:p-8 my-auto relative">
         {/* App Logo in Center */}
-        <div className="text-center mb-6">
-          <AppLogo className="w-14 h-14 mx-auto mb-3.5 shadow-sm rounded-2xl" />
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+        <div className="text-center mb-5 sm:mb-6">
+          <AppLogo className="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-3 shadow-sm rounded-2xl" />
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
             {isResetMode ? (
               <>
                 Reset <span className="text-blue-600">Password</span>
@@ -264,7 +264,7 @@ export default function LoginPage() {
               </>
             )}
           </h1>
-          <p className="text-slate-500 text-xs sm:text-sm mt-1">
+          <p className="text-slate-500 text-xs sm:text-sm mt-1 max-w-xs sm:max-w-sm mx-auto leading-relaxed">
             {isResetMode
               ? 'Reset your account password using email verification or your current password'
               : 'Sign in to your account to continue'}
@@ -293,7 +293,7 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@example.com"
-                  className="w-full h-10 px-3 py-2 text-sm rounded-md border border-slate-200 bg-slate-50/60 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition"
+                  className="w-full h-10 px-3 py-2 text-base sm:text-sm rounded-md border border-slate-200 bg-slate-50/60 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition"
                 />
               </div>
 
@@ -310,12 +310,12 @@ export default function LoginPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full h-10 px-3 py-2 pr-10 text-sm rounded-md border border-slate-200 bg-slate-50/60 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition"
+                    className="w-full h-10 px-3 py-2 pr-10 text-base sm:text-sm rounded-md border border-slate-200 bg-slate-50/60 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((prev) => !prev)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition cursor-pointer p-1"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition cursor-pointer p-1 touch-manipulation"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -330,7 +330,7 @@ export default function LoginPage() {
                       setResetErrorMessage('');
                       setResetSuccessMessage('');
                     }}
-                    className="ml-auto text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline transition cursor-pointer"
+                    className="ml-auto text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline transition cursor-pointer py-1"
                   >
                     Forgot password?
                   </button>
@@ -389,20 +389,20 @@ export default function LoginPage() {
           /* Password Reset Mode Form */
           <div className="space-y-4">
             {/* Method Selector Tabs */}
-            <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-semibold">
+            <div className="grid grid-cols-2 gap-1 p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs font-semibold">
               <button
                 type="button"
                 onClick={() => {
                   setResetMethod('otp');
                   setResetErrorMessage('');
                 }}
-                className={`flex items-center justify-center gap-1.5 py-2 rounded-lg transition cursor-pointer ${resetMethod === 'otp'
+                className={`flex items-center justify-center gap-1.5 py-2 px-1 text-center rounded-lg transition cursor-pointer text-[11px] sm:text-xs ${resetMethod === 'otp'
                   ? 'bg-white text-slate-900 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
                   }`}
               >
-                <Mail className="w-3.5 h-3.5" />
-                <span>Via Email OTP</span>
+                <Mail className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Via Email OTP</span>
               </button>
               <button
                 type="button"
@@ -410,13 +410,13 @@ export default function LoginPage() {
                   setResetMethod('oldPassword');
                   setResetErrorMessage('');
                 }}
-                className={`flex items-center justify-center gap-1.5 py-2 rounded-lg transition cursor-pointer ${resetMethod === 'oldPassword'
+                className={`flex items-center justify-center gap-1.5 py-2 px-1 text-center rounded-lg transition cursor-pointer text-[11px] sm:text-xs ${resetMethod === 'oldPassword'
                   ? 'bg-white text-slate-900 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
                   }`}
               >
-                <KeyRound className="w-3.5 h-3.5" />
-                <span>Via Old Password</span>
+                <KeyRound className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Via Old Password</span>
               </button>
             </div>
 
@@ -435,7 +435,7 @@ export default function LoginPage() {
                     setResetSuccessMessage('');
                     setResetErrorMessage('');
                   }}
-                  className="w-full py-2 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-lg transition shadow-xs cursor-pointer"
+                  className="w-full py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-semibold rounded-lg transition shadow-xs cursor-pointer touch-manipulation"
                 >
                   Sign In with New Password
                 </button>
@@ -464,30 +464,30 @@ export default function LoginPage() {
                 )}
 
                 <form onSubmit={handleResetSubmit} className="space-y-3.5">
-                  {/* Email Field */}
+                  {/* Email Field with Responsive Send Code Button */}
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
                       Registered Email
                     </label>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <input
                         type="email"
                         required
                         value={resetEmail}
                         onChange={(e) => setResetEmail(e.target.value)}
                         placeholder="name@example.com"
-                        className="flex-1 h-10 px-3 py-2 text-sm rounded-md border border-slate-200 bg-slate-50/60 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition"
+                        className="flex-1 h-10 px-3 py-2 text-base sm:text-sm rounded-md border border-slate-200 bg-slate-50/60 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition"
                       />
                       {resetMethod === 'otp' && (
                         <button
                           type="button"
                           onClick={handleSendResetOtp}
                           disabled={sendingOtp || otpCooldown > 0 || !resetEmail.trim()}
-                          className="px-3 h-10 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-200 disabled:text-slate-400 text-white text-xs font-semibold rounded-md transition shadow-xs shrink-0 cursor-pointer disabled:cursor-not-allowed flex items-center gap-1.5"
+                          className="w-full sm:w-auto px-3.5 h-10 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-200 disabled:text-slate-400 text-white text-xs font-semibold rounded-md transition shadow-xs shrink-0 cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-1.5 touch-manipulation"
                         >
                           {sendingOtp && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                           {!sendingOtp && <Send className="w-3.5 h-3.5" />}
-                          <span>{otpCooldown > 0 ? `${otpCooldown}s` : 'Send Code'}</span>
+                          <span className="whitespace-nowrap">{otpCooldown > 0 ? `Resend (${otpCooldown}s)` : 'Send Code'}</span>
                         </button>
                       )}
                     </div>
@@ -496,7 +496,7 @@ export default function LoginPage() {
                   {/* OTP Mode: 6-digit Code */}
                   {resetMethod === 'otp' ? (
                     <div>
-                      <div className="flex items-center justify-between mb-1">
+                      <div className="flex flex-wrap items-center justify-between gap-1 mb-1">
                         <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
                           6-Digit Verification Code
                         </label>
@@ -515,6 +515,9 @@ export default function LoginPage() {
                       </div>
                       <input
                         type="text"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        pattern="[0-9]*"
                         maxLength={6}
                         required
                         value={resetOtp}
@@ -525,7 +528,7 @@ export default function LoginPage() {
                           setResetOtpCheckError('');
                         }}
                         placeholder="123456"
-                        className={`w-full h-10 px-3 py-2 text-center text-lg font-mono font-bold tracking-widest rounded-md border bg-slate-50/60 placeholder:text-slate-300 focus:outline-none focus:ring-2 transition ${
+                        className={`w-full h-11 px-3 py-2 text-center text-xl font-mono font-bold tracking-[0.25em] sm:tracking-[0.4em] rounded-md border bg-slate-50/60 placeholder:text-slate-300 focus:outline-none focus:ring-2 transition ${
                           resetOtpVerified
                             ? 'border-emerald-500 text-emerald-700 focus:ring-emerald-500 bg-emerald-50/20'
                             : resetOtpCheckError
@@ -555,12 +558,12 @@ export default function LoginPage() {
                           value={resetOldPassword}
                           onChange={(e) => setResetOldPassword(e.target.value)}
                           placeholder="••••••••"
-                          className="w-full h-10 px-3 py-2 pr-10 text-sm rounded-md border border-slate-200 bg-slate-50/60 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition"
+                          className="w-full h-10 px-3 py-2 pr-10 text-base sm:text-sm rounded-md border border-slate-200 bg-slate-50/60 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition"
                         />
                         <button
                           type="button"
                           onClick={() => setShowResetOldPassword(!showResetOldPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition cursor-pointer p-1"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition cursor-pointer p-1 touch-manipulation"
                         >
                           {showResetOldPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                         </button>
@@ -580,12 +583,12 @@ export default function LoginPage() {
                         value={resetNewPassword}
                         onChange={(e) => setResetNewPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full h-10 px-3 py-2 pr-10 text-sm rounded-md border border-slate-200 bg-slate-50/60 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition"
+                        className="w-full h-10 px-3 py-2 pr-10 text-base sm:text-sm rounded-md border border-slate-200 bg-slate-50/60 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition"
                       />
                       <button
                         type="button"
                         onClick={() => setShowResetNewPassword(!showResetNewPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition cursor-pointer p-1"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition cursor-pointer p-1 touch-manipulation"
                       >
                         {showResetNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
@@ -594,17 +597,17 @@ export default function LoginPage() {
 
                   {/* Requirements checklist */}
                   {resetNewPassword && (
-                    <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100 text-[10px] space-y-1">
+                    <div className="p-2.5 bg-slate-50 rounded-lg border border-slate-100 text-[10px] sm:text-[11px] space-y-1">
                       <div className={`flex items-center gap-1.5 ${passHasMinLength ? 'text-emerald-600 font-medium' : 'text-slate-400'}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${passHasMinLength ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${passHasMinLength ? 'bg-emerald-500' : 'bg-slate-300'}`} />
                         <span>8+ characters</span>
                       </div>
                       <div className={`flex items-center gap-1.5 ${passHasUpper && passHasLower ? 'text-emerald-600 font-medium' : 'text-slate-400'}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${passHasUpper && passHasLower ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${passHasUpper && passHasLower ? 'bg-emerald-500' : 'bg-slate-300'}`} />
                         <span>Upper & lowercase letters</span>
                       </div>
                       <div className={`flex items-center gap-1.5 ${passHasDigit && passHasSpecial ? 'text-emerald-600 font-medium' : 'text-slate-400'}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${passHasDigit && passHasSpecial ? 'bg-emerald-500' : 'bg-slate-300'}`} />
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${passHasDigit && passHasSpecial ? 'bg-emerald-500' : 'bg-slate-300'}`} />
                         <span>Number & special character</span>
                       </div>
                     </div>
@@ -622,12 +625,12 @@ export default function LoginPage() {
                         value={resetConfirmPassword}
                         onChange={(e) => setResetConfirmPassword(e.target.value)}
                         placeholder="••••••••"
-                        className="w-full h-10 px-3 py-2 pr-10 text-sm rounded-md border border-slate-200 bg-slate-50/60 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition"
+                        className="w-full h-10 px-3 py-2 pr-10 text-base sm:text-sm rounded-md border border-slate-200 bg-slate-50/60 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white transition"
                       />
                       <button
                         type="button"
                         onClick={() => setShowResetConfirmPassword(!showResetConfirmPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition cursor-pointer p-1"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition cursor-pointer p-1 touch-manipulation"
                       >
                         {showResetConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                       </button>
@@ -640,7 +643,7 @@ export default function LoginPage() {
                   <button
                     type="submit"
                     disabled={resetLoading || (resetMethod === 'otp' && resetOtp.length !== 6)}
-                    className="w-full h-10 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white text-sm font-semibold rounded-md transition-colors cursor-pointer shadow-xs inline-flex items-center justify-center gap-2 disabled:cursor-not-allowed pt-0.5"
+                    className="w-full h-10 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white text-sm font-semibold rounded-md transition-colors cursor-pointer shadow-xs inline-flex items-center justify-center gap-2 disabled:cursor-not-allowed pt-0.5 touch-manipulation"
                   >
                     {resetLoading && <Loader2 className="animate-spin" size={15} />}
                     <span>{resetLoading ? 'Resetting Password...' : 'Reset Password'}</span>
@@ -658,7 +661,7 @@ export default function LoginPage() {
                   setResetErrorMessage('');
                   setResetSuccessMessage('');
                 }}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 py-2 px-3 text-xs sm:text-sm font-semibold text-slate-600 hover:text-slate-900 transition cursor-pointer touch-manipulation"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Back to Sign In</span>
