@@ -692,6 +692,7 @@ export default function AnalyticsPage() {
                         )}
 
                         <Area
+                          key={`area-${activePreset}-${weeklyData.length}`}
                           type="monotone"
                           dataKey="hours"
                           stroke="url(#stunningLineGrad)"
@@ -705,7 +706,9 @@ export default function AnalyticsPage() {
                             r: 6,
                             fill: '#ffffff',
                           }}
-                          animationDuration={300}
+                          isAnimationActive={true}
+                          animationBegin={0}
+                          animationDuration={700}
                           animationEasing="ease-out"
                         />
                       </AreaChart>
@@ -763,10 +766,11 @@ export default function AnalyticsPage() {
                   clientChartMode === 'donut' ? (
                     donutClientsData.length > 0 ? (
                       <div className="flex flex-col items-center">
-                        <div className="h-56 w-full relative animate-in fade-in zoom-in-95 duration-200">
-                          <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={200} debounce={50}>
+                        <div className="h-56 w-full relative">
+                          <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={200}>
                             <PieChart>
                               <Pie
+                                key={`pie-${activePreset}-${donutClientsData.length}`}
                                 data={donutClientsData}
                                 dataKey="value"
                                 nameKey="name"
@@ -775,7 +779,12 @@ export default function AnalyticsPage() {
                                 innerRadius={54}
                                 outerRadius={80}
                                 paddingAngle={3}
-                                isAnimationActive={false}
+                                startAngle={90}
+                                endAngle={-270}
+                                isAnimationActive={true}
+                                animationBegin={0}
+                                animationDuration={800}
+                                animationEasing="ease-out"
                                 stroke="#ffffff"
                                 strokeWidth={2}
                               >
@@ -855,7 +864,7 @@ export default function AnalyticsPage() {
                     /* 2-Layer Bar View for Clients */
                     <div className="overflow-y-auto max-h-64 [scrollbar-width:thin] pr-1">
                       <div style={{ height: `${Math.max(220, allClientsData.length * 32)}px` }}>
-                        <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={200} debounce={50}>
+                        <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={200}>
                           <BarChart
                             data={allClientsData}
                             layout="vertical"
@@ -879,12 +888,15 @@ export default function AnalyticsPage() {
                             />
                             <Tooltip content={<CustomTooltip unit="h" />} />
                             <Bar
+                              key={`bar-client-${activePreset}-${allClientsData.length}`}
                               dataKey="hours"
                               fill="url(#clientBarGrad)"
                               radius={[0, 8, 8, 0]}
                               barSize={16}
                               background={{ fill: '#f1f5f9', radius: [0, 8, 8, 0] }}
-                              animationDuration={280}
+                              isAnimationActive={true}
+                              animationBegin={0}
+                              animationDuration={650}
                               animationEasing="ease-out"
                             />
                           </BarChart>
@@ -925,7 +937,7 @@ export default function AnalyticsPage() {
               <div className="overflow-y-auto max-h-72 [scrollbar-width:thin] pr-1">
                 <div style={{ height: `${Math.max(240, displayedProjectsData.length * 32)}px` }}>
                   {displayedProjectsData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%" debounce={50}>
+                    <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         data={displayedProjectsData}
                         layout="vertical"
@@ -949,12 +961,15 @@ export default function AnalyticsPage() {
                         />
                         <Tooltip content={<CustomTooltip unit="h" />} />
                         <Bar
+                          key={`bar-project-${activePreset}-${projectLimitMode}-${displayedProjectsData.length}`}
                           dataKey="hours"
                           fill="url(#projectBarGrad)"
                           radius={[0, 8, 8, 0]}
                           barSize={16}
                           background={{ fill: '#f1f5f9', radius: [0, 8, 8, 0] }}
-                          animationDuration={280}
+                          isAnimationActive={true}
+                          animationBegin={0}
+                          animationDuration={650}
                           animationEasing="ease-out"
                         />
                       </BarChart>
@@ -998,7 +1013,7 @@ export default function AnalyticsPage() {
                   }}
                 >
                   {displayedEmployeesData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%" debounce={50}>
+                    <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         data={displayedEmployeesData}
                         margin={{ top: 10, right: 10, left: -25, bottom: 45 }}
@@ -1023,12 +1038,15 @@ export default function AnalyticsPage() {
                         <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} unit="h" />
                         <Tooltip content={<CustomTooltip unit="h" />} />
                         <Bar
+                          key={`bar-emp-${activePreset}-${employeeLimitMode}-${displayedEmployeesData.length}`}
                           dataKey="hours"
                           fill="url(#employeeBarGrad)"
                           radius={[8, 8, 0, 0]}
                           maxBarSize={32}
                           background={{ fill: '#f1f5f9', radius: [8, 8, 0, 0] }}
-                          animationDuration={280}
+                          isAnimationActive={true}
+                          animationBegin={0}
+                          animationDuration={650}
                           animationEasing="ease-out"
                         />
                       </BarChart>
