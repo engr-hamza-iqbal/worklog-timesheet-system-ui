@@ -119,7 +119,7 @@ export default function ProfilePage() {
 
     setSendingOtp(true);
     try {
-      const res = await api.post('/api/auth/send-reset-otp', { email: user.email });
+      const res = await api.post('/api/auth/send-reset-otp', { email: user.email }, { timeout: 20000 });
       if (res.success) {
         setOtpSentMessage(res.message || 'Verification code sent to your registered email.');
         setOtpCooldown(45);

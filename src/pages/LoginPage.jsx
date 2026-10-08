@@ -98,7 +98,7 @@ export default function LoginPage() {
 
     setSendingOtp(true);
     try {
-      const res = await api.post('/api/auth/send-reset-otp', { email: trimmedEmail });
+      const res = await api.post('/api/auth/send-reset-otp', { email: trimmedEmail }, { timeout: 20000 });
       if (res.success) {
         setOtpSentMessage(res.message || 'Verification code sent to your email.');
         setOtpCooldown(45);

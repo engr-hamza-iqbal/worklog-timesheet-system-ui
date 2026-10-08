@@ -270,7 +270,7 @@ export default function RegisterPage() {
 
     setOtpSending(true);
     try {
-      const res = await api.post('/api/auth/send-otp', { email: email.trim() });
+      const res = await api.post('/api/auth/send-otp', { email: email.trim() }, { timeout: 20000 });
       setOtpSent(true);
       setOtpTimer(600); // 10 minutes = 600s
       setResendCooldown(45); // 45s cooldown
