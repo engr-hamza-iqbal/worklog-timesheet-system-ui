@@ -95,6 +95,11 @@ export default function RegisterPage() {
   const [otpSuccessMessage, setOtpSuccessMessage] = useState('');
   const [devOtp, setDevOtp] = useState('');
 
+  // Live OTP verification status
+  const [otpVerifying, setOtpVerifying] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [otpCheckError, setOtpCheckError] = useState('');
+
   // Synchronize when URL search parameters change
   useEffect(() => {
     const raw = searchParams.get('token') || searchParams.get('invite');
@@ -217,6 +222,41 @@ export default function RegisterPage() {
     }, 1000);
     return () => clearInterval(interval);
   }, [resendCooldown]);
+
+  // Debounced live verification of 6-digit OTP
+  useEffect(() => {
+    setOtpVerified(false);
+    setOtpCheckError('');
+
+    const cleanOtp = otp.replace(/\D/g, '').slice(0, 6);
+    if (cleanOtp.length !== 6 || !email.trim() || isInvited || !otpSent) {
+      setOtpVerifying(false);
+      return;
+    }
+
+    setOtpVerifying(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await api.post('/api/auth/verify-otp', {
+          email: email.trim(),
+          otp: cleanOtp,
+        });
+        if (res.success) {
+          setOtpVerified(true);
+          setOtpCheckError('');
+        }
+      } catch (err) {
+        setOtpVerified(false);
+        setOtpCheckError(
+          err.response?.data?.message || err.response?.data?.error?.message || 'Invalid or expired verification code'
+        );
+      } finally {
+        setOtpVerifying(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [otp, email, isInvited, otpSent]);
 
   const formatTimer = (totalSeconds) => {
     const mins = Math.floor(totalSeconds / 60);
@@ -572,17 +612,31 @@ export default function RegisterPage() {
                       <ShieldCheck size={14} className="text-blue-600" />
                       Email Verification Code
                     </span>
-                    {otpTimer > 0 ? (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-mono font-bold bg-amber-100 text-amber-800 border border-amber-200 animate-pulse">
-                        <Clock size={11} />
-                        Expires in {formatTimer(otpTimer)}
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-100 text-rose-700 border border-rose-200">
-                        <AlertCircle size={11} />
-                        Expired (10 min)
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {otpVerifying && (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-blue-600 font-medium">
+                          <Loader2 size={12} className="animate-spin" />
+                          Checking...
+                        </span>
+                      )}
+                      {otpVerified && (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-semibold">
+                          <CheckCircle2 size={13} className="text-emerald-500" />
+                          Verified
+                        </span>
+                      )}
+                      {otpTimer > 0 ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-mono font-bold bg-amber-100 text-amber-800 border border-amber-200 animate-pulse">
+                          <Clock size={11} />
+                          Expires in {formatTimer(otpTimer)}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-100 text-rose-700 border border-rose-200">
+                          <AlertCircle size={11} />
+                          Expired (10 min)
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <input
@@ -591,10 +645,30 @@ export default function RegisterPage() {
                     maxLength={6}
                     value={otp}
                     disabled={otpTimer === 0}
-                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    onChange={(e) => {
+                      const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                      setOtp(val);
+                      setOtpVerified(false);
+                      setOtpCheckError('');
+                    }}
                     placeholder="Enter 6-digit code"
-                    className="w-full h-10 px-3 text-center tracking-widest font-mono text-base font-bold rounded-md border border-slate-300 bg-white text-slate-900 placeholder:tracking-normal placeholder:font-sans placeholder:text-xs placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition disabled:bg-slate-100 disabled:text-slate-400"
+                    className={`w-full h-10 px-3 text-center tracking-widest font-mono text-base font-bold rounded-md border bg-white placeholder:tracking-normal placeholder:font-sans placeholder:text-xs placeholder:text-slate-400 focus:outline-none focus:ring-2 transition disabled:bg-slate-100 disabled:text-slate-400 ${
+                      otpVerified
+                        ? 'border-emerald-500 text-emerald-700 focus:ring-emerald-500 bg-emerald-50/20'
+                        : otpCheckError
+                        ? 'border-rose-400 text-rose-700 focus:ring-rose-500 bg-rose-50/20'
+                        : otpVerifying
+                        ? 'border-blue-400 text-blue-600 focus:ring-blue-500'
+                        : 'border-slate-300 text-slate-900 focus:ring-blue-600 focus:border-blue-600'
+                    }`}
                   />
+
+                  {otpCheckError && (
+                    <p className="text-[11px] text-rose-600 flex items-center gap-1 font-medium">
+                      <AlertCircle size={12} className="shrink-0" />
+                      <span>{otpCheckError}</span>
+                    </p>
+                  )}
 
                   {devOtp && (
                     <div className="flex items-center justify-between pt-1">
@@ -603,7 +677,11 @@ export default function RegisterPage() {
                       </span>
                       <button
                         type="button"
-                        onClick={() => setOtp(devOtp)}
+                        onClick={() => {
+                          setOtp(devOtp);
+                          setOtpVerified(false);
+                          setOtpCheckError('');
+                        }}
                         className="text-[11px] font-semibold text-blue-600 hover:text-blue-700 cursor-pointer"
                       >
                         Auto-fill code

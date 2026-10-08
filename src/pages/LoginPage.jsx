@@ -50,6 +50,11 @@ export default function LoginPage() {
   const [devResetOtp, setDevResetOtp] = useState(null);
   const [otpSentMessage, setOtpSentMessage] = useState('');
 
+  // Reset OTP live verification state
+  const [resetOtpVerifying, setResetOtpVerifying] = useState(false);
+  const [resetOtpVerified, setResetOtpVerified] = useState(false);
+  const [resetOtpCheckError, setResetOtpCheckError] = useState('');
+
   // Reset submit state
   const [resetLoading, setResetLoading] = useState(false);
   const [resetErrorMessage, setResetErrorMessage] = useState('');
@@ -63,6 +68,41 @@ export default function LoginPage() {
     }, 1000);
     return () => clearInterval(timer);
   }, [otpCooldown]);
+
+  // Debounced live verification of 6-digit OTP
+  useEffect(() => {
+    setResetOtpVerified(false);
+    setResetOtpCheckError('');
+
+    const cleanOtp = resetOtp.replace(/\D/g, '').slice(0, 6);
+    if (cleanOtp.length !== 6 || !resetEmail.trim() || resetMethod !== 'otp') {
+      setResetOtpVerifying(false);
+      return;
+    }
+
+    setResetOtpVerifying(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await api.post('/api/auth/verify-reset-otp', {
+          email: resetEmail.trim(),
+          otp: cleanOtp,
+        });
+        if (res.success) {
+          setResetOtpVerified(true);
+          setResetOtpCheckError('');
+        }
+      } catch (err) {
+        setResetOtpVerified(false);
+        setResetOtpCheckError(
+          err.response?.data?.message || err.response?.data?.error?.message || 'Invalid or expired verification code'
+        );
+      } finally {
+        setResetOtpVerifying(false);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [resetOtp, resetEmail, resetMethod]);
 
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
@@ -456,18 +496,51 @@ export default function LoginPage() {
                   {/* OTP Mode: 6-digit Code */}
                   {resetMethod === 'otp' ? (
                     <div>
-                      <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                        6-Digit Verification Code
-                      </label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider">
+                          6-Digit Verification Code
+                        </label>
+                        {resetOtpVerifying && (
+                          <span className="inline-flex items-center gap-1 text-[11px] text-blue-600 font-medium">
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            Checking code...
+                          </span>
+                        )}
+                        {resetOtpVerified && (
+                          <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 font-semibold">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                            Code verified
+                          </span>
+                        )}
+                      </div>
                       <input
                         type="text"
                         maxLength={6}
                         required
                         value={resetOtp}
-                        onChange={(e) => setResetOtp(e.target.value.replace(/\D/g, ''))}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+                          setResetOtp(val);
+                          setResetOtpVerified(false);
+                          setResetOtpCheckError('');
+                        }}
                         placeholder="123456"
-                        className="w-full h-10 px-3 py-2 text-center text-lg font-mono font-bold tracking-widest rounded-md border border-slate-200 bg-slate-50/60 text-blue-600 placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition"
+                        className={`w-full h-10 px-3 py-2 text-center text-lg font-mono font-bold tracking-widest rounded-md border bg-slate-50/60 placeholder:text-slate-300 focus:outline-none focus:ring-2 transition ${
+                          resetOtpVerified
+                            ? 'border-emerald-500 text-emerald-700 focus:ring-emerald-500 bg-emerald-50/20'
+                            : resetOtpCheckError
+                            ? 'border-rose-400 text-rose-700 focus:ring-rose-500 bg-rose-50/20'
+                            : resetOtpVerifying
+                            ? 'border-blue-400 text-blue-600 focus:ring-blue-500'
+                            : 'border-slate-200 text-blue-600 focus:ring-blue-600 focus:bg-white'
+                        }`}
                       />
+                      {resetOtpCheckError && (
+                        <p className="mt-1 text-[11px] text-rose-600 flex items-center gap-1 font-medium">
+                          <AlertCircle className="w-3 h-3 shrink-0" />
+                          <span>{resetOtpCheckError}</span>
+                        </p>
+                      )}
                     </div>
                   ) : (
                     /* Old Password Mode: Current Password */
