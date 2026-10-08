@@ -1,26 +1,37 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext.jsx';
 import { NotificationProvider } from './context/NotificationContext.jsx';
 import AppLayout from './components/AppLayout.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import GuestRoute from './components/GuestRoute.jsx';
-import LoginPage from './pages/LoginPage.jsx';
-import RegisterPage from './pages/RegisterPage.jsx';
-import DashboardPage from './pages/DashboardPage.jsx';
-import ClientsProjectsPage from './pages/ClientsProjectsPage.jsx';
-import UsersPage from './pages/UsersPage.jsx';
-import AccessPage from './pages/access/AccessPage.jsx';
-import TimesheetsPage from './pages/TimesheetsPage.jsx';
-import ReviewPage from './pages/ReviewPage.jsx';
-import TimeOffPage from './pages/TimeOffPage.jsx';
-import ReportsPage from './pages/ReportsPage.jsx';
-import AnalyticsPage from './pages/AnalyticsPage.jsx';
-import EmailLogPage from './pages/EmailLogPage.jsx';
-import AuditLogsPage from './pages/AuditLogsPage.jsx';
-import LandingPage from './pages/LandingPage.jsx';
-import NotAuthorisedPage from './pages/NotAuthorisedPage.jsx';
 import './App.css';
+
+// Code-split pages via dynamic imports
+const LandingPage = lazy(() => import('./pages/LandingPage.jsx'));
+const LoginPage = lazy(() => import('./pages/LoginPage.jsx'));
+const RegisterPage = lazy(() => import('./pages/RegisterPage.jsx'));
+const DashboardPage = lazy(() => import('./pages/DashboardPage.jsx'));
+const ClientsProjectsPage = lazy(() => import('./pages/ClientsProjectsPage.jsx'));
+const UsersPage = lazy(() => import('./pages/UsersPage.jsx'));
+const AccessPage = lazy(() => import('./pages/access/AccessPage.jsx'));
+const TimesheetsPage = lazy(() => import('./pages/TimesheetsPage.jsx'));
+const ReviewPage = lazy(() => import('./pages/ReviewPage.jsx'));
+const TimeOffPage = lazy(() => import('./pages/TimeOffPage.jsx'));
+const ReportsPage = lazy(() => import('./pages/ReportsPage.jsx'));
+const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage.jsx'));
+const EmailLogPage = lazy(() => import('./pages/EmailLogPage.jsx'));
+const AuditLogsPage = lazy(() => import('./pages/AuditLogsPage.jsx'));
+const NotAuthorisedPage = lazy(() => import('./pages/NotAuthorisedPage.jsx'));
+
+function PageLoader() {
+  return (
+    <div className="flex min-h-[400px] w-full items-center justify-center gap-2.5 text-xs text-slate-500">
+      <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-slate-800" />
+      <span>Loading...</span>
+    </div>
+  );
+}
 
 export default function App() {
   return (
@@ -28,7 +39,8 @@ export default function App() {
       <AuthProvider>
         <NotificationProvider>
           <AppLayout>
-          <Routes>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
             <Route path="/" element={<LandingPage />} />
             <Route
               path="/login"
@@ -162,7 +174,8 @@ export default function App() {
             {/* Catch-all fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
-        </AppLayout>
+        </Suspense>
+      </AppLayout>
       </NotificationProvider>
     </AuthProvider>
     </BrowserRouter>

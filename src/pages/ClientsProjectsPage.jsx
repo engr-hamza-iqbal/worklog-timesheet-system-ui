@@ -453,18 +453,18 @@ export default function ClientsProjectsPage() {
       {/* Page header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-6 border-b border-slate-200">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900 tracking-tight">Clients &amp; Projects</h1>
-          <p className="text-xs text-slate-500 mt-1">Manage clients, projects, and billing rates.</p>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Clients &amp; Projects</h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">Manage clients, projects, and billing rates.</p>
         </div>
         {canManage && (
-          <div className="flex items-center gap-2 self-start sm:self-auto">
-            <button type="button" onClick={refreshPage} disabled={refreshing} title="Refresh clients and projects" className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer disabled:opacity-50">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <button type="button" onClick={refreshPage} disabled={refreshing} title="Refresh clients and projects" className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition cursor-pointer disabled:opacity-50 shadow-xs">
               <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />Refresh
             </button>
             {canCreateClient && (
               <button
                 onClick={() => setModal('newClient')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 rounded transition cursor-pointer"
+                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition cursor-pointer shadow-xs"
               >
                 <Plus className="w-3.5 h-3.5" />New Client
               </button>
@@ -495,12 +495,12 @@ export default function ClientsProjectsPage() {
                 message="Create your first client to get started."
               />
             ) : (
-              <ul className="divide-y divide-slate-100">
+              <ul className="divide-y divide-slate-100 max-h-56 md:max-h-[600px] overflow-y-auto [scrollbar-width:thin]">
                 {clients.map((client) => (
                   <li key={client.id}>
                     <button
                       onClick={() => setSelectedClientId(client.id)}
-                      className={`w-full flex items-center justify-between px-4 py-3 text-left transition ${
+                      className={`w-full flex items-center justify-between px-4 py-3 text-left transition cursor-pointer ${
                         selectedClientId === client.id
                           ? 'bg-slate-900 text-white'
                           : 'hover:bg-slate-50 text-slate-700'
@@ -533,7 +533,7 @@ export default function ClientsProjectsPage() {
           ) : (
             <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
               {/* Panel header */}
-              <div className="px-5 py-3 border-b border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="px-3.5 sm:px-5 py-3 border-b border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-2">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h2 className="text-sm font-semibold text-slate-900">{selectedClient.name}</h2>
@@ -544,23 +544,23 @@ export default function ClientsProjectsPage() {
                   </p>
                 </div>
                 {canManageClient(selectedClient) && (
-                  <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 shrink-0">
+                  <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
                     <button
                       onClick={() => { setEditingClient(selectedClient); setModal('editClient'); }}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer"
+                      className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer"
                     >
                       <Pencil className="w-3 h-3" />Edit
                     </button>
                     <button
                       onClick={() => handleClientArchive(selectedClient)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer"
+                      className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1 px-2.5 py-1.5 text-xs font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer"
                     >
                       {selectedClient.isActive ? <XCircle className="w-3 h-3" /> : <CheckCircle className="w-3 h-3" />}
                       {selectedClient.isActive ? 'Archive' : 'Restore'}
                     </button>
                     <button
                       onClick={() => setModal('newProject')}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 rounded transition cursor-pointer"
+                      className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 rounded transition cursor-pointer"
                     >
                       <Plus className="w-3 h-3" />New Project
                     </button>
@@ -591,166 +591,168 @@ export default function ClientsProjectsPage() {
                 />
               ) : (
                 <>
-                  <Table>
-                    <TableHead>
-                      <tr>
-                        <ResizableTh
-                          onClick={() => toggleProjectSort('name')}
-                          className="py-2.5 px-5 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
-                        >
-                          <div className="flex items-center gap-1.5">
-                            <span>Project</span>
-                            {projectSortField === 'name' ? (
-                              projectSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600 shrink-0" /> : <ArrowDown size={11} className="text-indigo-600 shrink-0" />
-                            ) : (
-                              <ArrowUpDown size={11} className="text-slate-400 opacity-60 shrink-0" />
-                            )}
-                          </div>
-                        </ResizableTh>
-                        <ResizableTh
-                          onClick={() => toggleProjectSort('status')}
-                          className="py-2.5 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
-                        >
-                          <div className="flex items-center gap-1.5">
-                            <span>Status</span>
-                            {projectSortField === 'status' ? (
-                              projectSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600 shrink-0" /> : <ArrowDown size={11} className="text-indigo-600 shrink-0" />
-                            ) : (
-                              <ArrowUpDown size={11} className="text-slate-400 opacity-60 shrink-0" />
-                            )}
-                          </div>
-                        </ResizableTh>
-                        {canViewBilling && (
+                  <div className="overflow-x-auto flex-1 min-w-0 [scrollbar-width:thin] touch-pan-x">
+                    <Table>
+                      <TableHead>
+                        <tr>
                           <ResizableTh
-                            onClick={() => toggleProjectSort('currentRate')}
-                            className="py-2.5 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
+                            onClick={() => toggleProjectSort('name')}
+                            className="py-2.5 px-3.5 sm:px-5 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition text-xs whitespace-nowrap"
                           >
                             <div className="flex items-center gap-1.5">
-                              <span>Rate / hr</span>
-                              {projectSortField === 'currentRate' ? (
+                              <span>Project</span>
+                              {projectSortField === 'name' ? (
                                 projectSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600 shrink-0" /> : <ArrowDown size={11} className="text-indigo-600 shrink-0" />
                               ) : (
                                 <ArrowUpDown size={11} className="text-slate-400 opacity-60 shrink-0" />
                               )}
                             </div>
                           </ResizableTh>
-                        )}
-                        <ResizableTh
-                          onClick={() => toggleProjectSort('team')}
-                          className="py-2.5 px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
-                        >
-                          <div className="flex items-center gap-1.5">
-                            <span>Team</span>
-                            {projectSortField === 'team' ? (
-                              projectSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600 shrink-0" /> : <ArrowDown size={11} className="text-indigo-600 shrink-0" />
-                            ) : (
-                              <ArrowUpDown size={11} className="text-slate-400 opacity-60 shrink-0" />
-                            )}
-                          </div>
-                        </ResizableTh>
-                        {canManage && (
                           <ResizableTh
-                            className="py-2.5 px-4 text-right"
+                            onClick={() => toggleProjectSort('status')}
+                            className="py-2.5 px-3 sm:px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition text-xs whitespace-nowrap"
                           >
-                            <span>Actions</span>
+                            <div className="flex items-center gap-1.5">
+                              <span>Status</span>
+                              {projectSortField === 'status' ? (
+                                projectSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600 shrink-0" /> : <ArrowDown size={11} className="text-indigo-600 shrink-0" />
+                              ) : (
+                                <ArrowUpDown size={11} className="text-slate-400 opacity-60 shrink-0" />
+                              )}
+                            </div>
                           </ResizableTh>
-                        )}
-                      </tr>
-                    </TableHead>
-                    <TableBody>
-                      {paginatedProjects.map((project) => (
-                        <TableRow key={project.id}>
-                          <TableTd className="px-5">
-                            <div className="font-medium text-slate-900" title={project.name}>{project.name}</div>
-                          </TableTd>
-                          <TableTd className="px-4">
-                            <Badge
-                              variant={project.status === 'ACTIVE' ? 'active' : 'closed'}
-                              label={project.status === 'ACTIVE' ? 'Active' : 'Closed'}
-                              dot
-                            />
-                          </TableTd>
                           {canViewBilling && (
-                            <TableTd className="px-4 text-slate-700">
-                              {project.currentRate != null
-                                ? <span className="font-medium">${Number(project.currentRate).toFixed(2)}</span>
-                                : <span className="text-slate-400">—</span>}
-                            </TableTd>
-                          )}
-                          <TableTd className="px-4 min-w-[160px] whitespace-normal">
-                            {project.assignedEmployees && project.assignedEmployees.length > 0 ? (
-                              <div className="flex flex-col gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleTeamExpanded(project.id);
-                                  }}
-                                  className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 hover:text-indigo-600 transition cursor-pointer select-none group w-fit"
-                                  title={expandedTeamProjects.has(project.id) ? "Collapse team members" : "Expand to view team members"}
-                                >
-                                  <span className="p-1 rounded bg-slate-100 group-hover:bg-indigo-50 text-slate-500 group-hover:text-indigo-600 transition">
-                                    <Users className="w-3.5 h-3.5" />
-                                  </span>
-                                  <span className="font-semibold text-slate-800">
-                                    {project.assignedEmployees.length} member{project.assignedEmployees.length !== 1 ? 's' : ''}
-                                  </span>
-                                  {expandedTeamProjects.has(project.id) ? (
-                                    <ChevronUp className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600 transition" />
-                                  ) : (
-                                    <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600 transition" />
-                                  )}
-                                </button>
-
-                                {expandedTeamProjects.has(project.id) && (
-                                  <div className="flex flex-wrap gap-1.5 mt-1 max-w-full">
-                                    {project.assignedEmployees.map((emp) => (
-                                      <span
-                                        key={emp.id}
-                                        title={`${emp.name}${emp.email ? ` (${emp.email})` : ''}`}
-                                        className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs hover:bg-slate-200/80 transition"
-                                      >
-                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                                        <span className="truncate max-w-[150px]">{emp.name}</span>
-                                      </span>
-                                    ))}
-                                  </div>
+                            <ResizableTh
+                              onClick={() => toggleProjectSort('currentRate')}
+                              className="py-2.5 px-3 sm:px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition text-xs whitespace-nowrap"
+                            >
+                              <div className="flex items-center gap-1.5">
+                                <span>Rate / hr</span>
+                                {projectSortField === 'currentRate' ? (
+                                  projectSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600 shrink-0" /> : <ArrowDown size={11} className="text-indigo-600 shrink-0" />
+                                ) : (
+                                  <ArrowUpDown size={11} className="text-slate-400 opacity-60 shrink-0" />
                                 )}
                               </div>
-                            ) : (
-                              <span className="text-slate-400 text-xs italic">—</span>
-                            )}
-                          </TableTd>
+                            </ResizableTh>
+                          )}
+                          <ResizableTh
+                            onClick={() => toggleProjectSort('team')}
+                            className="py-2.5 px-3 sm:px-4 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition text-xs whitespace-nowrap"
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <span>Team</span>
+                              {projectSortField === 'team' ? (
+                                projectSortOrder === 'asc' ? <ArrowUp size={11} className="text-indigo-600 shrink-0" /> : <ArrowDown size={11} className="text-indigo-600 shrink-0" />
+                              ) : (
+                                <ArrowUpDown size={11} className="text-slate-400 opacity-60 shrink-0" />
+                              )}
+                            </div>
+                          </ResizableTh>
                           {canManage && (
-                            <TableTd className="px-4 text-right">
-                              {canManageProject(project) ? (
-                                <div className="flex items-center gap-1.5 justify-end">
-                                  {canViewBilling && (
-                                    <button
-                                      onClick={() => { setRateProjectId(project.id); setModal('addRate'); }}
-                                      className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer"
-                                    >
-                                      <DollarSign className="w-3 h-3" />Rate
-                                    </button>
-                                  )}
+                            <ResizableTh
+                              className="py-2.5 px-3 sm:px-4 text-right text-xs whitespace-nowrap"
+                            >
+                              <span>Actions</span>
+                            </ResizableTh>
+                          )}
+                        </tr>
+                      </TableHead>
+                      <TableBody>
+                        {paginatedProjects.map((project) => (
+                          <TableRow key={project.id}>
+                            <TableTd className="px-3.5 sm:px-5 py-2.5 sm:py-3 whitespace-nowrap">
+                              <div className="font-medium text-slate-900 text-xs sm:text-sm" title={project.name}>{project.name}</div>
+                            </TableTd>
+                            <TableTd className="px-3 sm:px-4 py-2.5 sm:py-3 whitespace-nowrap">
+                              <Badge
+                                variant={project.status === 'ACTIVE' ? 'active' : 'closed'}
+                                label={project.status === 'ACTIVE' ? 'Active' : 'Closed'}
+                                dot
+                              />
+                            </TableTd>
+                            {canViewBilling && (
+                              <TableTd className="px-3 sm:px-4 py-2.5 sm:py-3 text-slate-700 whitespace-nowrap text-xs">
+                                {project.currentRate != null
+                                  ? <span className="font-medium font-mono">${Number(project.currentRate).toFixed(2)}</span>
+                                  : <span className="text-slate-400">—</span>}
+                              </TableTd>
+                            )}
+                            <TableTd className="px-3 sm:px-4 py-2.5 sm:py-3 min-w-[140px] whitespace-normal">
+                              {project.assignedEmployees && project.assignedEmployees.length > 0 ? (
+                                <div className="flex flex-col gap-1.5">
                                   <button
-                                    onClick={() => handleProjectStatusToggle(project)}
-                                    className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer"
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleTeamExpanded(project.id);
+                                    }}
+                                    className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-700 hover:text-indigo-600 transition cursor-pointer select-none group w-fit"
+                                    title={expandedTeamProjects.has(project.id) ? "Collapse team members" : "Expand to view team members"}
                                   >
-                                    {project.status === 'ACTIVE'
-                                      ? <><XCircle className="w-3 h-3" />Close</>
-                                      : <><CheckCircle className="w-3 h-3" />Reopen</>}
+                                    <span className="p-1 rounded bg-slate-100 group-hover:bg-indigo-50 text-slate-500 group-hover:text-indigo-600 transition">
+                                      <Users className="w-3.5 h-3.5" />
+                                    </span>
+                                    <span className="font-semibold text-slate-800">
+                                      {project.assignedEmployees.length} member{project.assignedEmployees.length !== 1 ? 's' : ''}
+                                    </span>
+                                    {expandedTeamProjects.has(project.id) ? (
+                                      <ChevronUp className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600 transition" />
+                                    ) : (
+                                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-600 transition" />
+                                    )}
                                   </button>
+
+                                  {expandedTeamProjects.has(project.id) && (
+                                    <div className="flex flex-wrap gap-1.5 mt-1 max-w-full">
+                                      {project.assignedEmployees.map((emp) => (
+                                        <span
+                                          key={emp.id}
+                                          title={`${emp.name}${emp.email ? ` (${emp.email})` : ''}`}
+                                          className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs hover:bg-slate-200/80 transition"
+                                        >
+                                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                                          <span className="truncate max-w-[150px]">{emp.name}</span>
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
                                 </div>
                               ) : (
-                                <span className="text-slate-400 text-[11px] italic">View only</span>
+                                <span className="text-slate-400 text-xs italic">—</span>
                               )}
                             </TableTd>
-                          )}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                            {canManage && (
+                              <TableTd className="px-3 sm:px-4 py-2.5 sm:py-3 text-right whitespace-nowrap">
+                                {canManageProject(project) ? (
+                                  <div className="flex items-center gap-1.5 justify-end">
+                                    {canViewBilling && (
+                                      <button
+                                        onClick={() => { setRateProjectId(project.id); setModal('addRate'); }}
+                                        className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer"
+                                      >
+                                        <DollarSign className="w-3 h-3" />Rate
+                                      </button>
+                                    )}
+                                    <button
+                                      onClick={() => handleProjectStatusToggle(project)}
+                                      className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-slate-600 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer"
+                                    >
+                                      {project.status === 'ACTIVE'
+                                        ? <><XCircle className="w-3 h-3" />Close</>
+                                        : <><CheckCircle className="w-3 h-3" />Reopen</>}
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-400 text-[11px] italic">View only</span>
+                                )}
+                              </TableTd>
+                            )}
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                   <Pagination
                     currentPage={projectPage}
                     totalItems={projects.length}
