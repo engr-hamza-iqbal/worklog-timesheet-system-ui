@@ -14,7 +14,6 @@ import {
   Clock,
   CheckCircle2,
   Layers,
-  ChevronDown,
 } from "lucide-react";
 import api from "../api/client.js";
 import Badge from "../components/Badge.jsx";
@@ -43,7 +42,7 @@ export default function TimeOffPage() {
   const [requests, setRequests] = useState([]);
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
-  const [showForm, setShowForm] = useState(false);
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
 
   const [filters, setFilters] = useState({
     status: "",
@@ -174,7 +173,7 @@ export default function TimeOffPage() {
         endDate: "",
         reason: "",
       }));
-      setShowForm(false);
+      setIsRequestModalOpen(false);
       setPage(1);
       await load();
     } catch (err) {
@@ -273,11 +272,11 @@ export default function TimeOffPage() {
           </button>
           <button
             type="button"
-            onClick={() => setShowForm((prev) => !prev)}
+            onClick={() => setIsRequestModalOpen(true)}
             className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition cursor-pointer"
           >
-            <Plus size={14} className={showForm ? "rotate-45 transition-transform" : "transition-transform"} />
-            <span>{showForm ? "Close Form" : "Request Leave"}</span>
+            <Plus size={14} />
+            <span>Request Leave</span>
           </button>
         </div>
       </div>
@@ -286,9 +285,8 @@ export default function TimeOffPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div
           onClick={() => setFilters({ ...filters, status: "" })}
-          className={`bg-white rounded-2xl border p-4 shadow-2xs flex items-center justify-between gap-3 cursor-pointer transition ${
-            filters.status === "" ? "border-indigo-300 ring-2 ring-indigo-50" : "border-slate-200/90 hover:border-slate-300"
-          }`}
+          className={`bg-white rounded-2xl border p-4 shadow-2xs flex items-center justify-between gap-3 cursor-pointer transition ${filters.status === "" ? "border-indigo-300 ring-2 ring-indigo-50" : "border-slate-200/90 hover:border-slate-300"
+            }`}
         >
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
@@ -304,9 +302,8 @@ export default function TimeOffPage() {
 
         <div
           onClick={() => setFilters({ ...filters, status: "PENDING" })}
-          className={`bg-white rounded-2xl border p-4 shadow-2xs flex items-center justify-between gap-3 cursor-pointer transition ${
-            filters.status === "PENDING" ? "border-amber-300 ring-2 ring-amber-50" : "border-slate-200/90 hover:border-slate-300"
-          }`}
+          className={`bg-white rounded-2xl border p-4 shadow-2xs flex items-center justify-between gap-3 cursor-pointer transition ${filters.status === "PENDING" ? "border-amber-300 ring-2 ring-amber-50" : "border-slate-200/90 hover:border-slate-300"
+            }`}
         >
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center shrink-0">
@@ -322,9 +319,8 @@ export default function TimeOffPage() {
 
         <div
           onClick={() => setFilters({ ...filters, status: "APPROVED" })}
-          className={`bg-white rounded-2xl border p-4 shadow-2xs flex items-center justify-between gap-3 cursor-pointer transition ${
-            filters.status === "APPROVED" ? "border-emerald-300 ring-2 ring-emerald-50" : "border-slate-200/90 hover:border-slate-300"
-          }`}
+          className={`bg-white rounded-2xl border p-4 shadow-2xs flex items-center justify-between gap-3 cursor-pointer transition ${filters.status === "APPROVED" ? "border-emerald-300 ring-2 ring-emerald-50" : "border-slate-200/90 hover:border-slate-300"
+            }`}
         >
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
@@ -352,107 +348,11 @@ export default function TimeOffPage() {
         </div>
       </div>
 
-      {/* ── Submit Leave Request Form (Collapsible Card) ── */}
-      {showForm && (
-        <form
-          onSubmit={createRequest}
-          className="mb-6 rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs animate-in fade-in duration-150"
-        >
-          <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center">
-                <CalendarDays size={15} />
-              </div>
-              <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                Submit Leave Request
-              </h2>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowForm(false)}
-              className="text-slate-400 hover:text-slate-600 p-1 rounded-md cursor-pointer"
-            >
-              <X size={16} />
-            </button>
-          </div>
-
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-12 items-end">
-            <label className="text-xs font-semibold text-slate-700 sm:col-span-1 md:col-span-1 lg:col-span-3">
-              Leave Type
-              <select
-                required
-                value={form.timeOffTypeId}
-                onChange={(e) =>
-                  setForm({ ...form, timeOffTypeId: e.target.value })
-                }
-                className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-slate-900 focus:outline-none transition shadow-2xs"
-              >
-                <option value="">Select leave type</option>
-                {types.map((type) => (
-                  <option key={type.id} value={type.id}>
-                    {type.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="text-xs font-semibold text-slate-700 sm:col-span-1 md:col-span-1 lg:col-span-2">
-              Start Date
-              <input
-                required
-                type="date"
-                value={form.startDate}
-                onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-                className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-slate-900 focus:outline-none transition shadow-2xs"
-              />
-            </label>
-
-            <label className="text-xs font-semibold text-slate-700 sm:col-span-1 md:col-span-1 lg:col-span-2">
-              End Date
-              <input
-                required
-                type="date"
-                min={form.startDate || undefined}
-                value={form.endDate}
-                onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-                className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-slate-900 focus:outline-none transition shadow-2xs"
-              />
-            </label>
-
-            <label className="text-xs font-semibold text-slate-700 sm:col-span-1 md:col-span-2 lg:col-span-3">
-              Reason
-              <input
-                required
-                minLength={5}
-                value={form.reason}
-                onChange={(e) => setForm({ ...form, reason: e.target.value })}
-                placeholder="e.g. Annual family leave"
-                className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-slate-900 focus:outline-none transition shadow-2xs"
-              />
-            </label>
-
-            <div className="sm:col-span-2 md:col-span-1 lg:col-span-2">
-              <button
-                type="submit"
-                disabled={saving || !types.length}
-                className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-3 py-2.5 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer disabled:cursor-not-allowed shadow-xs"
-              >
-                {saving ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
-                <span>{saving ? "Submitting..." : "Submit Request"}</span>
-              </button>
-            </div>
-          </div>
-        </form>
-      )}
-
       {/* ── Requests Table with Integrated Filters Bar ── */}
       <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs">
         {/* Table Toolbar & Filters */}
         <div className="px-5 py-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
-              <CalendarDays size={18} />
-            </div>
             <div>
               <h2 className="text-sm font-bold text-slate-900">
                 Time-Off Requests
@@ -694,6 +594,99 @@ export default function TimeOffPage() {
         />
       </div>
 
+      {/* ── Submit Leave Request Modal ── */}
+      <Modal
+        isOpen={isRequestModalOpen}
+        onClose={() => (saving ? null : setIsRequestModalOpen(false))}
+        title="Submit Leave Request"
+        size="md"
+      >
+        <form onSubmit={createRequest} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Leave Type
+            </label>
+            <select
+              required
+              value={form.timeOffTypeId}
+              onChange={(e) =>
+                setForm({ ...form, timeOffTypeId: e.target.value })
+              }
+              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-slate-900 focus:outline-none transition shadow-2xs"
+            >
+              <option value="">Select leave type</option>
+              {types.map((type) => (
+                <option key={type.id} value={type.id}>
+                  {type.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Start Date
+              </label>
+              <input
+                required
+                type="date"
+                value={form.startDate}
+                onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-slate-900 focus:outline-none transition shadow-2xs"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                End Date
+              </label>
+              <input
+                required
+                type="date"
+                min={form.startDate || undefined}
+                value={form.endDate}
+                onChange={(e) => setForm({ ...form, endDate: e.target.value })}
+                className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-slate-900 focus:outline-none transition shadow-2xs"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              Reason
+            </label>
+            <textarea
+              required
+              minLength={5}
+              rows={3}
+              value={form.reason}
+              onChange={(e) => setForm({ ...form, reason: e.target.value })}
+              placeholder="e.g. Annual family vacation or medical appointment (min 5 chars)..."
+              className="w-full rounded-xl border border-slate-300 bg-white p-3 text-xs focus:border-slate-900 focus:outline-none transition shadow-2xs resize-none"
+            />
+          </div>
+
+          <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => setIsRequestModalOpen(false)}
+              className="px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={saving || !types.length}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50 transition cursor-pointer disabled:cursor-not-allowed shadow-xs"
+            >
+              {saving ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+              <span>{saving ? "Submitting..." : "Submit Request"}</span>
+            </button>
+          </div>
+        </form>
+      </Modal>
+
       <ConfirmDialog
         isOpen={Boolean(confirmation)}
         onClose={() => (isDeciding || isCancelling ? null : setConfirmation(null))}
@@ -741,7 +734,7 @@ export default function TimeOffPage() {
             }}
             className="inline-flex items-center gap-1.5 rounded-xl bg-red-700 px-3 py-2 text-xs font-semibold text-white hover:bg-red-800 disabled:opacity-50 transition cursor-pointer disabled:cursor-not-allowed shadow-xs"
           >
-            {isDeciding && <Loader2 size={13} className="animate-spin" />}
+            {isDeciding && <Loader2 size={14} className="animate-spin" />}
             Decline request
           </button>
         </div>

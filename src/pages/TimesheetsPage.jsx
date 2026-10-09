@@ -282,9 +282,6 @@ export default function TimesheetsPage() {
     }
   }
 
-  useEffect(() => {
-    load();
-  }, [weekStart.toISOString(), isAdmin]);
 
   const filterKnownEntries = ({
     status = historyStatus,
@@ -364,26 +361,47 @@ export default function TimesheetsPage() {
     }
   }
 
+  // Sequentially load data for week and entries as well when timesheet page opens
   useEffect(() => {
-    if (activeTab === "entries") {
-      fetchHistory({ silent: historyEntries.length > 0 });
+    let isCancelled = false;
+
+    async function loadTabsSequentially() {
+      // 1. First load the week timesheet and assigned projects
+      await load();
+      if (isCancelled) return;
+
+      // 2. Sequentially load entries tab history so all tabs are ready
+      await fetchHistory({ silent: true });
+      if (isCancelled) return;
+
+      // 3. Preload all projects for admin filter if needed
       if (isAdmin && filterProjects.length === 0) {
-        api.get("/api/projects", {
-          params: { activeOnly: true },
-        }).then((res) => {
-          const nextProjects = Array.isArray(res.data) ? res.data : res.data?.projects || [];
-          if (nextProjects.length) setFilterProjects(nextProjects);
-        }).catch(() => { });
-      } else if (!isAdmin && projects.length === 0) {
-        api.get("/api/projects", {
-          params: { activeOnly: true, assignedToMe: true },
-        }).then((res) => {
-          const nextProjects = Array.isArray(res.data) ? res.data : res.data?.projects || [];
-          if (nextProjects.length) setProjects(nextProjects);
-        }).catch(() => { });
+        try {
+          const res = await api.get("/api/projects", { params: { activeOnly: true } });
+          if (!isCancelled) {
+            const nextProjects = Array.isArray(res.data) ? res.data : res.data?.projects || [];
+            if (nextProjects.length) setFilterProjects(nextProjects);
+          }
+        } catch {
+          // ignore
+        }
       }
     }
-  }, [activeTab, isAdmin]);
+
+    loadTabsSequentially();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [weekStart.toISOString(), isAdmin]);
+
+  useEffect(() => {
+    if (activeTab === "entries") {
+      if (historyEntries.length === 0 && !historyLoading) {
+        fetchHistory({ silent: false });
+      }
+    }
+  }, [activeTab]);
 
   const handleFilterStatusChange = (st) => {
     if (historyStatus === st || isFiltering) return;
@@ -524,6 +542,7 @@ export default function TimesheetsPage() {
       );
       setConfirmation(null);
       await load();
+      fetchHistory({ silent: true }).catch(() => {});
     } catch (err) {
       notify.error(err.message);
       setConfirmation(null);
@@ -553,6 +572,7 @@ export default function TimesheetsPage() {
       notify.success("Draft entry deleted.");
       setConfirmation(null);
       await load();
+      fetchHistory({ silent: true }).catch(() => {});
     } catch (err) {
       notify.error(err.message);
       setConfirmation(null);
@@ -586,6 +606,7 @@ export default function TimesheetsPage() {
       notify.success(`${parsed.data.entryIds.length} entries submitted for review.`);
       setConfirmation(null);
       await load();
+      fetchHistory({ silent: true }).catch(() => {});
     } catch (err) {
       notify.error(err.message);
       setConfirmation(null);
