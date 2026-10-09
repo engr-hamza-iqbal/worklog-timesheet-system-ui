@@ -81,12 +81,13 @@ function SearchableUserSelect({
   };
 
   return (
-    <div className="relative w-full sm:w-80" ref={dropdownRef}>
+    <div className="relative w-full" ref={dropdownRef}>
       <button
+        id="user-select-btn"
         type="button"
         disabled={disabled}
         onClick={() => setIsOpen((prev) => !prev)}
-        className="w-full flex items-center justify-between gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-left text-sm text-slate-800 shadow-2xs hover:bg-slate-50 focus:border-slate-900 focus:outline-none transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full flex items-center justify-between gap-2 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-left text-sm text-slate-800 shadow-2xs hover:bg-slate-50 focus:border-slate-900 focus:outline-none transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
@@ -262,18 +263,33 @@ export default function AccessPage() {
 
   return (
     <main className="relative flex-1 max-w-auto w-full mx-auto px-4 py-6">
-      {/* Page header */}
-      <div className="pb-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900 tracking-tight">Access Management</h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Grant, scope, and revoke individual capabilities per employee. Effects are immediate.
-          </p>
+      {refreshing && (
+        <div className="absolute inset-x-0 top-6 z-20 flex justify-center pointer-events-none">
+          <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white/95 px-4 py-3 text-sm font-medium text-slate-700 shadow-md">
+            <RefreshCw className="w-5 h-5 text-slate-500 animate-spin" />
+            Refreshing access data
+          </div>
         </div>
-        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+      )}
+
+      {/* ── Top Controls Bar: Select User (over dropdown) + Actions (same row) ── */}
+      <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs p-4 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div className="flex flex-col gap-1.5 w-full sm:w-80">
+          <label htmlFor="user-select-btn" className="text-xs font-semibold text-slate-700">
+            Select User
+          </label>
+          <SearchableUserSelect
+            users={users}
+            selectedId={selectedUserId}
+            onSelect={setSelectedUserId}
+            currentUserId={currentUser?.id}
+          />
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
           <Link
             to="/audit-logs"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg shadow-2xs transition cursor-pointer"
           >
             <History className="w-3.5 h-3.5 text-slate-500" />
             Access Audit Logs
@@ -283,7 +299,7 @@ export default function AccessPage() {
             onClick={() => fetchAccessData(false)}
             disabled={refreshing}
             title="Refresh access data"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded transition cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg shadow-2xs transition cursor-pointer disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
@@ -291,50 +307,19 @@ export default function AccessPage() {
           <button
             type="button"
             onClick={() => setBulkGrantModal(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg shadow-2xs transition cursor-pointer"
           >
-            <Shield className="w-3.5 h-3.5" />
+            <Shield className="w-3.5 h-3.5 text-indigo-600" />
             Grant Capability to Team
           </button>
           <button
             type="button"
             onClick={() => setBulkRevokeModal(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg shadow-2xs transition cursor-pointer"
           >
             <ShieldAlert className="w-3.5 h-3.5 text-red-600" />
             Revoke Capability from Team
           </button>
-        </div>
-      </div>
-
-      {refreshing && (
-        <div className="absolute inset-x-0 top-20 z-10 flex justify-center pointer-events-none">
-          <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white/95 px-4 py-3 text-sm font-medium text-slate-700 shadow-md">
-            <RefreshCw className="w-5 h-5 text-slate-500 animate-spin" />
-            Refreshing access data
-          </div>
-        </div>
-      )}
-
-      {/* ── User Selector Bar ── */}
-      <div className="mt-6 bg-white rounded-xl border border-slate-200/90 shadow-2xs p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 min-w-0">
-          <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 shrink-0">
-            Select User:
-          </label>
-          <SearchableUserSelect
-            users={users}
-            selectedId={selectedUserId}
-            onSelect={setSelectedUserId}
-            currentUserId={currentUser?.id}
-          />
-        </div>
-        <div className="flex items-center gap-3 text-xs text-slate-500 shrink-0 flex-wrap">
-          <span>Total: <strong className="text-slate-800 font-semibold">{users.length}</strong> users</span>
-          <span className="text-slate-300">•</span>
-          <span><strong className="text-slate-800 font-semibold">{users.filter((u) => u.accountType === 'ADMIN').length}</strong> Admins</span>
-          <span className="text-slate-300">•</span>
-          <span><strong className="text-slate-800 font-semibold">{users.filter((u) => u.accountType !== 'ADMIN').length}</strong> Employees</span>
         </div>
       </div>
 
