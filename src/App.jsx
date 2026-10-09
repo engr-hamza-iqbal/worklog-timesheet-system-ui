@@ -171,6 +171,14 @@ export default function App() {
               path="/access-logs"
               element={<Navigate to="/audit-logs" replace />}
             />
+            <Route
+              path="/clients-projects"
+              element={<Navigate to="/clients" replace />}
+            />
+            <Route
+              path="/projects"
+              element={<Navigate to="/clients" replace />}
+            />
 
             <Route
               path="/unauthorized"

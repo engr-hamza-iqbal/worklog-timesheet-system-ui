@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/client.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import Table, { TableHead, TableBody, TableRow, TableTd } from '../components/Table.jsx';
@@ -9,7 +9,6 @@ import {
   Clock,
   ShieldCheck,
   Calendar,
-  Briefcase,
   Users,
   FileSpreadsheet,
   BarChart3,
@@ -31,6 +30,7 @@ import {
   Filter,
   MoreVertical,
   Shield,
+  ExternalLink,
 } from 'lucide-react';
 
 const SYSTEM_CAPABILITIES = [
@@ -41,7 +41,7 @@ const SYSTEM_CAPABILITIES = [
     icon: Users,
     iconBg: 'bg-indigo-50 text-indigo-600 border-indigo-100',
     lastUpdated: 'Oct 8, 2026',
-    route: '/clients-projects',
+    route: '/users',
   },
   {
     code: 'DECIDE_TIME_OFF',
@@ -50,7 +50,7 @@ const SYSTEM_CAPABILITIES = [
     icon: Calendar,
     iconBg: 'bg-violet-50 text-violet-600 border-violet-100',
     lastUpdated: 'Oct 7, 2026',
-    route: '/review',
+    route: '/time-off',
   },
   {
     code: 'MANAGE_CLIENTS_PROJECTS',
@@ -59,7 +59,7 @@ const SYSTEM_CAPABILITIES = [
     icon: FolderOpen,
     iconBg: 'bg-sky-50 text-sky-600 border-sky-100',
     lastUpdated: 'Oct 5, 2026',
-    route: '/clients-projects',
+    route: '/clients',
   },
   {
     code: 'MANAGE_USERS',
@@ -104,7 +104,7 @@ const SYSTEM_CAPABILITIES = [
     icon: DollarSign,
     iconBg: 'bg-amber-50 text-amber-600 border-amber-100',
     lastUpdated: 'Oct 1, 2026',
-    route: '/clients-projects',
+    route: '/clients',
   },
   {
     code: 'VIEW_OTHER_RECORDS',
@@ -119,6 +119,7 @@ const SYSTEM_CAPABILITIES = [
 
 export default function DashboardPage() {
   const { user, capabilities, isAdmin, refreshUser } = useAuth();
+  const navigate = useNavigate();
   const [refreshing, setRefreshing] = useState(false);
   const [filterQuery, setFilterQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'GRANTED' | 'RESTRICTED'
@@ -126,8 +127,25 @@ export default function DashboardPage() {
   const [sortField, setSortField] = useState('name');
   const [sortOrder, setSortOrder] = useState('asc'); // 'asc' | 'desc'
   const [expandedScopeCaps, setExpandedScopeCaps] = useState(new Set());
+  const [activeMenuCap, setActiveMenuCap] = useState(null);
   const [projectsCount, setProjectsCount] = useState(4);
   const [pendingCount, setPendingCount] = useState(3);
+  const filterMenuRef = useRef(null);
+  const actionMenuRef = useRef(null);
+
+  // Close menus on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (filterMenuRef.current && !filterMenuRef.current.contains(e.target)) {
+        setShowFilterMenu(false);
+      }
+      if (actionMenuRef.current && !actionMenuRef.current.contains(e.target)) {
+        setActiveMenuCap(null);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Fetch real counts for metric cards with fallbacks
   useEffect(() => {
@@ -163,7 +181,7 @@ export default function DashboardPage() {
         }
         setPendingCount(pending);
       } catch {
-        // Fallback gracefully
+        // Fallback gracefully to default previews
       }
     }
 
@@ -185,6 +203,13 @@ export default function DashboardPage() {
     } else {
       setSortField(field);
       setSortOrder('asc');
+    }
+  };
+
+  const scrollToCapabilities = () => {
+    const el = document.getElementById('capabilities-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
@@ -244,14 +269,14 @@ export default function DashboardPage() {
           isAdmin || capabilities[a.code]?.isGlobal
             ? 2
             : capabilities[a.code]
-            ? 1
-            : 0;
+              ? 1
+              : 0;
         const bGlobal =
           isAdmin || capabilities[b.code]?.isGlobal
             ? 2
             : capabilities[b.code]
-            ? 1
-            : 0;
+              ? 1
+              : 0;
         comparison = aGlobal - bGlobal;
       }
       return sortOrder === 'asc' ? comparison : -comparison;
@@ -270,52 +295,92 @@ export default function DashboardPage() {
   return (
     <main className="flex-1 max-w-auto w-full mx-auto px-4 py-6 sm:px-6">
       {/* ── Welcome Greeting Hero Card ── */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#0F172A] via-[#1E1B4B] to-[#312E81] p-6 sm:p-8 text-white shadow-xl mb-6">
-        <div className="absolute right-1/4 top-0 -mt-10 w-96 h-96 rounded-full bg-indigo-500/15 blur-3xl pointer-events-none" />
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-r from-[#0C1236] via-[#161F55] to-[#12193E] p-6 sm:p-7 lg:p-8 text-white shadow-xl mb-6 border border-[#232F6B]/40">
+        {/* Soft background ambient glows */}
+        <div className="absolute right-1/3 top-0 -mt-10 w-96 h-96 rounded-full bg-indigo-500/15 blur-3xl pointer-events-none" />
         <div className="absolute -left-10 bottom-0 w-80 h-80 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+        <div className="relative z-10 grid grid-cols-1 md:grid-cols-12 lg:grid-cols-12 gap-6 items-center">
           {/* Left Column: Greeting & Summary */}
-          <div className="lg:col-span-6 xl:col-span-7 flex flex-col justify-center">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-300 mb-2">
+          <div className="md:col-span-7 lg:col-span-5 flex flex-col justify-center">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-300/90 mb-2">
               WELCOME BACK
             </span>
-            <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white mb-2.5">
-              {greetingTime}, {userName}! <span className="inline-block animate-wave">👋</span>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white mb-2.5">
+              {greetingTime}, {userName}!
             </h1>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-lg mb-6">
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-md mb-6 font-normal">
               Here&apos;s what&apos;s happening with your workspace. Track authorization coverage,
               review access scopes, and manage your organization&apos;s resources.
             </p>
 
             <div>
-              <a
-                href="#capabilities-section"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-semibold transition shadow-md w-fit cursor-pointer"
+              <button
+                type="button"
+                onClick={scrollToCapabilities}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-xs sm:text-sm font-semibold transition shadow-md w-fit cursor-pointer"
               >
                 <span>Go to Capabilities</span>
                 <ArrowRight size={15} />
-              </a>
+              </button>
             </div>
           </div>
 
-          {/* Middle Decorative Glass Shield Illustration (Desktop) */}
-          <div className="hidden xl:flex items-center justify-center lg:col-span-1">
-            <div className="relative w-28 h-32 rounded-2xl bg-gradient-to-tr from-white/10 to-indigo-500/20 border border-white/20 backdrop-blur-md shadow-2xl rotate-6 flex items-center justify-center">
-              <ShieldCheck className="w-14 h-14 text-indigo-300 drop-shadow-md" />
+          {/* Middle 3D Floating Glass Shield Illustration */}
+          <div className="hidden lg:flex lg:col-span-3 items-center justify-center relative min-h-[170px]">
+            <div className="relative w-full h-full flex items-center justify-center py-2">
+              {/* Subtle orbital dashed circle */}
+              <svg className="absolute w-52 h-52 pointer-events-none opacity-25" viewBox="0 0 200 200">
+                <circle
+                  cx="100"
+                  cy="100"
+                  r="78"
+                  fill="none"
+                  stroke="#818CF8"
+                  strokeWidth="1.5"
+                  strokeDasharray="4 8"
+                />
+              </svg>
+
+              {/* Background Glass Tablet */}
+              <div className="relative w-36 h-44 rounded-2xl bg-gradient-to-br from-indigo-500/25 via-blue-500/15 to-slate-900/40 border border-white/20 backdrop-blur-md shadow-xl rotate-[14deg] translate-x-4 -translate-y-2 p-3.5 flex flex-col justify-between pointer-events-none">
+                <div className="space-y-2.5">
+                  <div className="w-5 h-5 rounded-full bg-indigo-400/40 border border-white/20" />
+                  <div className="h-2 w-16 bg-white/30 rounded-full" />
+                  <div className="h-1.5 w-20 bg-white/20 rounded-full" />
+                  <div className="h-1.5 w-14 bg-white/15 rounded-full" />
+                </div>
+                <div className="h-2 w-10 bg-indigo-300/30 rounded-full self-end" />
+              </div>
+
+              {/* Foreground Floating Glass Shield */}
+              <div className="absolute w-32 h-40 rounded-2xl bg-gradient-to-br from-white/20 via-indigo-500/25 to-slate-900/40 border border-white/30 backdrop-blur-xl shadow-2xl -rotate-[10deg] -translate-x-4 translate-y-2 flex items-center justify-center pointer-events-none">
+                <div className="relative flex items-center justify-center">
+                  <div className="w-16 h-18 rounded-2xl bg-gradient-to-b from-[#38BDF8] via-[#4F46E5] to-[#312E81] border border-cyan-200/50 shadow-xl flex items-center justify-center shadow-indigo-500/40">
+                    <ShieldCheck className="w-9 h-9 text-white drop-shadow-md" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Glowing Particle Accents */}
+              <div className="absolute top-3 right-6 w-2 h-2 rounded-full bg-cyan-300 shadow-[0_0_8px_#38bdf8]" />
+              <div className="absolute bottom-5 left-5 w-1.5 h-1.5 rounded-full bg-indigo-300 shadow-[0_0_6px_#818cf8]" />
             </div>
           </div>
 
-          {/* Right Column: Glass Status Widgets */}
-          <div className="lg:col-span-6 xl:col-span-4 flex flex-col gap-3">
+          {/* Right Column: 3 Glass Metric Cards */}
+          <div className="md:col-span-5 lg:col-span-4 flex flex-col gap-3 justify-center">
             {/* Widget 1: Authorization Coverage */}
-            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/15 shadow-sm flex items-center justify-between gap-4">
+            <div
+              onClick={scrollToCapabilities}
+              className="bg-[#0E1738]/80 hover:bg-[#131F4A]/80 backdrop-blur-md rounded-2xl p-4 border border-white/10 shadow-sm flex items-center justify-between gap-4 transition cursor-pointer"
+            >
               <div className="flex items-center gap-3.5 min-w-0">
                 {/* Mini Donut Progress Ring */}
                 <div className="relative w-12 h-12 shrink-0 flex items-center justify-center">
                   <svg className="w-12 h-12 -rotate-90" viewBox="0 0 36 36">
                     <path
-                      className="text-slate-800/80"
+                      className="text-[#1E2958]"
                       strokeWidth="3.5"
                       stroke="currentColor"
                       fill="none"
@@ -334,12 +399,12 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="min-w-0">
-                  <div className="text-[11px] font-semibold text-slate-300">
+                  <div className="text-[11px] font-medium text-slate-300">
                     Authorization Coverage
                   </div>
                   <div className="text-lg font-bold text-white flex items-baseline gap-2 mt-0.5">
                     <span>{grantedCount} / {SYSTEM_CAPABILITIES.length}</span>
-                    <span className="text-xs font-semibold text-cyan-300">{percentageGranted}%</span>
+                    <span className="text-xs font-semibold text-cyan-400">{percentageGranted}%</span>
                   </div>
                   <div className="text-[11px] text-slate-400 truncate">
                     {percentageGranted === 100
@@ -349,18 +414,18 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center shrink-0">
-                <Shield className="w-4 h-4 text-indigo-200" />
+              <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                <Shield className="w-4 h-4 text-slate-300" />
               </div>
             </div>
 
             {/* Widget 2: Assigned Role */}
             <Link
               to="/profile"
-              className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/15 shadow-sm flex items-center justify-between gap-3 hover:bg-white/15 transition cursor-pointer"
+              className="bg-[#0E1738]/80 hover:bg-[#131F4A]/80 backdrop-blur-md rounded-2xl p-3.5 border border-white/10 shadow-sm flex items-center justify-between gap-3 transition cursor-pointer"
             >
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-xl bg-white/10 text-white flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-white/10 border border-white/10 text-white flex items-center justify-center shrink-0">
                   <User size={18} />
                 </div>
                 <div className="min-w-0">
@@ -378,18 +443,18 @@ export default function DashboardPage() {
 
             {/* Widget 3: Active Projects */}
             <Link
-              to="/clients-projects"
-              className="bg-white/10 backdrop-blur-md rounded-2xl p-3.5 border border-white/15 shadow-sm flex items-center justify-between gap-3 hover:bg-white/15 transition cursor-pointer"
+              to="/clients"
+              className="bg-[#0E1738]/80 hover:bg-[#131F4A]/80 backdrop-blur-md rounded-2xl p-3.5 border border-white/10 shadow-sm flex items-center justify-between gap-3 transition cursor-pointer"
             >
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-xl bg-white/10 text-amber-300 flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-amber-500/15 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
                   <FolderOpen size={18} />
                 </div>
                 <div className="min-w-0">
                   <div className="text-[11px] font-medium text-slate-300">Active Projects</div>
                   <div className="text-sm font-bold text-white flex items-baseline gap-1.5 truncate">
                     <span>{projectsCount}</span>
-                    <span className="text-xs font-normal text-slate-400">Projects under management</span>
+                    <span className="text-xs font-normal text-slate-300">Projects under management</span>
                   </div>
                 </div>
               </div>
@@ -402,9 +467,13 @@ export default function DashboardPage() {
       {/* ── Quick KPI Metric Cards Row ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Card 1: Total Capabilities */}
-        <a
-          href="#capabilities-section"
-          className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-xs flex items-center justify-between gap-3 hover:border-slate-300 hover:shadow-sm transition cursor-pointer"
+        <button
+          type="button"
+          onClick={() => {
+            setStatusFilter('ALL');
+            scrollToCapabilities();
+          }}
+          className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-xs flex items-center justify-between gap-3 hover:border-slate-300 hover:shadow-sm transition cursor-pointer text-left w-full"
         >
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="w-11 h-11 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
@@ -419,12 +488,16 @@ export default function DashboardPage() {
             </div>
           </div>
           <ChevronRight size={16} className="text-slate-400 shrink-0" />
-        </a>
+        </button>
 
         {/* Card 2: Granted Permissions */}
-        <a
-          href="#capabilities-section"
-          className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-xs flex items-center justify-between gap-3 hover:border-slate-300 hover:shadow-sm transition cursor-pointer"
+        <button
+          type="button"
+          onClick={() => {
+            setStatusFilter('GRANTED');
+            scrollToCapabilities();
+          }}
+          className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-xs flex items-center justify-between gap-3 hover:border-slate-300 hover:shadow-sm transition cursor-pointer text-left w-full"
         >
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
@@ -439,12 +512,12 @@ export default function DashboardPage() {
             </div>
           </div>
           <ChevronRight size={16} className="text-slate-400 shrink-0" />
-        </a>
+        </button>
 
         {/* Card 3: Pending Requests */}
         <Link
-          to={isAdmin || capabilities?.REVIEW_TIME ? '/review' : '/time-off'}
-          className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-xs flex items-center justify-between gap-3 hover:border-slate-300 hover:shadow-sm transition cursor-pointer"
+          to={isAdmin || capabilities?.REVIEW_TIME ? '/review' : (capabilities?.DECIDE_TIME_OFF ? '/time-off' : '/timesheet')}
+          className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-xs flex items-center justify-between gap-3 hover:border-slate-300 hover:shadow-sm transition cursor-pointer text-left"
         >
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="w-11 h-11 rounded-xl bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center shrink-0">
@@ -465,8 +538,8 @@ export default function DashboardPage() {
 
         {/* Card 4: Active Projects */}
         <Link
-          to="/clients-projects"
-          className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-xs flex items-center justify-between gap-3 hover:border-slate-300 hover:shadow-sm transition cursor-pointer"
+          to="/clients"
+          className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-xs flex items-center justify-between gap-3 hover:border-slate-300 hover:shadow-sm transition cursor-pointer text-left"
         >
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="w-11 h-11 rounded-xl bg-sky-50 border border-sky-100 text-sky-600 flex items-center justify-center shrink-0">
@@ -515,15 +588,14 @@ export default function DashboardPage() {
             </div>
 
             {/* Filter Toggle */}
-            <div className="relative">
+            <div className="relative" ref={filterMenuRef}>
               <button
                 type="button"
                 onClick={() => setShowFilterMenu((prev) => !prev)}
-                className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border transition cursor-pointer ${
-                  statusFilter !== 'ALL'
+                className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border transition cursor-pointer ${statusFilter !== 'ALL'
                     ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
                     : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'
-                }`}
+                  }`}
               >
                 <Filter size={13} />
                 <span>{statusFilter === 'ALL' ? 'Filter' : statusFilter === 'GRANTED' ? 'Granted' : 'Restricted'}</span>
@@ -534,27 +606,24 @@ export default function DashboardPage() {
                   <button
                     type="button"
                     onClick={() => { setStatusFilter('ALL'); setShowFilterMenu(false); }}
-                    className={`w-full text-left px-2.5 py-1.5 text-xs rounded-lg transition ${
-                      statusFilter === 'ALL' ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'
-                    }`}
+                    className={`w-full text-left px-2.5 py-1.5 text-xs rounded-lg transition ${statusFilter === 'ALL' ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'
+                      }`}
                   >
                     All
                   </button>
                   <button
                     type="button"
                     onClick={() => { setStatusFilter('GRANTED'); setShowFilterMenu(false); }}
-                    className={`w-full text-left px-2.5 py-1.5 text-xs rounded-lg transition ${
-                      statusFilter === 'GRANTED' ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'
-                    }`}
+                    className={`w-full text-left px-2.5 py-1.5 text-xs rounded-lg transition ${statusFilter === 'GRANTED' ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'
+                      }`}
                   >
                     Granted only
                   </button>
                   <button
                     type="button"
                     onClick={() => { setStatusFilter('RESTRICTED'); setShowFilterMenu(false); }}
-                    className={`w-full text-left px-2.5 py-1.5 text-xs rounded-lg transition ${
-                      statusFilter === 'RESTRICTED' ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'
-                    }`}
+                    className={`w-full text-left px-2.5 py-1.5 text-xs rounded-lg transition ${statusFilter === 'RESTRICTED' ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'
+                      }`}
                   >
                     Restricted only
                   </button>
@@ -687,19 +756,15 @@ export default function DashboardPage() {
                                 return <span className="text-xs text-slate-400 italic">No specific scope</span>;
                               }
 
-                              const projectSummary = grant?.allowedProjects?.map((p) => p.name).join(', ');
-                              const userSummary = grant?.allowedUsers?.map((u) => u.name).join(', ');
-
                               return (
                                 <>
                                   <button
                                     type="button"
                                     onClick={() => toggleScopeExpanded(cap.code)}
-                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition cursor-pointer ${
-                                      isExpanded
+                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition cursor-pointer ${isExpanded
                                         ? 'bg-blue-100 text-blue-800 border-blue-300'
                                         : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200'
-                                    }`}
+                                      }`}
                                   >
                                     <FolderOpen size={13} className="text-blue-600" />
                                     <span>
@@ -769,13 +834,46 @@ export default function DashboardPage() {
 
                     {/* Actions column */}
                     <td className="py-3.5 px-5 text-right whitespace-nowrap">
-                      <Link
-                        to={cap.route}
-                        className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
-                        title={`Open ${cap.name}`}
-                      >
-                        <ChevronRight size={16} />
-                      </Link>
+                      <div className="relative inline-block text-left" ref={actionMenuRef}>
+                        <button
+                          type="button"
+                          onClick={() => setActiveMenuCap(activeMenuCap === cap.code ? null : cap.code)}
+                          className="inline-flex items-center justify-center w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+                          title="Actions"
+                          aria-label={`Actions for ${cap.name}`}
+                        >
+                          <MoreVertical size={16} />
+                        </button>
+
+                        {activeMenuCap === cap.code && (
+                          <div className="absolute right-0 top-full mt-1 w-44 rounded-xl border border-slate-200 bg-white shadow-xl p-1 z-30 animate-in fade-in zoom-in-95 duration-100 text-left">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActiveMenuCap(null);
+                                navigate(cap.route);
+                              }}
+                              className="w-full text-left px-3 py-2 text-xs font-medium text-slate-700 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg flex items-center justify-between cursor-pointer"
+                            >
+                              <span>Open Feature</span>
+                              <ExternalLink size={13} className="text-slate-400" />
+                            </button>
+                            {isAdmin && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setActiveMenuCap(null);
+                                  navigate('/access');
+                                }}
+                                className="w-full text-left px-3 py-2 text-xs font-medium text-slate-700 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg flex items-center justify-between border-t border-slate-100 mt-0.5 pt-1.5 cursor-pointer"
+                              >
+                                <span>Manage Access</span>
+                                <Shield size={13} className="text-slate-400" />
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </TableRow>
                 );
