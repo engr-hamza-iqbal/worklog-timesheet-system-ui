@@ -654,15 +654,14 @@ export default function RegisterPage() {
                       setOtpCheckError('');
                     }}
                     placeholder="Enter 6-digit code"
-                    className={`w-full h-10 px-3 text-center tracking-widest font-mono text-base font-bold rounded-md border bg-white placeholder:tracking-normal placeholder:font-sans placeholder:text-xs placeholder:text-slate-400 focus:outline-none focus:ring-2 transition disabled:bg-slate-100 disabled:text-slate-400 ${
-                      otpVerified
+                    className={`w-full h-10 px-3 text-center tracking-widest font-mono text-base font-bold rounded-md border bg-white placeholder:tracking-normal placeholder:font-sans placeholder:text-xs placeholder:text-slate-400 focus:outline-none focus:ring-2 transition disabled:bg-slate-100 disabled:text-slate-400 ${otpVerified
                         ? 'border-emerald-500 text-emerald-700 focus:ring-emerald-500 bg-emerald-50/20'
                         : otpCheckError
-                        ? 'border-rose-400 text-rose-700 focus:ring-rose-500 bg-rose-50/20'
-                        : otpVerifying
-                        ? 'border-blue-400 text-blue-600 focus:ring-blue-500'
-                        : 'border-slate-300 text-slate-900 focus:ring-blue-600 focus:border-blue-600'
-                    }`}
+                          ? 'border-rose-400 text-rose-700 focus:ring-rose-500 bg-rose-50/20'
+                          : otpVerifying
+                            ? 'border-blue-400 text-blue-600 focus:ring-blue-500'
+                            : 'border-slate-300 text-slate-900 focus:ring-blue-600 focus:border-blue-600'
+                      }`}
                   />
 
                   {otpCheckError && (
@@ -739,8 +738,8 @@ export default function RegisterPage() {
                         <div
                           key={step}
                           className={`rounded-full transition-colors ${passwordCriteria.passedCount >= step
-                              ? passwordCriteria.strength.color
-                              : 'bg-slate-200'
+                            ? passwordCriteria.strength.color
+                            : 'bg-slate-200'
                             }`}
                         />
                       ))}
@@ -826,13 +825,12 @@ export default function RegisterPage() {
                         onChange={(e) => handleInvitationChange(e.target.value)}
                         onPaste={handleTokenPaste}
                         placeholder="Paste invitation link or code"
-                        className={`w-full h-9 px-3 py-1.5 text-xs font-mono rounded-md border text-slate-900 placeholder:text-slate-400 focus:outline-none transition ${
-                          tokenValidationMsg
+                        className={`w-full h-9 px-3 py-1.5 text-xs font-mono rounded-md border text-slate-900 placeholder:text-slate-400 focus:outline-none transition ${tokenValidationMsg
                             ? 'border-rose-400 bg-rose-50/20 focus:ring-2 focus:ring-rose-500'
                             : isInvited
-                            ? 'border-emerald-400 bg-emerald-50/20 focus:ring-2 focus:ring-emerald-500'
-                            : 'border-slate-200 bg-slate-50/60 focus:ring-2 focus:ring-slate-900 focus:bg-white'
-                        }`}
+                              ? 'border-emerald-400 bg-emerald-50/20 focus:ring-2 focus:ring-emerald-500'
+                              : 'border-slate-200 bg-slate-50/60 focus:ring-2 focus:ring-slate-900 focus:bg-white'
+                          }`}
                       />
                     </div>
                     {tokenValidationMsg && (
