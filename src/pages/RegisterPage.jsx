@@ -381,53 +381,55 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex-1 min-h-[calc(100vh-3.5rem)] flex items-center justify-center px-4 py-4 sm:py-6 bg-slate-50 relative overflow-hidden">
-      {/* Ambient background glows */}
-      <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-100/40 rounded-full blur-3xl pointer-events-none -z-10" />
-      <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 bg-indigo-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
+    <div className="flex-1 min-h-[calc(100vh-3.5rem)] flex flex-col items-center justify-center py-4 sm:py-6 md:py-8 px-4 sm:px-6 bg-slate-50 relative">
+      {/* Ambient background glows - safely clipped to prevent document overflow */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
+        <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-100/40 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-96 h-96 bg-indigo-100/30 rounded-full blur-3xl" />
+      </div>
 
-      <div className="max-w-5xl w-full mx-auto grid lg:grid-cols-12 gap-6 lg:gap-8 items-center">
-        {/* Left Column: Welcome Information */}
-        <div className="lg:col-span-5 hidden md:block pr-0 lg:pr-4">
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
+      <div className="max-w-5xl w-full mx-auto grid md:grid-cols-12 gap-6 lg:gap-8 items-start my-auto">
+        {/* Left Column: Welcome Information - in same row/line as register card on medium screens */}
+        <div className="md:col-span-5 hidden md:flex flex-col justify-start md:pt-2 lg:pt-3 pr-0 md:pr-4 lg:pr-6">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
             Welcome to <span className="text-blue-600">WorkLog System</span>
           </h1>
-          <p className="mt-3 text-slate-600 text-sm leading-relaxed">
+          <p className="mt-2.5 text-slate-600 text-xs sm:text-sm leading-relaxed">
             A simple, intuitive platform to log your daily work, submit weekly timesheets, and manage your project hours with ease.
           </p>
 
-          <div className="mt-7 space-y-4">
-            <div className="flex items-start gap-3.5">
+          <div className="mt-5 lg:mt-6 space-y-3.5 sm:space-y-4">
+            <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-                <ShieldCheck size={17} strokeWidth={2} />
+                <ShieldCheck size={16} strokeWidth={2} />
               </div>
               <div>
-                <h2 className="text-sm font-semibold text-slate-900">Verified &amp; Secure Access</h2>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <h2 className="text-xs sm:text-sm font-semibold text-slate-900">Verified &amp; Secure Access</h2>
+                <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 leading-snug">
                   Direct admin invitation links or 10-minute email OTP verification ensure only valid users register.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3.5">
+            <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-                <Clock size={17} strokeWidth={2} />
+                <Clock size={16} strokeWidth={2} />
               </div>
               <div>
-                <h2 className="text-sm font-semibold text-slate-900">Daily Work Logging</h2>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <h2 className="text-xs sm:text-sm font-semibold text-slate-900">Daily Work Logging</h2>
+                <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 leading-snug">
                   Easily record your hours and tasks across your assigned projects.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-start gap-3.5">
+            <div className="flex items-start gap-3">
               <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 text-blue-600 flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-                <CalendarCheck size={17} strokeWidth={2} />
+                <CalendarCheck size={16} strokeWidth={2} />
               </div>
               <div>
-                <h2 className="text-sm font-semibold text-slate-900">Weekly Timesheets &amp; Leave</h2>
-                <p className="text-xs text-slate-500 mt-0.5">
+                <h2 className="text-xs sm:text-sm font-semibold text-slate-900">Weekly Timesheets &amp; Leave</h2>
+                <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5 leading-snug">
                   Review and submit timesheets with one click and track time-off balances.
                 </p>
               </div>
@@ -436,7 +438,7 @@ export default function RegisterPage() {
         </div>
 
         {/* Right Column: Register Card */}
-        <div className="lg:col-span-7 w-full max-w-lg mx-auto">
+        <div className="md:col-span-7 w-full max-w-lg mx-auto">
           <div className="bg-white rounded-2xl border border-slate-100/90 shadow-xl p-5 sm:p-7 relative">
             {/* Header with AppLogo in Center */}
             <div className="text-center mb-5">
