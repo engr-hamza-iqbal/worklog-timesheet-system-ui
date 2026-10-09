@@ -244,15 +244,17 @@ export default function LoginPage() {
   const passHasSpecial = /[^A-Za-z0-9]/.test(resetNewPassword);
 
   return (
-    <div className="flex-1 min-h-[calc(100vh-3.5rem)] flex flex-col items-center justify-center py-6 sm:py-10 px-3.5 sm:px-6 bg-slate-50 relative overflow-y-auto">
-      {/* Ambient background glows */}
-      <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-blue-100/40 rounded-full blur-3xl pointer-events-none -z-10" />
-      <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-80 h-80 bg-indigo-100/30 rounded-full blur-3xl pointer-events-none -z-10" />
+    <div className="flex-1 min-h-[calc(100vh-3.5rem)] flex flex-col items-center justify-center py-4 sm:py-6 px-3.5 sm:px-6 bg-slate-50 relative">
+      {/* Ambient background glows - isolated and clipped to prevent phantom overflow */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
+        <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-blue-100/40 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-80 h-80 bg-indigo-100/30 rounded-full blur-3xl" />
+      </div>
 
-      <div className="w-full max-w-md bg-white rounded-2xl border border-slate-100/90 shadow-xl p-4 sm:p-8 my-auto relative">
+      <div className="w-full max-w-md bg-white rounded-2xl border border-slate-100/90 shadow-xl p-5 sm:p-7 my-auto relative">
         {/* App Logo in Center */}
-        <div className="text-center mb-5 sm:mb-6">
-          <AppLogo className="w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-3 shadow-sm rounded-2xl" />
+        <div className="text-center mb-4 sm:mb-5">
+          <AppLogo className="w-12 h-12 mx-auto mb-2.5 shadow-sm rounded-2xl" />
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
             {isResetMode ? (
               <>
@@ -282,7 +284,7 @@ export default function LoginPage() {
               </div>
             )}
 
-            <form onSubmit={handleLoginSubmit} className="space-y-4">
+            <form onSubmit={handleLoginSubmit} className="space-y-3.5 sm:space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">
                   Email
@@ -349,8 +351,8 @@ export default function LoginPage() {
 
             {/* Quick Demo Access (for dev environment) */}
             {!import.meta.env.PROD && (
-              <div className="mt-5">
-                <div className="relative flex items-center justify-center mb-3">
+              <div className="mt-4 pt-1">
+                <div className="relative flex items-center justify-center mb-2.5">
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-slate-200" />
                   </div>
@@ -378,7 +380,7 @@ export default function LoginPage() {
             )}
 
             {/* Footer */}
-            <p className="text-center text-sm text-slate-500 mt-6">
+            <p className="text-center text-sm text-slate-500 mt-4 sm:mt-5">
               Don't have an account?{' '}
               <Link to="/register" className="text-blue-600 font-semibold hover:underline">
                 Register here
