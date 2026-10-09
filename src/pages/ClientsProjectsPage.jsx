@@ -13,6 +13,7 @@ import ConfirmDialog from '../components/ConfirmDialog.jsx';
 import Pagination from '../components/Pagination.jsx';
 import Table, { TableHead, TableBody, TableRow, TableTd } from '../components/Table.jsx';
 import ResizableTh from '../components/ResizableTh.jsx';
+import SearchableSelect from '../components/SearchableSelect.jsx';
 import { clientSchema, clientStatusSchema, projectRateSchema, projectSchema, projectStatusSchema } from '../validation/formSchemas.js';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -450,23 +451,49 @@ export default function ClientsProjectsPage() {
 
   return (
     <main className="flex-1 max-w-auto w-full mx-auto px-4 py-6">
-      {/* Page header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-6 border-b border-slate-200">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">Clients &amp; Projects</h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">Manage clients, projects, and billing rates.</p>
+      {/* ── Top Controls Bar: Select Client (over dropdown) + Actions (same row) ── */}
+      <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs p-4 flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div className="flex flex-col gap-1.5 w-full sm:w-80">
+          <label htmlFor="client-select-btn" className="text-xs font-semibold text-slate-700">
+            Select Client
+          </label>
+          <SearchableSelect
+            id="client-select-btn"
+            items={clients}
+            selectedId={selectedClientId}
+            onSelect={(id) => setSelectedClientId(id)}
+            placeholder="Select client..."
+            searchPlaceholder="Search clients by name..."
+            renderIcon={(c) => (
+              <div className="w-6 h-6 rounded-md bg-indigo-50 border border-indigo-200 text-indigo-700 flex items-center justify-center shrink-0">
+                <Building2 className="w-3.5 h-3.5" />
+              </div>
+            )}
+            getItemLabel={(c) => c.name}
+            getItemBadge={(c) => (!c.isActive ? { label: 'Archived', variant: 'amber' } : null)}
+          />
         </div>
+
         {canManage && (
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <button type="button" onClick={refreshPage} disabled={refreshing} title="Refresh clients and projects" className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition cursor-pointer disabled:opacity-50 shadow-xs">
-              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />Refresh
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={refreshPage}
+              disabled={refreshing}
+              title="Refresh clients and projects"
+              className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg shadow-2xs transition cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
             </button>
             {canCreateClient && (
               <button
+                type="button"
                 onClick={() => setModal('newClient')}
-                className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-lg transition cursor-pointer shadow-xs"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-white bg-slate-900 hover:bg-slate-800 rounded-lg shadow-2xs transition cursor-pointer"
               >
-                <Plus className="w-3.5 h-3.5" />New Client
+                <Plus className="w-3.5 h-3.5" />
+                New Client
               </button>
             )}
           </div>
@@ -479,59 +506,16 @@ export default function ClientsProjectsPage() {
         </div>
       )}
 
-      <div className="mt-6 flex flex-col md:flex-row gap-6">
-        {/* ── Left: Client list ── */}
-        <div className="w-full md:w-60 lg:w-64 shrink-0">
-          <div className="bg-white rounded-xl border border-slate-200/90 shadow-xs overflow-hidden">
-            <div className="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Clients</span>
-              <span className="text-[11px] font-mono font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded">{clients.length}</span>
-            </div>
-
-            {clients.length === 0 ? (
-              <EmptyState
-                icon={<Building2 className="w-8 h-8" />}
-                title="No clients yet"
-                message="Create your first client to get started."
-              />
-            ) : (
-              <ul className="divide-y divide-slate-100 max-h-56 md:max-h-[600px] overflow-y-auto [scrollbar-width:thin]">
-                {clients.map((client) => (
-                  <li key={client.id}>
-                    <button
-                      onClick={() => setSelectedClientId(client.id)}
-                      className={`w-full flex items-center justify-between px-4 py-3 text-left transition cursor-pointer ${
-                        selectedClientId === client.id
-                          ? 'bg-slate-900 text-white'
-                          : 'hover:bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <Building2 className={`w-3.5 h-3.5 shrink-0 ${selectedClientId === client.id ? 'text-slate-300' : 'text-slate-400'}`} />
-                        <span className="text-xs font-medium truncate">{client.name}</span>
-                      </div>
-                      <div className="flex items-center gap-1.5 ml-2 shrink-0">
-                        {!client.isActive && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">Archived</span>
-                        )}
-                        <ChevronRight className={`w-3 h-3 ${selectedClientId === client.id ? 'text-slate-300' : 'text-slate-400'}`} />
-                      </div>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+      {/* ── Full-Width Projects View ── */}
+      <div className="mt-6">
+        {!selectedClient ? (
+          <div className="bg-white rounded-xl border border-slate-200 h-60 flex flex-col items-center justify-center text-center p-6 shadow-2xs">
+            <Building2 className="w-10 h-10 text-slate-300 mb-2" />
+            <p className="text-sm font-medium text-slate-700">No client selected</p>
+            <p className="text-xs text-slate-400 mt-1">Please select a client from the dropdown above to view and manage projects.</p>
           </div>
-        </div>
-
-        {/* ── Right: Projects panel ── */}
-        <div className="flex-1 min-w-0">
-          {!selectedClient ? (
-            <div className="bg-white rounded-lg border border-slate-200 h-48 flex items-center justify-center">
-              <p className="text-sm text-slate-400">Select a client to view its projects.</p>
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+        ) : (
+          <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-2xs">
               {/* Panel header */}
               <div className="px-3.5 sm:px-5 py-3 border-b border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-2">
                 <div className="min-w-0">
@@ -763,7 +747,6 @@ export default function ClientsProjectsPage() {
               )}
             </div>
           )}
-        </div>
       </div>
 
       {/* ── Modals ── */}
