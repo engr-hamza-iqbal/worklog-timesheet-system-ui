@@ -432,10 +432,7 @@ export default function AnalyticsPage() {
       {/* ── Page Header ── */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
-            Analytics Dashboard
-          </h1>
-          <p className="mt-1 text-xs sm:text-sm text-slate-500">
+          <p className="text-xs sm:text-sm text-slate-500">
             Database-aggregated approved timesheets, project distributions, and team contributions.
           </p>
         </div>

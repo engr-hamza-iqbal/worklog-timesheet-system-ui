@@ -391,8 +391,7 @@ export default function ReviewPage() {
       {/* Page Header */}
       <div className="flex flex-wrap items-end justify-between gap-4 mb-5">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Review Queue</h1>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs sm:text-sm text-slate-500">
             Review submitted timesheets and decide time off requests within your authorized scope.
           </p>
         </div>

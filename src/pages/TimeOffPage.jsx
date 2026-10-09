@@ -10,6 +10,11 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Plus,
+  Clock,
+  CheckCircle2,
+  Layers,
+  ChevronDown,
 } from "lucide-react";
 import api from "../api/client.js";
 import Badge from "../components/Badge.jsx";
@@ -38,8 +43,7 @@ export default function TimeOffPage() {
   const [requests, setRequests] = useState([]);
   const [page, setPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
-
-
+  const [showForm, setShowForm] = useState(false);
 
   const [filters, setFilters] = useState({
     status: "",
@@ -94,20 +98,6 @@ export default function TimeOffPage() {
     load();
   }, []);
 
-  function applyFilters(event) {
-    event.preventDefault();
-    if (
-      filters.startDate &&
-      filters.endDate &&
-      filters.endDate < filters.startDate
-    ) {
-      notify.warn("End date cannot be earlier than start date.");
-      return;
-    }
-    setPage(1);
-    load(filters);
-  }
-
   const [requestSortField, setRequestSortField] = useState('startDate');
   const [requestSortOrder, setRequestSortOrder] = useState('desc'); // 'asc' | 'desc'
 
@@ -157,6 +147,15 @@ export default function TimeOffPage() {
     return sortedRequests.slice(start, start + ITEMS_PER_PAGE);
   }, [sortedRequests, page]);
 
+  // Statistics calculation for KPI cards
+  const stats = useMemo(() => {
+    const total = requests.length;
+    const pending = requests.filter((r) => r.status === 'PENDING').length;
+    const approved = requests.filter((r) => r.status === 'APPROVED').length;
+    const declined = requests.filter((r) => r.status === 'DECLINED').length;
+    return { total, pending, approved, declined };
+  }, [requests]);
+
   async function createRequest(event) {
     event.preventDefault();
     const parsed = timeOffRequestSchema.safeParse(form);
@@ -175,6 +174,7 @@ export default function TimeOffPage() {
         endDate: "",
         reason: "",
       }));
+      setShowForm(false);
       setPage(1);
       await load();
     } catch (err) {
@@ -253,333 +253,447 @@ export default function TimeOffPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-auto px-4 py-6">
-      <div className="flex flex-wrap items-end justify-between gap-4 mb-6">
+    <main className="mx-auto w-full max-w-auto px-4 py-4 sm:px-6">
+      {/* ── Page Header / Description & Actions ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-200">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Absence tracking
-          </p>
-          <h1 className="text-2xl font-semibold text-slate-900">Time off</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="text-xs sm:text-sm text-slate-500">
             Request time away and see decisions that affect your work week.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={load}
-          disabled={loading}
-          className="inline-flex items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-        >
-          <RefreshCw size={15} className={loading ? "animate-spin" : ""} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+          <button
+            type="button"
+            onClick={() => load()}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 shadow-2xs hover:bg-slate-50 disabled:opacity-50 transition cursor-pointer"
+          >
+            <RefreshCw size={13} className={loading ? "animate-spin text-slate-900" : "text-slate-500"} />
+            <span>Refresh</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowForm((prev) => !prev)}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 px-3.5 py-2 text-xs font-semibold text-white shadow-xs transition cursor-pointer"
+          >
+            <Plus size={14} className={showForm ? "rotate-45 transition-transform" : "transition-transform"} />
+            <span>{showForm ? "Close Form" : "Request Leave"}</span>
+          </button>
+        </div>
       </div>
-      <form
-        onSubmit={createRequest}
-        className="mb-6 rounded-xl border border-slate-200/90 bg-white p-5 shadow-xs"
-      >
-        <h2 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">
-          Submit Leave Request
-        </h2>
-        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-12 items-end">
-          <label className="text-xs font-medium text-slate-600 sm:col-span-1 md:col-span-1 lg:col-span-3">
-            Leave Type
-            <select
-              required
-              value={form.timeOffTypeId}
-              onChange={(e) =>
-                setForm({ ...form, timeOffTypeId: e.target.value })
-              }
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs focus:border-slate-900 focus:outline-none"
-            >
-              <option value="">Select type</option>
-              {types.map((type) => (
-                <option key={type.id} value={type.id}>
-                  {type.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="text-xs font-medium text-slate-600 sm:col-span-1 md:col-span-1 lg:col-span-2">
-            Start date
-            <input
-              required
-              type="date"
-              value={form.startDate}
-              onChange={(e) => setForm({ ...form, startDate: e.target.value })}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs focus:border-slate-900 focus:outline-none"
-            />
-          </label>
-          <label className="text-xs font-medium text-slate-600 sm:col-span-1 md:col-span-1 lg:col-span-2">
-            End date
-            <input
-              required
-              type="date"
-              min={form.startDate || undefined}
-              value={form.endDate}
-              onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs focus:border-slate-900 focus:outline-none"
-            />
-          </label>
-          <label className="text-xs font-medium text-slate-600 sm:col-span-1 md:col-span-2 lg:col-span-3">
-            Reason
-            <input
-              required
-              minLength="5"
-              value={form.reason}
-              onChange={(e) => setForm({ ...form, reason: e.target.value })}
-              placeholder="e.g. Annual family leave"
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs focus:border-slate-900 focus:outline-none"
-            />
-          </label>
-          <div className="sm:col-span-2 md:col-span-1 lg:col-span-2">
-            <button
-              type="submit"
-              disabled={saving || !types.length}
-              className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer disabled:cursor-not-allowed shadow-xs"
-            >
-              {saving ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
-              <span>{saving ? "Submitting..." : "Submit"}</span>
-            </button>
+
+      {/* ── KPI Summary Cards Row ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div
+          onClick={() => setFilters({ ...filters, status: "" })}
+          className={`bg-white rounded-2xl border p-4 shadow-2xs flex items-center justify-between gap-3 cursor-pointer transition ${
+            filters.status === "" ? "border-indigo-300 ring-2 ring-indigo-50" : "border-slate-200/90 hover:border-slate-300"
+          }`}
+        >
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+              <CalendarDays size={18} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-medium text-slate-500">Total Requests</div>
+              <div className="text-xl font-extrabold text-slate-900 mt-0.5">{stats.total}</div>
+              <div className="text-[11px] text-slate-400">All submitted records</div>
+            </div>
           </div>
         </div>
-      </form>
-      <form
-        onSubmit={applyFilters}
-        className="mb-6 rounded-xl border border-slate-200/90 bg-white p-4 shadow-xs"
-      >
-        <div className="flex flex-col sm:flex-row flex-wrap sm:items-end gap-3">
-          <label className="text-xs font-medium text-slate-600 w-full sm:w-44">
-            Filter Status
+
+        <div
+          onClick={() => setFilters({ ...filters, status: "PENDING" })}
+          className={`bg-white rounded-2xl border p-4 shadow-2xs flex items-center justify-between gap-3 cursor-pointer transition ${
+            filters.status === "PENDING" ? "border-amber-300 ring-2 ring-amber-50" : "border-slate-200/90 hover:border-slate-300"
+          }`}
+        >
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 text-amber-600 flex items-center justify-center shrink-0">
+              <Clock size={18} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-medium text-slate-500">Pending Review</div>
+              <div className="text-xl font-extrabold text-slate-900 mt-0.5">{stats.pending}</div>
+              <div className="text-[11px] text-slate-400">Awaiting approval</div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          onClick={() => setFilters({ ...filters, status: "APPROVED" })}
+          className={`bg-white rounded-2xl border p-4 shadow-2xs flex items-center justify-between gap-3 cursor-pointer transition ${
+            filters.status === "APPROVED" ? "border-emerald-300 ring-2 ring-emerald-50" : "border-slate-200/90 hover:border-slate-300"
+          }`}
+        >
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+              <CheckCircle2 size={18} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-medium text-slate-500">Approved Leave</div>
+              <div className="text-xl font-extrabold text-slate-900 mt-0.5">{stats.approved}</div>
+              <div className="text-[11px] text-slate-400">Authorized requests</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-4 shadow-2xs flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="w-10 h-10 rounded-xl bg-violet-50 border border-violet-100 text-violet-600 flex items-center justify-center shrink-0">
+              <Layers size={18} />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-medium text-slate-500">Leave Policies</div>
+              <div className="text-xl font-extrabold text-slate-900 mt-0.5">{types.length}</div>
+              <div className="text-[11px] text-slate-400">Configured absence types</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Submit Leave Request Form (Collapsible Card) ── */}
+      {showForm && (
+        <form
+          onSubmit={createRequest}
+          className="mb-6 rounded-2xl border border-slate-200/90 bg-white p-5 sm:p-6 shadow-xs animate-in fade-in duration-150"
+        >
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center">
+                <CalendarDays size={15} />
+              </div>
+              <h2 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                Submit Leave Request
+              </h2>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowForm(false)}
+              className="text-slate-400 hover:text-slate-600 p-1 rounded-md cursor-pointer"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-12 items-end">
+            <label className="text-xs font-semibold text-slate-700 sm:col-span-1 md:col-span-1 lg:col-span-3">
+              Leave Type
+              <select
+                required
+                value={form.timeOffTypeId}
+                onChange={(e) =>
+                  setForm({ ...form, timeOffTypeId: e.target.value })
+                }
+                className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-slate-900 focus:outline-none transition shadow-2xs"
+              >
+                <option value="">Select leave type</option>
+                {types.map((type) => (
+                  <option key={type.id} value={type.id}>
+                    {type.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="text-xs font-semibold text-slate-700 sm:col-span-1 md:col-span-1 lg:col-span-2">
+              Start Date
+              <input
+                required
+                type="date"
+                value={form.startDate}
+                onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+                className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-slate-900 focus:outline-none transition shadow-2xs"
+              />
+            </label>
+
+            <label className="text-xs font-semibold text-slate-700 sm:col-span-1 md:col-span-1 lg:col-span-2">
+              End Date
+              <input
+                required
+                type="date"
+                min={form.startDate || undefined}
+                value={form.endDate}
+                onChange={(e) => setForm({ ...form, endDate: e.target.value })}
+                className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-slate-900 focus:outline-none transition shadow-2xs"
+              />
+            </label>
+
+            <label className="text-xs font-semibold text-slate-700 sm:col-span-1 md:col-span-2 lg:col-span-3">
+              Reason
+              <input
+                required
+                minLength={5}
+                value={form.reason}
+                onChange={(e) => setForm({ ...form, reason: e.target.value })}
+                placeholder="e.g. Annual family leave"
+                className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs focus:border-slate-900 focus:outline-none transition shadow-2xs"
+              />
+            </label>
+
+            <div className="sm:col-span-2 md:col-span-1 lg:col-span-2">
+              <button
+                type="submit"
+                disabled={saving || !types.length}
+                className="w-full inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-3 py-2.5 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-50 transition cursor-pointer disabled:cursor-not-allowed shadow-xs"
+              >
+                {saving ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
+                <span>{saving ? "Submitting..." : "Submit Request"}</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      )}
+
+      {/* ── Requests Table with Integrated Filters Bar ── */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-xs">
+        {/* Table Toolbar & Filters */}
+        <div className="px-5 py-4 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+              <CalendarDays size={18} />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold text-slate-900">
+                Time-Off Requests
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                {filteredRequests.length} record{filteredRequests.length === 1 ? '' : 's'} matching filter criteria
+              </p>
+            </div>
+          </div>
+
+          {/* Filters Form */}
+          <div className="flex flex-wrap items-center gap-2.5">
             <select
               value={filters.status}
               onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs focus:border-slate-900 focus:outline-none"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-700 focus:border-slate-900 focus:outline-none transition shadow-2xs"
             >
               <option value="">All statuses</option>
               {["PENDING", "APPROVED", "DECLINED", "CANCELLED", "EXPIRED"].map((status) => (
-                <option key={status}>{status}</option>
+                <option key={status} value={status}>{status}</option>
               ))}
             </select>
-          </label>
-          <label className="text-xs font-medium text-slate-600 w-full sm:w-36">
-            From
+
             <input
               type="date"
+              placeholder="From"
               max={filters.endDate || undefined}
               value={filters.startDate}
-              onChange={(e) =>
-                setFilters({ ...filters, startDate: e.target.value })
-              }
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs focus:border-slate-900 focus:outline-none"
+              onChange={(e) => setFilters({ ...filters, startDate: e.target.value })}
+              className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-slate-900 focus:outline-none transition shadow-2xs"
             />
-          </label>
-          <label className="text-xs font-medium text-slate-600 w-full sm:w-36">
-            To
+
             <input
               type="date"
+              placeholder="To"
               min={filters.startDate || undefined}
               value={filters.endDate}
-              onChange={(e) =>
-                setFilters({ ...filters, endDate: e.target.value })
-              }
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs focus:border-slate-900 focus:outline-none"
+              onChange={(e) => setFilters({ ...filters, endDate: e.target.value })}
+              className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 focus:border-slate-900 focus:outline-none transition shadow-2xs"
             />
-          </label>
-          <div className="flex items-center gap-2 mt-1 sm:mt-0 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={() => {
-                const cleared = { status: "", startDate: "", endDate: "" };
-                setFilters(cleared);
-                load(cleared);
-              }}
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 hover:bg-slate-50 transition cursor-pointer"
-            >
-              <X size={13} />
-              <span>Clear</span>
-            </button>
+
+            {(filters.status || filters.startDate || filters.endDate) && (
+              <button
+                type="button"
+                onClick={() => {
+                  const cleared = { status: "", startDate: "", endDate: "" };
+                  setFilters(cleared);
+                  load(cleared);
+                }}
+                className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer"
+                title="Clear filters"
+              >
+                <X size={12} />
+                <span>Clear</span>
+              </button>
+            )}
           </div>
         </div>
-      </form>
-      <section className="overflow-x-auto rounded-xl border border-slate-200/90 bg-white shadow-xs">
-        {loading ? (
-          <div className="flex min-h-48 items-center justify-center gap-3 text-sm text-slate-500">
-            <RefreshCw className="animate-spin" size={20} />
-            Loading time-off requests...
-          </div>
-        ) : filteredRequests.length === 0 ? (
-          <div className="p-12 text-center text-sm text-slate-500">
-            No time-off requests match these filters.
-          </div>
-        ) : (
-          <Table>
-            <TableHead>
-              <tr>
-                <ResizableTh
-                  onClick={() => toggleRequestSort('employee')}
-                  className="px-4 py-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <span>Employee</span>
-                    {requestSortField === 'employee' ? (
-                      requestSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
-                    ) : (
-                      <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
-                    )}
-                  </div>
-                </ResizableTh>
-                <ResizableTh
-                  onClick={() => toggleRequestSort('startDate')}
-                  className="px-4 py-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <span>Dates</span>
-                    {requestSortField === 'startDate' ? (
-                      requestSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
-                    ) : (
-                      <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
-                    )}
-                  </div>
-                </ResizableTh>
-                <ResizableTh
-                  onClick={() => toggleRequestSort('type')}
-                  className="px-4 py-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <span>Type</span>
-                    {requestSortField === 'type' ? (
-                      requestSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
-                    ) : (
-                      <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
-                    )}
-                  </div>
-                </ResizableTh>
-                <ResizableTh
-                  onClick={() => toggleRequestSort('reason')}
-                  className="px-4 py-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <span>Reason</span>
-                    {requestSortField === 'reason' ? (
-                      requestSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
-                    ) : (
-                      <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
-                    )}
-                  </div>
-                </ResizableTh>
-                <ResizableTh
-                  onClick={() => toggleRequestSort('status')}
-                  className="px-4 py-3 cursor-pointer hover:bg-slate-100 hover:text-slate-800 transition"
-                >
-                  <div className="flex items-center gap-1.5">
-                    <span>Status</span>
-                    {requestSortField === 'status' ? (
-                      requestSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
-                    ) : (
-                      <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
-                    )}
-                  </div>
-                </ResizableTh>
-                <ResizableTh
-                  className="px-4 py-3"
-                >
-                  <span>Action</span>
-                </ResizableTh>
-              </tr>
-            </TableHead>
-            <TableBody>
-              {paginatedRequests.map((request) => (
-                <TableRow
-                  key={request.id}
-                  className="align-top"
-                >
-                  <td className="px-4 py-3.5 whitespace-nowrap text-xs font-medium text-slate-900">
-                    <span title={request.user?.name || user?.name}>
-                      {request.user?.name || user?.name}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3.5 whitespace-nowrap text-xs text-slate-700">
-                    {request.startDate} to {request.endDate}
-                  </td>
-                  <td className="px-4 py-3.5 whitespace-nowrap text-xs text-slate-700">
-                    <span title={request.timeOffType?.name}>
-                      {request.timeOffType?.name}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3.5 text-xs text-slate-600 min-w-[160px] max-w-xs">
-                    <div className="line-clamp-2" title={request.reason}>{request.reason}</div>
-                    {request.decisionComment && (
-                      <p className="mt-0.5 text-xs text-red-600 line-clamp-1" title={request.decisionComment}>
-                        {request.decisionComment}
-                      </p>
-                    )}
-                  </td>
-                  <td className="px-4 py-3.5 whitespace-nowrap">
-                    <Badge
-                      variant={statusVariant[request.status]}
-                      label={request.status}
-                    />
-                  </td>
-                  <td className="px-4 py-3.5 whitespace-nowrap">
-                    <div className="flex gap-2">
-                      {request.status === "PENDING" &&
-                        request.userId === user?.id && (
-                          <button
-                            title="Cancel request"
-                            onClick={() =>
-                              setConfirmation({
-                                title: "Cancel time-off request",
-                                message:
-                                  "Cancel this pending time-off request?",
-                                confirmLabel: "Cancel request",
-                                tone: "danger",
-                                onConfirm: () => cancelRequest(request.id),
-                              })
-                            }
-                            className="text-red-700 cursor-pointer"
-                          >
-                            <X size={16} />
-                          </button>
-                        )}
-                      {canDecide &&
-                        request.status === "PENDING" &&
-                        request.userId !== user?.id && (
-                          <>
-                            <button
-                              title="Approve request"
-                              onClick={() =>
-                                decideRequest(request.id, "APPROVED")
-                              }
-                              className="text-emerald-700 cursor-pointer"
-                            >
-                              <Check size={16} />
-                            </button>
-                            <button
-                              title="Decline request"
-                              onClick={() =>
-                                decideRequest(request.id, "DECLINED")
-                              }
-                              className="text-red-700 cursor-pointer"
-                            >
-                              <RotateCcw size={16} />
-                            </button>
-                          </>
-                        )}
+
+        {/* Requests Table Content */}
+        <div className="overflow-x-auto">
+          {loading ? (
+            <div className="flex min-h-48 items-center justify-center gap-3 text-xs text-slate-500 py-12">
+              <RefreshCw className="animate-spin text-slate-400" size={18} />
+              <span>Loading time-off requests...</span>
+            </div>
+          ) : filteredRequests.length === 0 ? (
+            <div className="p-12 text-center text-xs text-slate-500">
+              No time-off requests match these filters.
+            </div>
+          ) : (
+            <Table>
+              <TableHead>
+                <tr>
+                  <ResizableTh
+                    onClick={() => toggleRequestSort('employee')}
+                    className="px-5 py-3 cursor-pointer hover:bg-slate-50 hover:text-slate-800 transition text-xs font-bold text-slate-500 uppercase tracking-wider"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Employee</span>
+                      {requestSortField === 'employee' ? (
+                        requestSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
+                      ) : (
+                        <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
+                      )}
                     </div>
-                  </td>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
+                  </ResizableTh>
+                  <ResizableTh
+                    onClick={() => toggleRequestSort('startDate')}
+                    className="px-4 py-3 cursor-pointer hover:bg-slate-50 hover:text-slate-800 transition text-xs font-bold text-slate-500 uppercase tracking-wider"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Dates</span>
+                      {requestSortField === 'startDate' ? (
+                        requestSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
+                      ) : (
+                        <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
+                      )}
+                    </div>
+                  </ResizableTh>
+                  <ResizableTh
+                    onClick={() => toggleRequestSort('type')}
+                    className="px-4 py-3 cursor-pointer hover:bg-slate-50 hover:text-slate-800 transition text-xs font-bold text-slate-500 uppercase tracking-wider"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Type</span>
+                      {requestSortField === 'type' ? (
+                        requestSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
+                      ) : (
+                        <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
+                      )}
+                    </div>
+                  </ResizableTh>
+                  <ResizableTh
+                    onClick={() => toggleRequestSort('reason')}
+                    className="px-4 py-3 cursor-pointer hover:bg-slate-50 hover:text-slate-800 transition text-xs font-bold text-slate-500 uppercase tracking-wider"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Reason</span>
+                      {requestSortField === 'reason' ? (
+                        requestSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
+                      ) : (
+                        <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
+                      )}
+                    </div>
+                  </ResizableTh>
+                  <ResizableTh
+                    onClick={() => toggleRequestSort('status')}
+                    className="px-4 py-3 cursor-pointer hover:bg-slate-50 hover:text-slate-800 transition text-xs font-bold text-slate-500 uppercase tracking-wider"
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <span>Status</span>
+                      {requestSortField === 'status' ? (
+                        requestSortOrder === 'asc' ? <ArrowUp size={12} className="text-indigo-600 shrink-0" /> : <ArrowDown size={12} className="text-indigo-600 shrink-0" />
+                      ) : (
+                        <ArrowUpDown size={12} className="text-slate-400 opacity-60 shrink-0" />
+                      )}
+                    </div>
+                  </ResizableTh>
+                  <ResizableTh className="px-5 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-wider">
+                    <span>Action</span>
+                  </ResizableTh>
+                </tr>
+              </TableHead>
+              <TableBody>
+                {paginatedRequests.map((request) => (
+                  <TableRow
+                    key={request.id}
+                    className="align-middle"
+                  >
+                    <td className="px-5 py-3.5 whitespace-nowrap text-xs font-semibold text-slate-900">
+                      <span title={request.user?.name || user?.name}>
+                        {request.user?.name || user?.name}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 whitespace-nowrap text-xs text-slate-700">
+                      <span className="font-medium text-slate-800">{request.startDate}</span>
+                      <span className="text-slate-400 mx-1">to</span>
+                      <span className="font-medium text-slate-800">{request.endDate}</span>
+                    </td>
+                    <td className="px-4 py-3.5 whitespace-nowrap text-xs text-slate-700">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-800">
+                        {request.timeOffType?.name}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3.5 text-xs text-slate-600 min-w-[160px] max-w-xs">
+                      <div className="line-clamp-2" title={request.reason}>{request.reason}</div>
+                      {request.decisionComment && (
+                        <p className="mt-0.5 text-[11px] text-red-600 line-clamp-1" title={request.decisionComment}>
+                          Note: {request.decisionComment}
+                        </p>
+                      )}
+                    </td>
+                    <td className="px-4 py-3.5 whitespace-nowrap">
+                      <Badge
+                        variant={statusVariant[request.status]}
+                        label={request.status}
+                      />
+                    </td>
+                    <td className="px-5 py-3.5 whitespace-nowrap text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {request.status === "PENDING" &&
+                          request.userId === user?.id && (
+                            <button
+                              title="Cancel request"
+                              onClick={() =>
+                                setConfirmation({
+                                  title: "Cancel time-off request",
+                                  message:
+                                    "Cancel this pending time-off request?",
+                                  confirmLabel: "Cancel request",
+                                  tone: "danger",
+                                  onConfirm: () => cancelRequest(request.id),
+                                })
+                              }
+                              className="p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition cursor-pointer"
+                            >
+                              <X size={15} />
+                            </button>
+                          )}
+                        {canDecide &&
+                          request.status === "PENDING" &&
+                          request.userId !== user?.id && (
+                            <>
+                              <button
+                                title="Approve request"
+                                onClick={() =>
+                                  decideRequest(request.id, "APPROVED")
+                                }
+                                className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition cursor-pointer"
+                              >
+                                <Check size={15} />
+                              </button>
+                              <button
+                                title="Decline request"
+                                onClick={() =>
+                                  decideRequest(request.id, "DECLINED")
+                                }
+                                className="p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition cursor-pointer"
+                              >
+                                <RotateCcw size={15} />
+                              </button>
+                            </>
+                          )}
+                      </div>
+                    </td>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+
         <Pagination
           currentPage={page}
           totalItems={filteredRequests.length}
           itemsPerPage={ITEMS_PER_PAGE}
           onPageChange={setPage}
         />
-      </section>
+      </div>
+
       <ConfirmDialog
         isOpen={Boolean(confirmation)}
         onClose={() => (isDeciding || isCancelling ? null : setConfirmation(null))}
@@ -590,18 +704,21 @@ export default function TimeOffPage() {
         tone={confirmation?.tone}
         loading={isDeciding || isCancelling}
       />
+
       <Modal
         isOpen={Boolean(declineRequest)}
         onClose={() => (isDeciding ? null : setDeclineRequest(null))}
         title="Decline time-off request"
         size="sm"
       >
-        <p className="text-sm text-slate-600">Explain why this request is being declined. A comment of at least five characters is required.</p>
+        <p className="text-xs sm:text-sm text-slate-600">
+          Explain why this request is being declined. A comment of at least five characters is required.
+        </p>
         <textarea
           autoFocus
           value={declineComment}
           onChange={(event) => setDeclineComment(event.target.value)}
-          className="mt-4 min-h-28 w-full rounded-md border border-slate-300 p-3 text-sm focus:border-slate-900 focus:outline-none"
+          className="mt-4 min-h-28 w-full rounded-xl border border-slate-300 p-3 text-xs sm:text-sm focus:border-slate-900 focus:outline-none shadow-2xs"
           placeholder="Reason for declining..."
         />
         <div className="mt-4 flex justify-end gap-2">
@@ -609,7 +726,7 @@ export default function TimeOffPage() {
             type="button"
             disabled={Boolean(isDeciding)}
             onClick={() => setDeclineRequest(null)}
-            className="rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+            className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
           >
             Cancel
           </button>
@@ -622,9 +739,9 @@ export default function TimeOffPage() {
               setDeclineRequest(null);
               confirmDecision(id, "DECLINED", comment);
             }}
-            className="inline-flex items-center gap-1.5 rounded-md bg-red-700 px-3 py-2 text-sm text-white hover:bg-red-800 disabled:opacity-50 transition cursor-pointer disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-red-700 px-3 py-2 text-xs font-semibold text-white hover:bg-red-800 disabled:opacity-50 transition cursor-pointer disabled:cursor-not-allowed shadow-xs"
           >
-            {isDeciding && <Loader2 size={14} className="animate-spin" />}
+            {isDeciding && <Loader2 size={13} className="animate-spin" />}
             Decline request
           </button>
         </div>

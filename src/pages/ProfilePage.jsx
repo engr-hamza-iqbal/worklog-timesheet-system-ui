@@ -255,10 +255,7 @@ export default function ProfilePage() {
       {/* Header banner */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 pb-4 border-b border-slate-200">
         <div>
-          <h1 className="text-xl sm:text-2xl md:text-3xl font-bold tracking-tight text-slate-900">
-            Account Profile
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-500 mt-0.5 sm:mt-1">
+          <p className="text-xs sm:text-sm text-slate-500">
             Manage your personal profile details, account credentials, and system capabilities.
           </p>
         </div>

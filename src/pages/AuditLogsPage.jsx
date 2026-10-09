@@ -211,18 +211,11 @@ export default function AuditLogsPage() {
   return (
     <main className="relative flex-1 max-w-auto w-full mx-auto px-4 py-6">
       {/* Page Header */}
-      <div className="pb-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+      <div className="pb-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2.5">
-            <div>
-              <h1 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                Access Audit Logs
-              </h1>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Immutable, tamper-evident security audit trail tracking all capability grants, scope updates, and revocations.
-              </p>
-            </div>
-          </div>
+          <p className="text-xs sm:text-sm text-slate-500">
+            Immutable, tamper-evident security audit trail tracking all capability grants, scope updates, and revocations.
+          </p>
         </div>
 
         <div className="flex items-center gap-2.5 self-start sm:self-auto">

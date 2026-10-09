@@ -206,11 +206,7 @@ export default function EmailLogPage() {
       {/* Header */}
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Audit & Notifications
-          </p>
-          <h1 className="text-2xl font-semibold text-slate-900">Email Log</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="text-xs sm:text-sm text-slate-500">
             Audit log of all notification attempts, delivery status, and failure messages.
           </p>
         </div>

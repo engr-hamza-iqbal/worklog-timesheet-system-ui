@@ -1625,10 +1625,9 @@ export default function UsersPage() {
   return (
     <main className="flex-1 max-w-auto w-full mx-auto px-4 py-6">
       {/* Page header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-6 border-b border-slate-200">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900 tracking-tight">Users &amp; Assignments</h1>
-          <p className="text-xs text-slate-500 mt-1">Manage team members and their project assignments.</p>
+          <p className="text-xs sm:text-sm text-slate-500">Manage team members and their project assignments.</p>
         </div>
         {(canManageUsers || canAssign) && (
           <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">

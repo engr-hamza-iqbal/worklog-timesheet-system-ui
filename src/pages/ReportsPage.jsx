@@ -542,11 +542,7 @@ export default function ReportsPage() {
       {/* Page Header */}
       <div className="mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Financial & Operational summaries
-          </p>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">Reports</h1>
-          <p className="mt-1 text-xs sm:text-sm text-slate-500">
+          <p className="text-xs sm:text-sm text-slate-500">
             Database-aggregated hours, financial values, absences, and review backlog auditing.
           </p>
         </div>

@@ -373,14 +373,14 @@ export default function TimesheetsPage() {
         }).then((res) => {
           const nextProjects = Array.isArray(res.data) ? res.data : res.data?.projects || [];
           if (nextProjects.length) setFilterProjects(nextProjects);
-        }).catch(() => {});
+        }).catch(() => { });
       } else if (!isAdmin && projects.length === 0) {
         api.get("/api/projects", {
           params: { activeOnly: true, assignedToMe: true },
         }).then((res) => {
           const nextProjects = Array.isArray(res.data) ? res.data : res.data?.projects || [];
           if (nextProjects.length) setProjects(nextProjects);
-        }).catch(() => {});
+        }).catch(() => { });
       }
     }
   }, [activeTab, isAdmin]);
@@ -665,11 +665,11 @@ export default function TimesheetsPage() {
   const weekPercentage = Math.min(Math.round((weekTotalHours / 40) * 100), 100);
 
   return (
-    <main className="max-w-auto mx-auto w-full px-4 py-6">
+    <main className="max-w-auto mx-auto w-full px-4 py-4">
       {/* ── Page Header ── */}
       <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Timesheet</h1>
+          {/* <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Timesheet</h1> */}
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
             Track your work hours, stay productive, and review your progress.
           </p>
@@ -694,11 +694,10 @@ export default function TimesheetsPage() {
         <button
           type="button"
           onClick={() => setActiveTab("record")}
-          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${
-            activeTab === "record"
-              ? "bg-indigo-600 text-white shadow-xs"
-              : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200 shadow-2xs"
-          }`}
+          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${activeTab === "record"
+            ? "bg-indigo-600 text-white shadow-xs"
+            : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200 shadow-2xs"
+            }`}
         >
           <Clock size={15} />
           <span>Log Time</span>
@@ -707,17 +706,15 @@ export default function TimesheetsPage() {
         <button
           type="button"
           onClick={() => setActiveTab("week")}
-          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${
-            activeTab === "week"
-              ? "bg-indigo-600 text-white shadow-xs"
-              : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200 shadow-2xs"
-          }`}
+          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${activeTab === "week"
+            ? "bg-indigo-600 text-white shadow-xs"
+            : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200 shadow-2xs"
+            }`}
         >
           <CalendarDays size={15} />
           <span>My Week</span>
-          <span className={`px-2 py-0.5 rounded-lg text-xs font-bold ${
-            activeTab === "week" ? "bg-white/20 text-white" : "bg-indigo-50 text-indigo-700"
-          }`}>
+          <span className={`px-2 py-0.5 rounded-lg text-xs font-bold ${activeTab === "week" ? "bg-white/20 text-white" : "bg-indigo-50 text-indigo-700"
+            }`}>
             {formatDuration(weekTotalHours)}
           </span>
         </button>
@@ -725,17 +722,15 @@ export default function TimesheetsPage() {
         <button
           type="button"
           onClick={() => setActiveTab("entries")}
-          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${
-            activeTab === "entries"
-              ? "bg-indigo-600 text-white shadow-xs"
-              : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200 shadow-2xs"
-          }`}
+          className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition cursor-pointer ${activeTab === "entries"
+            ? "bg-indigo-600 text-white shadow-xs"
+            : "bg-white text-slate-600 hover:bg-slate-50 border border-slate-200 shadow-2xs"
+            }`}
         >
           <FileText size={15} />
           <span>My Entries</span>
-          <span className={`px-2 py-0.5 rounded-lg text-xs font-bold ${
-            activeTab === "entries" ? "bg-white/20 text-white" : "bg-indigo-50 text-indigo-700"
-          }`}>
+          <span className={`px-2 py-0.5 rounded-lg text-xs font-bold ${activeTab === "entries" ? "bg-white/20 text-white" : "bg-indigo-50 text-indigo-700"
+            }`}>
             {historyTotal}
           </span>
         </button>
@@ -920,11 +915,10 @@ export default function TimesheetsPage() {
                         setCustomDuration(false);
                         setForm((p) => ({ ...p, durationHours: preset.value }));
                       }}
-                      className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                        !customDuration && form.durationHours === preset.value
-                          ? "bg-indigo-600 text-white shadow-2xs"
-                          : "bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200"
-                      }`}
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${!customDuration && form.durationHours === preset.value
+                        ? "bg-indigo-600 text-white shadow-2xs"
+                        : "bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200"
+                        }`}
                     >
                       {preset.label}
                     </button>
@@ -932,11 +926,10 @@ export default function TimesheetsPage() {
                   <button
                     type="button"
                     onClick={() => setCustomDuration(true)}
-                    className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${
-                      customDuration
-                        ? "bg-indigo-600 text-white shadow-2xs"
-                        : "bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200"
-                    }`}
+                    className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer ${customDuration
+                      ? "bg-indigo-600 text-white shadow-2xs"
+                      : "bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200"
+                      }`}
                   >
                     <Clock size={12} />
                     <span>Custom</span>
@@ -1030,14 +1023,12 @@ export default function TimesheetsPage() {
             </div>
 
             {selectedDayData.timeOff && (
-              <div className={`p-3 mx-4 mt-4 rounded-xl text-xs flex items-center gap-2 ${
-                selectedDayData.timeOff.status === 'PENDING'
-                  ? 'bg-amber-50 border border-amber-200 text-amber-800'
-                  : 'bg-sky-50 border border-sky-200 text-sky-800'
-              }`}>
-                <AlertCircle className={`w-4 h-4 shrink-0 ${
-                  selectedDayData.timeOff.status === 'PENDING' ? 'text-amber-600' : 'text-sky-600'
-                }`} />
+              <div className={`p-3 mx-4 mt-4 rounded-xl text-xs flex items-center gap-2 ${selectedDayData.timeOff.status === 'PENDING'
+                ? 'bg-amber-50 border border-amber-200 text-amber-800'
+                : 'bg-sky-50 border border-sky-200 text-sky-800'
+                }`}>
+                <AlertCircle className={`w-4 h-4 shrink-0 ${selectedDayData.timeOff.status === 'PENDING' ? 'text-amber-600' : 'text-sky-600'
+                  }`} />
                 <span>
                   {selectedDayData.timeOff.status === 'PENDING' ? 'Pending Leave Request' : 'Approved Absence'} on this day:{' '}
                   <strong>{selectedDayData.timeOff.type?.name}</strong>
@@ -1206,20 +1197,18 @@ export default function TimesheetsPage() {
                         <p className="text-[11px] text-slate-400">{date}</p>
                       </div>
                       <span
-                        className={`text-xs font-bold ${
-                          day.totalMinutes >= 1440 ? "text-rose-600" : "text-slate-700"
-                        }`}
+                        className={`text-xs font-bold ${day.totalMinutes >= 1440 ? "text-rose-600" : "text-slate-700"
+                          }`}
                       >
                         {day.totalMinutes / 60} / 24h
                       </span>
                     </div>
 
                     {day.timeOff && (
-                      <div className={`mb-3 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium flex items-center justify-between ${
-                        day.timeOff.status === 'PENDING'
-                          ? 'border-amber-200 bg-amber-50 text-amber-800'
-                          : 'border-sky-200 bg-sky-50 text-sky-800'
-                      }`}>
+                      <div className={`mb-3 rounded-lg border px-2.5 py-1.5 text-[11px] font-medium flex items-center justify-between ${day.timeOff.status === 'PENDING'
+                        ? 'border-amber-200 bg-amber-50 text-amber-800'
+                        : 'border-sky-200 bg-sky-50 text-sky-800'
+                        }`}>
                         <span>
                           {day.timeOff.status === 'PENDING' ? 'Pending Leave: ' : 'Absence: '}
                           {day.timeOff.type?.name}
@@ -1297,9 +1286,8 @@ export default function TimesheetsPage() {
                   value={historySearch}
                   disabled={isFiltering}
                   onChange={(e) => handleFilterSearchChange(e.target.value)}
-                  className={`w-full border border-slate-300 rounded-lg pl-8 pr-3 py-1.5 text-xs focus:border-slate-900 focus:outline-none transition ${
-                    isFiltering ? "opacity-60 cursor-not-allowed bg-slate-50" : ""
-                  }`}
+                  className={`w-full border border-slate-300 rounded-lg pl-8 pr-3 py-1.5 text-xs focus:border-slate-900 focus:outline-none transition ${isFiltering ? "opacity-60 cursor-not-allowed bg-slate-50" : ""
+                    }`}
                 />
                 <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
               </div>
@@ -1309,9 +1297,8 @@ export default function TimesheetsPage() {
                 value={historyProject}
                 disabled={isFiltering}
                 onChange={(e) => handleFilterProjectChange(e.target.value)}
-                className={`w-full sm:w-auto border border-slate-300 rounded-lg px-3 py-1.5 text-xs bg-white focus:border-slate-900 focus:outline-none transition ${
-                  isFiltering ? "opacity-60 cursor-not-allowed bg-slate-50" : "cursor-pointer"
-                }`}
+                className={`w-full sm:w-auto border border-slate-300 rounded-lg px-3 py-1.5 text-xs bg-white focus:border-slate-900 focus:outline-none transition ${isFiltering ? "opacity-60 cursor-not-allowed bg-slate-50" : "cursor-pointer"
+                  }`}
               >
                 <option value="">All Projects</option>
                 {allDropdownProjects.map((p) => (
@@ -1332,13 +1319,12 @@ export default function TimesheetsPage() {
                       type="button"
                       disabled={isOtherDisabled}
                       onClick={() => handleFilterStatusChange(st)}
-                      className={`px-2.5 py-1 transition font-medium ${
-                        isActive
-                          ? "bg-slate-900 text-white cursor-default"
-                          : isOtherDisabled
+                      className={`px-2.5 py-1 transition font-medium ${isActive
+                        ? "bg-slate-900 text-white cursor-default"
+                        : isOtherDisabled
                           ? "bg-white text-slate-300 opacity-40 cursor-not-allowed border-slate-100"
                           : "bg-white text-slate-600 hover:bg-slate-50 cursor-pointer"
-                      }`}
+                        }`}
                     >
                       {st === "ALL" ? "All" : st.charAt(0) + st.slice(1).toLowerCase()}
                     </button>

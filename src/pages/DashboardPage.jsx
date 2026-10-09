@@ -295,7 +295,7 @@ export default function DashboardPage() {
   return (
     <main className="flex-1 max-w-auto w-full mx-auto px-4 py-6 sm:px-6">
       {/* ── Welcome Greeting Hero Card ── */}
-      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-r from-[#0C1236] via-[#161F55] to-[#12193E] p-6 sm:p-7 lg:p-8 text-white shadow-xl mb-6 border border-[#232F6B]/40">
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-2xl bg-gradient-to-r from-[#0C1236] via-[#161F55] to-[#12193E] p-6 sm:p-7 lg:p-8 text-white shadow-xl mb-6 border border-[#232F6B]/40">
         {/* Soft background ambient glows */}
         <div className="absolute right-1/3 top-0 -mt-10 w-96 h-96 rounded-full bg-indigo-500/15 blur-3xl pointer-events-none" />
         <div className="absolute -left-10 bottom-0 w-80 h-80 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" />
@@ -593,8 +593,8 @@ export default function DashboardPage() {
                 type="button"
                 onClick={() => setShowFilterMenu((prev) => !prev)}
                 className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl border transition cursor-pointer ${statusFilter !== 'ALL'
-                    ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                    : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'
+                  ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                  : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-200'
                   }`}
               >
                 <Filter size={13} />
@@ -762,8 +762,8 @@ export default function DashboardPage() {
                                     type="button"
                                     onClick={() => toggleScopeExpanded(cap.code)}
                                     className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition cursor-pointer ${isExpanded
-                                        ? 'bg-blue-100 text-blue-800 border-blue-300'
-                                        : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200'
+                                      ? 'bg-blue-100 text-blue-800 border-blue-300'
+                                      : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200'
                                       }`}
                                   >
                                     <FolderOpen size={13} className="text-blue-600" />
