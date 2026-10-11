@@ -637,16 +637,12 @@ export default function ReviewPage() {
                   )}
                 </div>
 
-                <div className="text-xs text-slate-500">
-                  {hasActiveFilters ? (
-                    <>
-                      Filtered <strong className="text-slate-800">{filteredEntries.length}</strong> of{" "}
-                      <strong className="text-slate-800">{allEntries.length}</strong> submitted entries
-                    </>
-                  ) : (
-                    <>Showing all <strong className="text-slate-800">{allEntries.length}</strong> submitted entries</>
-                  )}
-                </div>
+                {hasActiveFilters && (
+                  <div className="text-xs text-slate-500">
+                    Filtered <strong className="text-slate-800">{filteredEntries.length}</strong> of{" "}
+                    <strong className="text-slate-800">{allEntries.length}</strong> entries
+                  </div>
+                )}
               </div>
             </div>
 

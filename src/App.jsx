@@ -5,6 +5,7 @@ import { NotificationProvider } from './context/NotificationContext.jsx';
 import AppLayout from './components/AppLayout.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 import GuestRoute from './components/GuestRoute.jsx';
+import ErrorBoundary from './components/ErrorBoundary.jsx';
 import './App.css';
 
 // Code-split pages via dynamic imports
@@ -40,160 +41,162 @@ export default function App() {
       <AuthProvider>
         <NotificationProvider>
           <AppLayout>
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route
-              path="/login"
-              element={
-                <GuestRoute>
-                  <LoginPage />
-                </GuestRoute>
-              }
-            />
-            <Route
-              path="/register"
-              element={
-                <GuestRoute>
-                  <RegisterPage />
-                </GuestRoute>
-              }
-            />
+            <ErrorBoundary level="page">
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  <Route path="/" element={<LandingPage />} />
+                  <Route
+                    path="/login"
+                    element={
+                      <GuestRoute>
+                        <LoginPage />
+                      </GuestRoute>
+                    }
+                  />
+                  <Route
+                    path="/register"
+                    element={
+                      <GuestRoute>
+                        <RegisterPage />
+                      </GuestRoute>
+                    }
+                  />
 
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <DashboardPage />
-                </ProtectedRoute>
-              }
-            />
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <ProtectedRoute>
+                        <DashboardPage />
+                      </ProtectedRoute>
+                    }
+                  />
 
-            <Route
-              path="/profile"
-              element={
-                <ProtectedRoute>
-                  <ProfilePage />
-                </ProtectedRoute>
-              }
-            />
+                  <Route
+                    path="/profile"
+                    element={
+                      <ProtectedRoute>
+                        <ProfilePage />
+                      </ProtectedRoute>
+                    }
+                  />
 
-            <Route
-              path="/clients"
-              element={
-                <ProtectedRoute capability="MANAGE_CLIENTS_PROJECTS">
-                  <ClientsProjectsPage />
-                </ProtectedRoute>
-              }
-            />
+                  <Route
+                    path="/clients"
+                    element={
+                      <ProtectedRoute capability="MANAGE_CLIENTS_PROJECTS">
+                        <ClientsProjectsPage />
+                      </ProtectedRoute>
+                    }
+                  />
 
-            <Route
-              path="/users"
-              element={
-                <ProtectedRoute anyCapabilities={['MANAGE_USERS', 'ASSIGN_PROJECTS']}>
-                  <UsersPage />
-                </ProtectedRoute>
-              }
-            />
+                  <Route
+                    path="/users"
+                    element={
+                      <ProtectedRoute anyCapabilities={['MANAGE_USERS', 'ASSIGN_PROJECTS']}>
+                        <UsersPage />
+                      </ProtectedRoute>
+                    }
+                  />
 
-            <Route
-              path="/access"
-              element={
-                <ProtectedRoute adminOnly>
-                  <AccessPage />
-                </ProtectedRoute>
-              }
-            />
+                  <Route
+                    path="/access"
+                    element={
+                      <ProtectedRoute adminOnly>
+                        <AccessPage />
+                      </ProtectedRoute>
+                    }
+                  />
 
-            <Route
-              path="/timesheet"
-              element={
-                <ProtectedRoute>
-                  <TimesheetsPage />
-                </ProtectedRoute>
-              }
-            />
+                  <Route
+                    path="/timesheet"
+                    element={
+                      <ProtectedRoute>
+                        <TimesheetsPage />
+                      </ProtectedRoute>
+                    }
+                  />
 
-            <Route
-              path="/review"
-              element={
-                <ProtectedRoute capability="REVIEW_TIME">
-                  <ReviewPage />
-                </ProtectedRoute>
-              }
-            />
+                  <Route
+                    path="/review"
+                    element={
+                      <ProtectedRoute capability="REVIEW_TIME">
+                        <ReviewPage />
+                      </ProtectedRoute>
+                    }
+                  />
 
-            <Route
-              path="/time-off"
-              element={
-                <ProtectedRoute>
-                  <TimeOffPage />
-                </ProtectedRoute>
-              }
-            />
+                  <Route
+                    path="/time-off"
+                    element={
+                      <ProtectedRoute>
+                        <TimeOffPage />
+                      </ProtectedRoute>
+                    }
+                  />
 
-            <Route
-              path="/reports"
-              element={
-                <ProtectedRoute capability="VIEW_REPORTS">
-                  <ReportsPage />
-                </ProtectedRoute>
-              }
-            />
+                  <Route
+                    path="/reports"
+                    element={
+                      <ProtectedRoute capability="VIEW_REPORTS">
+                        <ReportsPage />
+                      </ProtectedRoute>
+                    }
+                  />
 
-            <Route
-              path="/analytics"
-              element={
-                <ProtectedRoute capability="VIEW_ANALYTICS">
-                  <AnalyticsPage />
-                </ProtectedRoute>
-              }
-            />
+                  <Route
+                    path="/analytics"
+                    element={
+                      <ProtectedRoute capability="VIEW_ANALYTICS">
+                        <AnalyticsPage />
+                      </ProtectedRoute>
+                    }
+                  />
 
-            <Route
-              path="/emails"
-              element={
-                <ProtectedRoute adminOnly>
-                  <EmailLogPage />
-                </ProtectedRoute>
-              }
-            />
+                  <Route
+                    path="/emails"
+                    element={
+                      <ProtectedRoute adminOnly>
+                        <EmailLogPage />
+                      </ProtectedRoute>
+                    }
+                  />
 
-            <Route
-              path="/audit-logs"
-              element={
-                <ProtectedRoute adminOnly>
-                  <AuditLogsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/access-logs"
-              element={<Navigate to="/audit-logs" replace />}
-            />
-            <Route
-              path="/clients-projects"
-              element={<Navigate to="/clients" replace />}
-            />
-            <Route
-              path="/projects"
-              element={<Navigate to="/clients" replace />}
-            />
+                  <Route
+                    path="/audit-logs"
+                    element={
+                      <ProtectedRoute adminOnly>
+                        <AuditLogsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/access-logs"
+                    element={<Navigate to="/audit-logs" replace />}
+                  />
+                  <Route
+                    path="/clients-projects"
+                    element={<Navigate to="/clients" replace />}
+                  />
+                  <Route
+                    path="/projects"
+                    element={<Navigate to="/clients" replace />}
+                  />
 
-            <Route
-              path="/unauthorized"
-              element={
-                <ProtectedRoute>
-                  <NotAuthorisedPage />
-                </ProtectedRoute>
-              }
-            />
+                  <Route
+                    path="/unauthorized"
+                    element={
+                      <ProtectedRoute>
+                        <NotAuthorisedPage />
+                      </ProtectedRoute>
+                    }
+                  />
 
-            {/* Catch-all fallback */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Suspense>
-      </AppLayout>
+                  {/* Catch-all fallback */}
+                  <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+              </Suspense>
+            </ErrorBoundary>
+          </AppLayout>
       </NotificationProvider>
     </AuthProvider>
     </BrowserRouter>
