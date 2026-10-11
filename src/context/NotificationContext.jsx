@@ -4,6 +4,7 @@ import { CheckCircle2, AlertTriangle, XCircle, Info, X } from 'lucide-react';
 const NotificationContext = createContext(null);
 
 let nextId = 1;
+const recentNotifications = new Map();
 
 export function NotificationProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
@@ -19,12 +20,29 @@ export function NotificationProvider({ children }) {
     duration = 4500,
   }) => {
     if (!message) return null;
+
+    // Strict synchronous deduplication to prevent double alerts across re-renders or batching
+    const dedupeKey = `${title || ''}::${message}`;
+    const now = Date.now();
+    const lastDispatched = recentNotifications.get(dedupeKey) || 0;
+    if (now - lastDispatched < 4000) {
+      return null;
+    }
+    recentNotifications.set(dedupeKey, now);
+
+    if (recentNotifications.size > 50) {
+      for (const [key, timestamp] of recentNotifications.entries()) {
+        if (now - timestamp > 10000) {
+          recentNotifications.delete(key);
+        }
+      }
+    }
+
     let createdId = null;
 
     setNotifications((prev) => {
-      // Prevent duplicate messages in quick succession (e.g. concurrent 401s / deactivated calls)
       const isDuplicate = prev.some(
-        (n) => n.message === message && Date.now() - n.createdAt < 3500
+        (n) => n.message === message && Date.now() - n.createdAt < 4000
       );
       if (isDuplicate) return prev;
 
@@ -42,6 +60,7 @@ export function NotificationProvider({ children }) {
 
     return createdId;
   }, []);
+
 
   // Listen for global custom events so non-React files or interceptors can also emit notifications
   useEffect(() => {

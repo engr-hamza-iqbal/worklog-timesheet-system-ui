@@ -133,6 +133,11 @@ export default function DashboardPage() {
   const filterMenuRef = useRef(null);
   const actionMenuRef = useRef(null);
 
+  const canManageProjects = Boolean(isAdmin || capabilities?.MANAGE_CLIENTS_PROJECTS);
+  const activeProjectsRoute = canManageProjects ? '/clients' : '/timesheet';
+  const activeProjectsSubtitle = canManageProjects ? 'Projects under management' : 'Active assigned projects';
+
+
   // Close menus on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -443,7 +448,7 @@ export default function DashboardPage() {
 
             {/* Widget 3: Active Projects */}
             <Link
-              to="/clients"
+              to={activeProjectsRoute}
               className="bg-[#0E1738]/80 hover:bg-[#131F4A]/80 backdrop-blur-md rounded-2xl p-3.5 border border-white/10 shadow-sm flex items-center justify-between gap-3 transition cursor-pointer"
             >
               <div className="flex items-center gap-3 min-w-0">
@@ -454,12 +459,13 @@ export default function DashboardPage() {
                   <div className="text-[11px] font-medium text-slate-300">Active Projects</div>
                   <div className="text-sm font-bold text-white flex items-baseline gap-1.5 truncate">
                     <span>{projectsCount}</span>
-                    <span className="text-xs font-normal text-slate-300">Projects under management</span>
+                    <span className="text-xs font-normal text-slate-300">{activeProjectsSubtitle}</span>
                   </div>
                 </div>
               </div>
               <ChevronRight size={16} className="text-slate-400 shrink-0" />
             </Link>
+
           </div>
         </div>
       </div>
@@ -538,7 +544,7 @@ export default function DashboardPage() {
 
         {/* Card 4: Active Projects */}
         <Link
-          to="/clients"
+          to={activeProjectsRoute}
           className="bg-white rounded-2xl border border-slate-200/90 p-4 sm:p-5 shadow-xs flex items-center justify-between gap-3 hover:border-slate-300 hover:shadow-sm transition cursor-pointer text-left"
         >
           <div className="flex items-center gap-3.5 min-w-0">
@@ -550,11 +556,12 @@ export default function DashboardPage() {
               <div className="text-xl font-extrabold text-slate-900 mt-0.5">
                 {projectsCount}
               </div>
-              <div className="text-[11px] text-slate-400 truncate">Projects under management</div>
+              <div className="text-[11px] text-slate-400 truncate">{activeProjectsSubtitle}</div>
             </div>
           </div>
           <ChevronRight size={16} className="text-slate-400 shrink-0" />
         </Link>
+
       </div>
 
       {/* ── System Capabilities Table Card ── */}

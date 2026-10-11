@@ -3,6 +3,10 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { Loader2 } from 'lucide-react';
 
+// Module-level deduplication to prevent double alerts across re-renders or rapid transitions
+let lastAlertKey = '';
+let lastAlertTime = 0;
+
 export default function ProtectedRoute({
   children,
   adminOnly = false,
@@ -12,7 +16,6 @@ export default function ProtectedRoute({
 }) {
   const { isAuthenticated, loading, isAdmin, capabilities } = useAuth();
   const location = useLocation();
-  const lastAlertedRef = useRef(null);
 
   // Check authorization
   let isDenied = false;
@@ -24,12 +27,12 @@ export default function ProtectedRoute({
       reason = 'This section requires administrator privileges.';
     } else if (capability && !capabilities[capability]) {
       isDenied = true;
-      reason = `Access permission for "${capability}" has been revoked.`;
+      reason = `Access to this section requires the "${capability}" permission.`;
     } else if (anyCapabilities && Array.isArray(anyCapabilities)) {
       const hasAny = anyCapabilities.some((cap) => Boolean(capabilities[cap]));
       if (!hasAny) {
         isDenied = true;
-        reason = 'Access permissions for this section have been revoked.';
+        reason = 'Access permissions for this section are required.';
       }
     }
   }
@@ -37,13 +40,16 @@ export default function ProtectedRoute({
   // Notify and fall back smoothly without page reload
   useEffect(() => {
     if (isDenied && location.pathname !== fallbackTo) {
-      if (lastAlertedRef.current !== location.pathname) {
-        lastAlertedRef.current = location.pathname;
+      const alertKey = `${location.pathname}:${reason}`;
+      const now = Date.now();
+      if (alertKey !== lastAlertKey || now - lastAlertTime > 4000) {
+        lastAlertKey = alertKey;
+        lastAlertTime = now;
         window.dispatchEvent(
           new CustomEvent('app:notify', {
             detail: {
               type: 'warn',
-              title: 'Access Revoked',
+              title: 'Access Restricted',
               message: `${reason} Redirected to Dashboard.`,
             },
           })
@@ -51,6 +57,7 @@ export default function ProtectedRoute({
       }
     }
   }, [isDenied, location.pathname, fallbackTo, reason]);
+
 
   if (loading) {
     return (

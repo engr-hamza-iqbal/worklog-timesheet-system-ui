@@ -15,10 +15,9 @@ window.addEventListener('vite:preloadError', (event) => {
 });
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <ErrorBoundary level="root">
-      <App />
-    </ErrorBoundary>
-  </StrictMode>,
+  <ErrorBoundary level="root">
+    <App />
+  </ErrorBoundary>,
 );
+
 
