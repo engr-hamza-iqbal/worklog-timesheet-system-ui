@@ -8,23 +8,49 @@ import GuestRoute from './components/GuestRoute.jsx';
 import ErrorBoundary from './components/ErrorBoundary.jsx';
 import './App.css';
 
-// Code-split pages via dynamic imports
-const LandingPage = lazy(() => import('./pages/LandingPage.jsx'));
-const LoginPage = lazy(() => import('./pages/LoginPage.jsx'));
-const RegisterPage = lazy(() => import('./pages/RegisterPage.jsx'));
-const DashboardPage = lazy(() => import('./pages/DashboardPage.jsx'));
-const ClientsProjectsPage = lazy(() => import('./pages/ClientsProjectsPage.jsx'));
-const UsersPage = lazy(() => import('./pages/UsersPage.jsx'));
-const AccessPage = lazy(() => import('./pages/access/AccessPage.jsx'));
-const TimesheetsPage = lazy(() => import('./pages/TimesheetsPage.jsx'));
-const ReviewPage = lazy(() => import('./pages/ReviewPage.jsx'));
-const TimeOffPage = lazy(() => import('./pages/TimeOffPage.jsx'));
-const ReportsPage = lazy(() => import('./pages/ReportsPage.jsx'));
-const AnalyticsPage = lazy(() => import('./pages/AnalyticsPage.jsx'));
-const EmailLogPage = lazy(() => import('./pages/EmailLogPage.jsx'));
-const AuditLogsPage = lazy(() => import('./pages/AuditLogsPage.jsx'));
-const NotAuthorisedPage = lazy(() => import('./pages/NotAuthorisedPage.jsx'));
-const ProfilePage = lazy(() => import('./pages/ProfilePage.jsx'));
+// Robust lazy loader that auto-reloads if an old chunk is requested after a new production deployment
+function lazyRetry(componentImport) {
+  return lazy(async () => {
+    try {
+      return await componentImport();
+    } catch (error) {
+      const isChunkError =
+        error?.message?.includes('dynamically imported module') ||
+        error?.message?.includes('Expected a JavaScript-or-Wasm module script') ||
+        error?.message?.includes('Failed to fetch') ||
+        error?.name === 'ChunkLoadError';
+
+      const lastReload = parseInt(sessionStorage.getItem('worklog_chunk_reload') || '0', 10);
+      const canReload = Date.now() - lastReload > 15000;
+
+      if (isChunkError && canReload) {
+        sessionStorage.setItem('worklog_chunk_reload', Date.now().toString());
+        window.location.reload();
+        return new Promise(() => {}); // Keep loader active until window finishes reloading
+      }
+      throw error;
+    }
+  });
+}
+
+// Code-split pages via resilient dynamic imports
+const LandingPage = lazyRetry(() => import('./pages/LandingPage.jsx'));
+const LoginPage = lazyRetry(() => import('./pages/LoginPage.jsx'));
+const RegisterPage = lazyRetry(() => import('./pages/RegisterPage.jsx'));
+const DashboardPage = lazyRetry(() => import('./pages/DashboardPage.jsx'));
+const ClientsProjectsPage = lazyRetry(() => import('./pages/ClientsProjectsPage.jsx'));
+const UsersPage = lazyRetry(() => import('./pages/UsersPage.jsx'));
+const AccessPage = lazyRetry(() => import('./pages/access/AccessPage.jsx'));
+const TimesheetsPage = lazyRetry(() => import('./pages/TimesheetsPage.jsx'));
+const ReviewPage = lazyRetry(() => import('./pages/ReviewPage.jsx'));
+const TimeOffPage = lazyRetry(() => import('./pages/TimeOffPage.jsx'));
+const ReportsPage = lazyRetry(() => import('./pages/ReportsPage.jsx'));
+const AnalyticsPage = lazyRetry(() => import('./pages/AnalyticsPage.jsx'));
+const EmailLogPage = lazyRetry(() => import('./pages/EmailLogPage.jsx'));
+const AuditLogsPage = lazyRetry(() => import('./pages/AuditLogsPage.jsx'));
+const NotAuthorisedPage = lazyRetry(() => import('./pages/NotAuthorisedPage.jsx'));
+const ProfilePage = lazyRetry(() => import('./pages/ProfilePage.jsx'));
+
 
 function PageLoader() {
   return (

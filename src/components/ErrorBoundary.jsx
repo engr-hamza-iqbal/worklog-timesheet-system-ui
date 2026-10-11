@@ -29,10 +29,21 @@ export default class ErrorBoundary extends Component {
 
   componentDidCatch(error, errorInfo) {
     this.setState({ errorInfo });
-    // Log error to console for development
     console.error('ErrorBoundary caught an unhandled error:', error, errorInfo);
 
-    // Optional: send error to telemetry or backend audit logger if desired
+    const isChunkError =
+      error?.message?.includes('dynamically imported module') ||
+      error?.message?.includes('Expected a JavaScript-or-Wasm module script') ||
+      error?.message?.includes('Failed to fetch') ||
+      error?.name === 'ChunkLoadError';
+
+    const lastReload = parseInt(sessionStorage.getItem('worklog_chunk_reload') || '0', 10);
+    if (isChunkError && Date.now() - lastReload > 15000) {
+      sessionStorage.setItem('worklog_chunk_reload', Date.now().toString());
+      window.location.reload();
+      return;
+    }
+
     try {
       const errorPayload = {
         message: error?.message || 'Unknown render error',
@@ -46,6 +57,7 @@ export default class ErrorBoundary extends Component {
       // Ignore storage errors
     }
   }
+
 
   handleReset = () => {
     this.setState({
@@ -93,6 +105,12 @@ export default class ErrorBoundary extends Component {
       const isPageLevel = this.props.level === 'page';
       const { error, errorInfo, showDetails, copied } = this.state;
 
+      const isChunkError =
+        error?.message?.includes('dynamically imported module') ||
+        error?.message?.includes('Expected a JavaScript-or-Wasm module script') ||
+        error?.message?.includes('Failed to fetch') ||
+        error?.name === 'ChunkLoadError';
+
       return (
         <div
           className={`flex flex-col items-center justify-center p-6 sm:p-10 text-center ${
@@ -105,13 +123,21 @@ export default class ErrorBoundary extends Component {
           {/* Visual Accent Icon */}
           <div
             className={`w-16 h-16 sm:w-20 sm:h-20 rounded-3xl flex items-center justify-center mb-6 shadow-xl relative ${
-              isPageLevel
+              isChunkError
+                ? isPageLevel
+                  ? 'bg-indigo-50 border border-indigo-200/80 text-indigo-600'
+                  : 'bg-gradient-to-tr from-indigo-500/20 to-sky-500/30 border border-white/20 backdrop-blur-md text-indigo-400'
+                : isPageLevel
                 ? 'bg-rose-50 border border-rose-200/80 text-rose-600'
                 : 'bg-gradient-to-tr from-rose-500/20 to-indigo-500/30 border border-white/20 backdrop-blur-md text-rose-400'
             }`}
           >
-            <AlertTriangle className="w-8 h-8 sm:w-10 sm:h-10 animate-bounce" />
-            <div className="absolute -inset-1 rounded-3xl bg-rose-500/10 blur-lg pointer-events-none" />
+            {isChunkError ? (
+              <RefreshCw className="w-8 h-8 sm:w-10 sm:h-10 animate-spin" />
+            ) : (
+              <AlertTriangle className="w-8 h-8 sm:w-10 sm:h-10 animate-bounce" />
+            )}
+            <div className={`absolute -inset-1 rounded-3xl blur-lg pointer-events-none ${isChunkError ? 'bg-indigo-500/10' : 'bg-rose-500/10'}`} />
           </div>
 
           {/* Heading & Friendly Subtitle */}
@@ -120,15 +146,18 @@ export default class ErrorBoundary extends Component {
               isPageLevel ? 'text-slate-900' : 'text-white'
             }`}
           >
-            Something went unexpectedly wrong
+            {isChunkError ? 'New Version Available' : 'Something went unexpectedly wrong'}
           </h2>
           <p
             className={`text-xs sm:text-sm max-w-md mx-auto mb-6 leading-relaxed ${
               isPageLevel ? 'text-slate-500' : 'text-slate-300'
             }`}
           >
-            We ran into an unhandled issue while rendering this view. Don&apos;t worry—your data and work logs are safely saved on the server.
+            {isChunkError
+              ? 'A fresh update has been deployed. Please reload the page to load the latest application bundle.'
+              : 'We ran into an unhandled issue while rendering this view. Don\'t worry—your data and work logs are safely saved on the server.'}
           </p>
+
 
           {/* Primary Action Buttons */}
           <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
