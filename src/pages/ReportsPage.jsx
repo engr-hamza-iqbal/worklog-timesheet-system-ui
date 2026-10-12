@@ -465,7 +465,7 @@ export default function ReportsPage() {
     if (activeTab === 'employee' && selectedEmployeeId) {
       loadEmployeeDetails(selectedEmployeeId, empFilters);
     }
-  }, [activeTab, selectedEmployeeId]);
+  }, [activeTab, selectedEmployeeId, empFilters]);
 
   function clearFilters() {
     const nextFilters = { startDate: '', endDate: '' };

@@ -31,7 +31,7 @@ import { entryIdsSchema, reviewReturnSchema, timeOffDecisionSchema } from "../va
 
 export default function ReviewPage() {
   const { notify } = useNotification();
-  const { isAdmin, capabilities } = useAuth();
+  const { user, isAdmin, capabilities } = useAuth();
   const canReviewTime = isAdmin || !!capabilities['REVIEW_TIME'];
   const canDecideTimeOff = isAdmin || !!capabilities['DECIDE_TIME_OFF'];
 
@@ -96,7 +96,7 @@ export default function ReviewPage() {
 
   // Load latest entries and pending time off requests from DB
   async function load(isManualRefresh = false) {
-    const cacheKey = "review-queue:all";
+    const cacheKey = `review-queue:${user?.id || 'anon'}`;
     if (!isManualRefresh) {
       const cached = sessionStorage.getItem(cacheKey);
       if (cached) {
@@ -285,7 +285,7 @@ export default function ReviewPage() {
           notify.success(`Approved ${selected.length} entries.`);
           setSelected([]);
           setConfirmation(null);
-          await load();
+          await load(true);
         } catch (err) {
           notify.error(err.message || "Failed to approve entries.");
           setConfirmation(null);
@@ -313,7 +313,7 @@ export default function ReviewPage() {
           notify.success("Entry approved.");
           setSelected((prev) => prev.filter((item) => item !== id));
           setConfirmation(null);
-          await load();
+          await load(true);
         } catch (err) {
           notify.error(err.message || "Failed to approve entry.");
           setConfirmation(null);
@@ -338,7 +338,7 @@ export default function ReviewPage() {
       setReturningId(null);
       setComment("");
       setSelected((prev) => prev.filter((id) => id !== returningId));
-      await load();
+      await load(true);
     } catch (err) {
       notify.error(err.message || "Failed to return entry.");
     } finally {
@@ -363,7 +363,7 @@ export default function ReviewPage() {
           await api.post(`/api/time-off/requests/${reqItem.id}/decide`, parsed.data);
           notify.success("Time off request approved.");
           setConfirmation(null);
-          await load();
+          await load(true);
         } catch (err) {
           notify.error(err.message || "Failed to approve time off request.");
           setConfirmation(null);
@@ -392,7 +392,7 @@ export default function ReviewPage() {
       notify.success("Time off request declined.");
       setDeclineTarget(null);
       setDeclineReason("");
-      await load();
+      await load(true);
     } catch (err) {
       notify.error(err.message || "Failed to decline time off request.");
     } finally {
