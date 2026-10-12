@@ -818,7 +818,6 @@ function AssignProjectsForm({ user, assignedProjectIds, allowedProjectIds, onSuc
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message || 'Select at least one project to assign.');
       return;
-      const pIds = parsed.data.projectIds;
     }
     setLoading(true);
     setError('');
@@ -1067,7 +1066,6 @@ function BulkAssignTeamForm({ users, allowedAssignUserIds, allowedProjectIds, cu
     if (!selectedProjectId || !parsed.success) {
       setError(!selectedProjectId ? 'Please select a project.' : (parsed.error.issues[0]?.message || 'Select at least one employee.'));
       return;
-      const uIds = parsed.data.userIds;
     }
     setLoading(true);
     setError('');
@@ -1520,7 +1518,7 @@ export default function UsersPage() {
     }
   }, []);
 
-  useEffect(() => { fetchUsers(); }, []);
+  useEffect(() => { fetchUsers(); }, [fetchUsers]);
 
   // PATCH /api/users/:id/status → { success, data: { id, name, email, accountType, isActive, updatedAt }, message }
   const handleToggleStatus = (user) => {

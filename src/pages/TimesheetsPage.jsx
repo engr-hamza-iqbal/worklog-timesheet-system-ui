@@ -229,7 +229,7 @@ export default function TimesheetsPage() {
   const dateRange = { startDate: iso(weekStart), endDate: iso(weekEnd) };
 
   async function load() {
-    const cacheKey = `timesheet:${dateRange.startDate}:${dateRange.endDate}`;
+    const cacheKey = `timesheet:${user?.id || 'anon'}:${dateRange.startDate}:${dateRange.endDate}`;
     const cached = sessionStorage.getItem(cacheKey);
     if (cached) {
       try {
@@ -538,7 +538,7 @@ export default function TimesheetsPage() {
       notify.success(msg);
       resetForm(form.workDate);
       sessionStorage.removeItem(
-        `timesheet:${dateRange.startDate}:${dateRange.endDate}`,
+        `timesheet:${user?.id || 'anon'}:${dateRange.startDate}:${dateRange.endDate}`,
       );
       setConfirmation(null);
       await load();
