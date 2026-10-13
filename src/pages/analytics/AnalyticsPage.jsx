@@ -25,8 +25,8 @@ export default function AnalyticsPage() {
 
   // Chart view modes & limit states
   const [clientChartMode, setClientChartMode] = useState('donut'); // 'donut' | 'bar'
-  const [projectLimitMode, setProjectLimitMode] = useState('top8'); // 'top8' | 'all'
-  const [employeeLimitMode, setEmployeeLimitMode] = useState('all'); // 'top8' | 'all'
+  const [projectLimitMode, setProjectLimitMode] = useState('top8'); // 'top8' | 'top20' | 'all'
+  const [employeeLimitMode, setEmployeeLimitMode] = useState('top8'); // 'top8' | 'top20' | 'all'
 
   // Detailed breakdown table state
   const [breakdownTab, setBreakdownTab] = useState('employees'); // 'employees' | 'projects' | 'clients'
@@ -145,6 +145,9 @@ export default function AnalyticsPage() {
     if (projectLimitMode === 'top8') {
       return allProjectsData.slice(0, 8);
     }
+    if (projectLimitMode === 'top20') {
+      return allProjectsData.slice(0, 20);
+    }
     return allProjectsData;
   }, [allProjectsData, projectLimitMode]);
 
@@ -209,6 +212,9 @@ export default function AnalyticsPage() {
   const displayedEmployeesData = useMemo(() => {
     if (employeeLimitMode === 'top8') {
       return allEmployeesData.slice(0, 8);
+    }
+    if (employeeLimitMode === 'top20') {
+      return allEmployeesData.slice(0, 20);
     }
     return allEmployeesData;
   }, [allEmployeesData, employeeLimitMode]);

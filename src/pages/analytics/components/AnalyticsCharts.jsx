@@ -4,7 +4,7 @@ import {
   BarChart, Bar, CartesianGrid, ReferenceLine,
   PieChart, Pie, Cell,
 } from 'recharts';
-import { PieChart as PieIcon, BarChart2, Eye, EyeOff } from 'lucide-react';
+import { PieChart as PieIcon, BarChart2, Search, X, List } from 'lucide-react';
 
 const CHART_COLORS = [
   '#6366f1', // Indigo
@@ -99,6 +99,100 @@ export default function AnalyticsCharts({
   const visibleAllClientsData = useMemo(() => {
     return (allClientsData || []).filter((entry) => !hiddenClients.has(entry.name));
   }, [allClientsData, hiddenClients]);
+
+  // Local search & view states for projects and employees
+  const [projectSearch, setProjectSearch] = useState('');
+  const [employeeSearch, setEmployeeSearch] = useState('');
+  const [employeeViewMode, setEmployeeViewMode] = useState('column'); // 'column' | 'bar'
+
+  // Filtered projects considering active search query
+  const projectsToRender = useMemo(() => {
+    if (projectSearch.trim()) {
+      const q = projectSearch.toLowerCase().trim();
+      return (allProjectsData || []).filter((p) => (p.name || '').toLowerCase().includes(q));
+    }
+    return displayedProjectsData || [];
+  }, [projectSearch, allProjectsData, displayedProjectsData]);
+
+  // Filtered employees considering active search query
+  const employeesToRender = useMemo(() => {
+    if (employeeSearch.trim()) {
+      const q = employeeSearch.toLowerCase().trim();
+      return (allEmployeesData || []).filter((e) => (e.name || '').toLowerCase().includes(q));
+    }
+    return displayedEmployeesData || [];
+  }, [employeeSearch, allEmployeesData, displayedEmployeesData]);
+
+  // Clean single-line project tick with ellipsis truncation that never wraps or collides with bars
+  const renderProjectTick = ({ x, y, payload }) => {
+    const fullName = String(payload?.value || '');
+    const maxChars = 20;
+    const label = fullName.length > maxChars ? `${fullName.slice(0, maxChars - 1)}…` : fullName;
+    return (
+      <g transform={`translate(${x},${y})`}>
+        <title>{fullName}</title>
+        <text
+          x={-10}
+          y={4}
+          textAnchor="end"
+          fill="#475569"
+          fontSize={10.5}
+          fontWeight={500}
+          className="cursor-default select-none"
+        >
+          {label}
+        </text>
+      </g>
+    );
+  };
+
+  // Clean single-line employee tick for column view with tilt and truncation
+  const renderEmployeeXTick = ({ x, y, payload }) => {
+    const name = String(payload?.value || '');
+    const maxChars = 13;
+    const label = name.length > maxChars ? `${name.slice(0, maxChars - 1)}…` : name;
+    return (
+      <g transform={`translate(${x},${y})`}>
+        <title>{name}</title>
+        <text
+          x={0}
+          y={0}
+          dy={10}
+          textAnchor="end"
+          fill="#64748b"
+          fontSize={10}
+          fontWeight={500}
+          transform="rotate(-35)"
+          className="cursor-default select-none"
+        >
+          {label}
+        </text>
+      </g>
+    );
+  };
+
+  // Clean single-line employee tick for horizontal bar view
+  const renderEmployeeYTick = ({ x, y, payload }) => {
+    const fullName = String(payload?.value || '');
+    const maxChars = 20;
+    const label = fullName.length > maxChars ? `${fullName.slice(0, maxChars - 1)}…` : fullName;
+    return (
+      <g transform={`translate(${x},${y})`}>
+        <title>{fullName}</title>
+        <text
+          x={-10}
+          y={4}
+          textAnchor="end"
+          fill="#475569"
+          fontSize={10.5}
+          fontWeight={500}
+          className="cursor-default select-none"
+        >
+          {label}
+        </text>
+      </g>
+    );
+  };
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
@@ -414,36 +508,88 @@ export default function AnalyticsCharts({
         </div>
       </section>
 
-      {/* 3. Hours by Project (Bar Chart with dynamic scaling and scroll) */}
+      {/* 3. Hours by Project (Bar Chart with dynamic scaling, non-colliding labels, and search) */}
       <section className="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-xs flex flex-col justify-between relative z-0 hover:z-50 focus-within:z-50 transition-all">
-        <div className="mb-3.5 sm:mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h2 className="text-sm font-semibold text-slate-900">Hours by Project</h2>
-            <p className="text-[11px] text-slate-500">Top project initiatives by approved volume</p>
+        <div className="mb-3.5 sm:mb-4 flex flex-col gap-2.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-900">Hours by Project</h2>
+              <p className="text-[11px] text-slate-500">Top project initiatives by approved volume</p>
+            </div>
+            <div className="flex items-center justify-between sm:justify-end gap-1.5 flex-wrap">
+              <span className="text-xs font-mono font-medium text-sky-600 bg-sky-50 px-2 py-0.5 rounded">
+                {projectsToRender.length} of {allProjectsData.length} shown
+              </span>
+              {allProjectsData.length > 8 && (
+                <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => { setProjectLimitMode('top8'); setProjectSearch(''); }}
+                    className={`px-2 py-0.5 rounded-md font-medium transition cursor-pointer ${
+                      projectLimitMode === 'top8' && !projectSearch
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    Top 8
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setProjectLimitMode('top20'); setProjectSearch(''); }}
+                    className={`px-2 py-0.5 rounded-md font-medium transition cursor-pointer ${
+                      projectLimitMode === 'top20' && !projectSearch
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    Top 20
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setProjectLimitMode('all')}
+                    className={`px-2 py-0.5 rounded-md font-medium transition cursor-pointer ${
+                      projectLimitMode === 'all' && !projectSearch
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    All ({allProjectsData.length})
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
-          <div className="flex items-center justify-between sm:justify-end gap-1.5 w-full sm:w-auto">
-            <span className="text-xs font-mono font-medium text-sky-600 bg-sky-50 px-2 py-0.5 rounded">
-              {displayedProjectsData.length} shown
-            </span>
-            {allProjectsData.length > 8 && (
-              <button
-                type="button"
-                onClick={() => setProjectLimitMode((m) => (m === 'top8' ? 'all' : 'top8'))}
-                className="px-2 py-0.5 rounded border border-slate-200 bg-slate-50 text-[11px] font-medium text-slate-600 hover:bg-slate-100 transition cursor-pointer"
-              >
-                {projectLimitMode === 'top8' ? `Show All (${allProjectsData.length})` : 'Show Top 8'}
-              </button>
-            )}
-          </div>
+          {allProjectsData.length > 8 && (
+            <div className="relative">
+              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input
+                type="text"
+                value={projectSearch}
+                onChange={(e) => setProjectSearch(e.target.value)}
+                placeholder="Search projects by name..."
+                className="w-full rounded-md border border-slate-200 bg-slate-50/70 pl-8 pr-7 py-1 text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:border-sky-500 focus:outline-none transition"
+              />
+              {projectSearch && (
+                <button
+                  type="button"
+                  onClick={() => setProjectSearch('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  title="Clear search"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+          )}
         </div>
         <div className="overflow-y-auto max-h-72 [scrollbar-width:thin] pr-1">
-          <div style={{ height: `${Math.max(240, displayedProjectsData.length * 32)}px` }}>
-            {displayedProjectsData.length > 0 ? (
+          <div style={{ height: `${Math.max(260, projectsToRender.length * 38)}px` }}>
+            {projectsToRender.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={displayedProjectsData}
+                  data={projectsToRender}
                   layout="vertical"
-                  margin={{ top: 5, right: 15, left: 0, bottom: 5 }}
+                  margin={{ top: 8, right: 20, left: 10, bottom: 8 }}
                 >
                   <defs>
                     <linearGradient id="projectBarGrad" x1="0" y1="0" x2="1" y2="0">
@@ -456,10 +602,13 @@ export default function AnalyticsCharts({
                   <YAxis
                     type="category"
                     dataKey="name"
-                    stroke="#64748b"
-                    fontSize={10}
+                    stroke="#cbd5e1"
+                    fontSize={10.5}
                     tickLine={false}
-                    width={90}
+                    axisLine={{ stroke: '#e2e8f0' }}
+                    width={145}
+                    interval={0}
+                    tick={renderProjectTick}
                   />
                   <Tooltip
                     content={<CustomTooltip unit="h" />}
@@ -467,7 +616,7 @@ export default function AnalyticsCharts({
                     allowEscapeViewBox={{ x: true, y: true }}
                   />
                   <Bar
-                    key={`bar-project-${activePreset}-${projectLimitMode}-${displayedProjectsData.length}`}
+                    key={`bar-project-${activePreset}-${projectLimitMode}-${projectsToRender.length}-${projectSearch}`}
                     dataKey="hours"
                     fill="url(#projectBarGrad)"
                     radius={[0, 8, 8, 0]}
@@ -482,92 +631,233 @@ export default function AnalyticsCharts({
               </ResponsiveContainer>
             ) : (
               <div className="flex h-full items-center justify-center text-xs text-slate-400">
-                No project hours recorded in this range.
+                {projectSearch ? 'No projects match your search.' : 'No project hours recorded in this range.'}
               </div>
             )}
           </div>
         </div>
       </section>
 
-      {/* 4. Hours by Employee (Bar Chart with horizontal scroll when many team members) */}
+      {/* 4. Hours by Employee (Bar Chart with view modes and handling for many users) */}
       <section className="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-xs flex flex-col justify-between relative z-0 hover:z-50 focus-within:z-50 transition-all">
-        <div className="mb-3.5 sm:mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h2 className="text-sm font-semibold text-slate-900">Hours by Team Member</h2>
-            <p className="text-[11px] text-slate-500">Approved effort across individual contributors</p>
-          </div>
-          <div className="flex items-center justify-between sm:justify-end gap-1.5 w-full sm:w-auto">
-            <span className="text-xs font-mono font-medium text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
-              {displayedEmployeesData.length} members
-            </span>
-            {allEmployeesData.length > 8 && (
-              <button
-                type="button"
-                onClick={() => setEmployeeLimitMode((m) => (m === 'top8' ? 'all' : 'top8'))}
-                className="px-2 py-0.5 rounded border border-slate-200 bg-slate-50 text-[11px] font-medium text-slate-600 hover:bg-slate-100 transition cursor-pointer"
-              >
-                {employeeLimitMode === 'top8' ? `Show All (${allEmployeesData.length})` : 'Show Top 8'}
-              </button>
-            )}
-          </div>
-        </div>
-        <div className="overflow-x-auto pb-2 [scrollbar-width:thin] touch-pan-x">
-          <div
-            style={{
-              minWidth: `${Math.max(280, displayedEmployeesData.length * 52)}px`,
-              height: '280px',
-            }}
-          >
-            {displayedEmployeesData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={displayedEmployeesData}
-                  margin={{ top: 10, right: 10, left: -25, bottom: 45 }}
+        <div className="mb-3.5 sm:mb-4 flex flex-col gap-2.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-900">Hours by Team Member</h2>
+              <p className="text-[11px] text-slate-500">Approved effort across individual contributors</p>
+            </div>
+            <div className="flex items-center justify-between sm:justify-end gap-1.5 flex-wrap">
+              <span className="text-xs font-mono font-medium text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
+                {employeesToRender.length} of {allEmployeesData.length} members
+              </span>
+              {/* View Mode Toggle: Columns vs Rows */}
+              <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setEmployeeViewMode('column')}
+                  title="Column chart view"
+                  className={`px-2 py-0.5 rounded-md font-medium transition cursor-pointer flex items-center gap-1 ${
+                    employeeViewMode === 'column'
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
                 >
-                  <defs>
-                    <linearGradient id="employeeBarGrad" x1="0" y1="1" x2="0" y2="0">
-                      <stop offset="0%" stopColor="#4f46e5" />
-                      <stop offset="100%" stopColor="#818cf8" />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                  <XAxis
-                    dataKey="name"
-                    stroke="#64748b"
-                    fontSize={10}
-                    tickLine={false}
-                    interval={0}
-                    angle={-30}
-                    textAnchor="end"
-                    height={55}
-                  />
-                  <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} unit="h" />
-                  <Tooltip
-                    content={<CustomTooltip unit="h" />}
-                    wrapperStyle={{ zIndex: 99999, pointerEvents: 'none' }}
-                    allowEscapeViewBox={{ x: true, y: true }}
-                  />
-                  <Bar
-                    key={`bar-emp-${activePreset}-${employeeLimitMode}-${displayedEmployeesData.length}`}
-                    dataKey="hours"
-                    fill="url(#employeeBarGrad)"
-                    radius={[8, 8, 0, 0]}
-                    maxBarSize={32}
-                    background={{ fill: '#f1f5f9', radius: [8, 8, 0, 0] }}
-                    isAnimationActive={true}
-                    animationBegin={0}
-                    animationDuration={650}
-                    animationEasing="ease-out"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="flex h-full items-center justify-center text-xs text-slate-400">
-                No employee hours recorded in this range.
+                  <BarChart2 size={12} />
+                  <span>Columns</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEmployeeViewMode('bar')}
+                  title="Horizontal rows list view (ideal for many members)"
+                  className={`px-2 py-0.5 rounded-md font-medium transition cursor-pointer flex items-center gap-1 ${
+                    employeeViewMode === 'bar'
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  <List size={12} />
+                  <span>Rows</span>
+                </button>
               </div>
-            )}
+              {/* Limit Presets */}
+              {allEmployeesData.length > 8 && (
+                <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => { setEmployeeLimitMode('top8'); setEmployeeSearch(''); }}
+                    className={`px-2 py-0.5 rounded-md font-medium transition cursor-pointer ${
+                      employeeLimitMode === 'top8' && !employeeSearch
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    Top 8
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setEmployeeLimitMode('top20'); setEmployeeSearch(''); }}
+                    className={`px-2 py-0.5 rounded-md font-medium transition cursor-pointer ${
+                      employeeLimitMode === 'top20' && !employeeSearch
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    Top 20
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEmployeeLimitMode('all')}
+                    className={`px-2 py-0.5 rounded-md font-medium transition cursor-pointer ${
+                      employeeLimitMode === 'all' && !employeeSearch
+                        ? 'bg-white text-slate-900 shadow-xs'
+                        : 'text-slate-500 hover:text-slate-800'
+                    }`}
+                  >
+                    All ({allEmployeesData.length})
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
+          {allEmployeesData.length > 8 && (
+            <div className="relative">
+              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+              <input
+                type="text"
+                value={employeeSearch}
+                onChange={(e) => setEmployeeSearch(e.target.value)}
+                placeholder="Search team members by name..."
+                className="w-full rounded-md border border-slate-200 bg-slate-50/70 pl-8 pr-7 py-1 text-xs text-slate-800 placeholder-slate-400 focus:bg-white focus:border-indigo-500 focus:outline-none transition"
+              />
+              {employeeSearch && (
+                <button
+                  type="button"
+                  onClick={() => setEmployeeSearch('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  title="Clear search"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+          )}
         </div>
+
+        {employeeViewMode === 'column' ? (
+          <div className="overflow-x-auto pb-2 [scrollbar-width:thin] touch-pan-x">
+            <div
+              style={{
+                width: employeesToRender.length <= 8 ? '100%' : `${Math.max(280, employeesToRender.length * 48)}px`,
+                minWidth: employeesToRender.length <= 8 ? '100%' : `${Math.max(280, employeesToRender.length * 48)}px`,
+                height: '280px',
+              }}
+            >
+              {employeesToRender.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={employeesToRender}
+                    margin={{ top: 10, right: 15, left: -20, bottom: 45 }}
+                  >
+                    <defs>
+                      <linearGradient id="employeeBarGrad" x1="0" y1="1" x2="0" y2="0">
+                        <stop offset="0%" stopColor="#4f46e5" />
+                        <stop offset="100%" stopColor="#818cf8" />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                    <XAxis
+                      dataKey="name"
+                      stroke="#cbd5e1"
+                      fontSize={10}
+                      tickLine={false}
+                      axisLine={{ stroke: '#e2e8f0' }}
+                      interval={0}
+                      height={55}
+                      tick={renderEmployeeXTick}
+                    />
+                    <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} unit="h" />
+                    <Tooltip
+                      content={<CustomTooltip unit="h" />}
+                      wrapperStyle={{ zIndex: 99999, pointerEvents: 'none' }}
+                      allowEscapeViewBox={{ x: true, y: true }}
+                    />
+                    <Bar
+                      key={`bar-emp-${activePreset}-${employeeLimitMode}-${employeesToRender.length}-${employeeSearch}`}
+                      dataKey="hours"
+                      fill="url(#employeeBarGrad)"
+                      radius={[8, 8, 0, 0]}
+                      maxBarSize={32}
+                      background={{ fill: '#f1f5f9', radius: [8, 8, 0, 0] }}
+                      isAnimationActive={true}
+                      animationBegin={0}
+                      animationDuration={650}
+                      animationEasing="ease-out"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full items-center justify-center text-xs text-slate-400">
+                  {employeeSearch ? 'No team members match your search.' : 'No employee hours recorded in this range.'}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="overflow-y-auto max-h-72 [scrollbar-width:thin] pr-1">
+            <div style={{ height: `${Math.max(260, employeesToRender.length * 38)}px` }}>
+              {employeesToRender.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={employeesToRender}
+                    layout="vertical"
+                    margin={{ top: 8, right: 20, left: 10, bottom: 8 }}
+                  >
+                    <defs>
+                      <linearGradient id="employeeRowBarGrad" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#4f46e5" />
+                        <stop offset="100%" stopColor="#818cf8" />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" horizontal={false} />
+                    <XAxis type="number" stroke="#94a3b8" fontSize={10} unit="h" />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      stroke="#cbd5e1"
+                      fontSize={10.5}
+                      tickLine={false}
+                      axisLine={{ stroke: '#e2e8f0' }}
+                      width={145}
+                      interval={0}
+                      tick={renderEmployeeYTick}
+                    />
+                    <Tooltip
+                      content={<CustomTooltip unit="h" />}
+                      wrapperStyle={{ zIndex: 99999, pointerEvents: 'none' }}
+                      allowEscapeViewBox={{ x: true, y: true }}
+                    />
+                    <Bar
+                      key={`bar-emp-row-${activePreset}-${employeeLimitMode}-${employeesToRender.length}-${employeeSearch}`}
+                      dataKey="hours"
+                      fill="url(#employeeRowBarGrad)"
+                      radius={[0, 8, 8, 0]}
+                      barSize={16}
+                      background={{ fill: '#f1f5f9', radius: [0, 8, 8, 0] }}
+                      isAnimationActive={true}
+                      animationBegin={0}
+                      animationDuration={650}
+                      animationEasing="ease-out"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex h-full items-center justify-center text-xs text-slate-400">
+                  {employeeSearch ? 'No team members match your search.' : 'No employee hours recorded in this range.'}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </section>
     </div>
   );
