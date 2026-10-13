@@ -41,45 +41,41 @@ export default function DashboardPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Fetch real counts for metric cards with fallbacks
+  // Fetch real counts for metric cards via lightweight single endpoint with graceful fallback
   useEffect(() => {
+    let isCancelled = false;
+
     async function fetchDashboardStats() {
       try {
-        const [projectsRes, reviewsRes, timeOffRes] = await Promise.allSettled([
-          api.get('/api/projects', { params: { activeOnly: true } }),
-          isAdmin || capabilities?.REVIEW_TIME
-            ? api.get('/api/reviews')
-            : Promise.resolve({ data: { entries: [] } }),
-          isAdmin || capabilities?.DECIDE_TIME_OFF
-            ? api.get('/api/time-off/requests', { params: { status: 'PENDING' } })
-            : Promise.resolve({ data: [] }),
-        ]);
-
-        if (projectsRes.status === 'fulfilled') {
-          const list = Array.isArray(projectsRes.value.data)
-            ? projectsRes.value.data
-            : projectsRes.value.data?.projects || [];
-          setProjectsCount(list.length);
+        const res = await api.get('/api/dashboard/stats');
+        if (!isCancelled && res?.data) {
+          if (typeof res.data.projectsCount === 'number') {
+            setProjectsCount(res.data.projectsCount);
+          }
+          if (typeof res.data.pendingCount === 'number') {
+            setPendingCount(res.data.pendingCount);
+          }
+          return;
         }
-
-        let pending = 0;
-        if (reviewsRes.status === 'fulfilled') {
-          const revEntries = reviewsRes.value.data?.entries || [];
-          pending += revEntries.length;
-        }
-        if (timeOffRes.status === 'fulfilled') {
-          const toRequests = Array.isArray(timeOffRes.value.data)
-            ? timeOffRes.value.data
-            : [];
-          pending += toRequests.length;
-        }
-        setPendingCount(pending);
       } catch {
-        // Fallback gracefully to default previews
+        // Fallback to minimal queries if stats endpoint is unreachable
+      }
+
+      if (!isCancelled) {
+        try {
+          const fallbackRes = await api.get('/api/projects', { params: { activeOnly: true, limit: 1 } });
+          const totalProjects = fallbackRes?.data?.total || fallbackRes?.data?.projects?.length || fallbackRes?.data?.length || 4;
+          if (!isCancelled) setProjectsCount(totalProjects);
+        } catch {
+          // Graceful fallback defaults preserved
+        }
       }
     }
 
     fetchDashboardStats();
+    return () => {
+      isCancelled = true;
+    };
   }, [isAdmin, capabilities]);
 
   const toggleScopeExpanded = (code) => {

@@ -77,6 +77,13 @@ api.interceptors.response.use(
     return response.data;
   },
   async (error) => {
+    if (axios.isCancel(error) || error.name === 'CanceledError' || error.code === 'ERR_CANCELED') {
+      const canceledErr = new Error('Request canceled');
+      canceledErr.isCanceled = true;
+      canceledErr.code = 'ERR_CANCELED';
+      return Promise.reject(canceledErr);
+    }
+
     const request = error.config;
     const isRetryableGet = request?.method?.toLowerCase() === 'get'
       && (!error.response || error.response.status >= 500);

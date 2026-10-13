@@ -165,13 +165,19 @@ export default function ReportsPage() {
 
   useEffect(() => {
     if (!authLoading && canView) {
-      loadSummary();
-      loadMissing();
-      loadWhoIsAway();
-      loadReviewQueueByReviewer();
-      loadEmployees();
+      if (activeTab === 'summary' && !report) {
+        loadSummary();
+      } else if (activeTab === 'missing' && !missingData) {
+        loadMissing();
+      } else if (activeTab === 'away' && !awayData) {
+        loadWhoIsAway();
+      } else if (activeTab === 'reviewQueue' && !reviewQueueData) {
+        loadReviewQueueByReviewer();
+      } else if (activeTab === 'employee' && employeeUsers.length === 0) {
+        loadEmployees();
+      }
     }
-  }, [authLoading, canView]);
+  }, [authLoading, canView, activeTab, report, missingData, awayData, reviewQueueData, employeeUsers.length]);
 
   useEffect(() => {
     if (activeTab === 'employee' && selectedEmployeeId) {

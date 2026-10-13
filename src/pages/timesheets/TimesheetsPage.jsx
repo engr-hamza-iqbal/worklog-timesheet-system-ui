@@ -59,6 +59,7 @@ export default function TimesheetsPage() {
 
   const allKnownEntriesRef = useRef(new Map());
   const silentFetchTimerRef = useRef(null);
+  const historyAbortRef = useRef(null);
 
   const cacheEntries = (list) => {
     if (!Array.isArray(list)) return;
@@ -84,6 +85,7 @@ export default function TimesheetsPage() {
   useEffect(() => {
     return () => {
       if (silentFetchTimerRef.current) clearTimeout(silentFetchTimerRef.current);
+      if (historyAbortRef.current) historyAbortRef.current.abort();
     };
   }, []);
 
@@ -222,6 +224,12 @@ export default function TimesheetsPage() {
     sortOrder = historySortOrder,
     silent = false,
   } = {}) {
+    if (historyAbortRef.current) {
+      historyAbortRef.current.abort();
+    }
+    const controller = new AbortController();
+    historyAbortRef.current = controller;
+
     try {
       if (!silent) setHistoryLoading(true);
       setIsSilentFetching(true);
@@ -235,6 +243,7 @@ export default function TimesheetsPage() {
           sortBy,
           sortOrder,
         },
+        signal: controller.signal,
       });
       const entries = response.data?.entries || [];
       const total = response.data?.pagination?.total || 0;
@@ -242,13 +251,16 @@ export default function TimesheetsPage() {
       setHistoryEntries(entries);
       setHistoryTotal(total);
     } catch (err) {
+      if (err.isCanceled || err.code === "ERR_CANCELED") return;
       if (err.status !== 401 && err.code !== "ACCOUNT_DEACTIVATED") {
         notify.error(err.message || "Failed to load entry history.");
       }
     } finally {
-      setHistoryLoading(false);
-      setIsSilentFetching(false);
-      setIsFiltering(false);
+      if (historyAbortRef.current === controller) {
+        setHistoryLoading(false);
+        setIsSilentFetching(false);
+        setIsFiltering(false);
+      }
     }
   }
 
@@ -257,35 +269,16 @@ export default function TimesheetsPage() {
   useEffect(() => {
     let isCancelled = false;
 
-    async function loadTabsSequentially() {
-      // 1. First load the week timesheet and assigned projects
+    async function loadInitialTimesheet() {
       await load();
-      if (isCancelled) return;
-
-      // 2. Sequentially load entries tab history so all tabs are ready
-      await fetchHistory({ silent: true });
-      if (isCancelled) return;
-
-      // 3. Preload all projects for admin filter if needed
-      if (isAdmin && filterProjects.length === 0) {
-        try {
-          const res = await api.get("/api/projects", { params: { activeOnly: true } });
-          if (!isCancelled) {
-            const nextProjects = Array.isArray(res.data) ? res.data : res.data?.projects || [];
-            if (nextProjects.length) setFilterProjects(nextProjects);
-          }
-        } catch {
-          // ignore
-        }
-      }
     }
 
-    loadTabsSequentially();
+    loadInitialTimesheet();
 
     return () => {
       isCancelled = true;
     };
-  }, [weekStartIso, isAdmin]);
+  }, [weekStartIso]);
 
   useEffect(() => {
     if (activeTab === "entries") {

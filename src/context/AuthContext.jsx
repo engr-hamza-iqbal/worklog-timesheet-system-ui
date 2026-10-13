@@ -126,12 +126,19 @@ export function AuthProvider({ children }) {
     }
   }
 
-  const refreshUser = useCallback(async () => {
+  const lastRefreshedRef = useRef(0);
+
+  const refreshUser = useCallback(async ({ force = false } = {}) => {
     if (isLoggingOutRef.current || !token || !user) return null;
+    const now = Date.now();
+    if (!force && now - lastRefreshedRef.current < 20000) {
+      return { user, capabilities };
+    }
     try {
       const res = await api.get('/api/auth/me');
       if (isLoggingOutRef.current || !token) return null;
       if (res.success && res.data) {
+        lastRefreshedRef.current = Date.now();
         if (res.data.csrfToken) {
           setCsrfToken(res.data.csrfToken);
         }
@@ -143,7 +150,7 @@ export function AuthProvider({ children }) {
       console.error('Failed to refresh user capabilities:', err);
     }
     return null;
-  }, [token, user]);
+  }, [token, user, capabilities]);
 
   // Real-time permission & capability synchronization via SSE and BroadcastChannel
   useEffect(() => {
@@ -160,7 +167,7 @@ export function AuthProvider({ children }) {
           setUser(null);
           setCapabilities({});
         } else if (event.data?.type === 'REFRESH_CAPABILITIES') {
-          refreshUser();
+          refreshUser({ force: true });
         }
       };
     } catch {
@@ -179,7 +186,7 @@ export function AuthProvider({ children }) {
     // 4. API 403 / permission-denied event listener
     const handlePermissionDenied = () => {
       if (!isLoggingOutRef.current) {
-        refreshUser();
+        refreshUser({ force: true });
       }
     };
     window.addEventListener('auth:permission-denied', handlePermissionDenied);
