@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer,
   BarChart, Bar, CartesianGrid, ReferenceLine,
   PieChart, Pie, Cell,
 } from 'recharts';
-import { PieChart as PieIcon, BarChart2 } from 'lucide-react';
+import { PieChart as PieIcon, BarChart2, Eye, EyeOff } from 'lucide-react';
 
 const CHART_COLORS = [
   '#6366f1', // Indigo
@@ -25,10 +25,10 @@ export function CustomTooltip({ active, payload, label, unit = 'h' }) {
     const value = item.value !== undefined ? Number(item.value).toFixed(2) : '0.00';
     const name = item.name || label || '';
     return (
-      <div className="rounded-lg border border-slate-700/60 bg-slate-900/95 px-3 py-2 text-xs text-white shadow-xl backdrop-blur-xs">
+      <div className="rounded-lg border border-slate-700/60 bg-slate-900/95 px-3 py-2 text-xs text-white shadow-2xl backdrop-blur-md relative z-50 pointer-events-none">
         {name && <div className="font-semibold text-slate-200 mb-0.5">{name}</div>}
         <div className="flex items-center gap-1.5 font-mono">
-          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color || '#6366f1' }} />
+          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color || item.payload?.fill || '#6366f1' }} />
           <span className="text-slate-400">Total:</span>
           <span className="font-bold text-white">{value} {unit}</span>
         </div>
@@ -56,10 +56,54 @@ export default function AnalyticsCharts({
   employeeLimitMode,
   setEmployeeLimitMode,
 }) {
+  // Set of client names that are toggled OFF
+  const [hiddenClients, setHiddenClients] = useState(() => new Set());
+
+  // Toggle client on/off
+  const toggleClient = (clientName) => {
+    setHiddenClients((prev) => {
+      const next = new Set(prev);
+      if (next.has(clientName)) {
+        next.delete(clientName);
+      } else {
+        next.add(clientName);
+      }
+      return next;
+    });
+  };
+
+  const showAllClients = () => {
+    setHiddenClients(new Set());
+  };
+
+  // Fixed client color mapping so client colors remain stable when other clients are toggled
+  const clientColorMap = useMemo(() => {
+    const map = {};
+    (donutClientsData || []).forEach((entry, index) => {
+      map[entry.name] = CHART_COLORS[index % CHART_COLORS.length];
+    });
+    return map;
+  }, [donutClientsData]);
+
+  // Clients that are ON (visible in the Donut and Bar chart)
+  const visibleDonutClients = useMemo(() => {
+    return (donutClientsData || []).filter((entry) => !hiddenClients.has(entry.name));
+  }, [donutClientsData, hiddenClients]);
+
+  // Total hours among currently active / ON clients
+  const activeDonutHours = useMemo(() => {
+    return visibleDonutClients.reduce((sum, item) => sum + (item.value || 0), 0);
+  }, [visibleDonutClients]);
+
+  // Visible data for Bar chart mode
+  const visibleAllClientsData = useMemo(() => {
+    return (allClientsData || []).filter((entry) => !hiddenClients.has(entry.name));
+  }, [allClientsData, hiddenClients]);
+
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       {/* 1. Weekly Hours Trend (Area Chart) */}
-      <section className="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-xs flex flex-col justify-between">
+      <section className="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-xs flex flex-col justify-between relative z-10 hover:z-50 focus-within:z-50 transition-all overflow-visible">
         <div className="mb-3.5 sm:mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h2 className="text-sm font-semibold text-slate-900">Weekly Hours Trend</h2>
@@ -77,11 +121,11 @@ export default function AnalyticsCharts({
             )}
           </div>
         </div>
-        <div className="overflow-x-auto pb-1 [scrollbar-width:thin] touch-pan-x">
-          <div style={{ minWidth: `${Math.max(260, weeklyData.length * 32)}px`, height: '260px' }}>
+        <div className="w-full overflow-visible">
+          <div className="w-full h-[260px] overflow-visible">
             {weeklyData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%" minWidth={240} minHeight={240} debounce={50}>
-                <AreaChart data={weeklyData} margin={{ top: 12, right: 12, left: -22, bottom: 4 }}>
+              <ResponsiveContainer width="100%" height="100%" minHeight={240} debounce={50} className="overflow-visible">
+                <AreaChart data={weeklyData} margin={{ top: 20, right: 25, left: 0, bottom: 6 }}>
                   <defs>
                     <linearGradient id="stunningAreaGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#6366f1" stopOpacity={0.38} />
@@ -100,8 +144,12 @@ export default function AnalyticsCharts({
 
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.7} vertical={false} />
                   <XAxis dataKey="week" stroke="#94a3b8" fontSize={10} tickLine={false} dy={4} />
-                  <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} unit="h" />
-                  <Tooltip content={<CustomTooltip unit="h" />} />
+                  <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} unit="h" width={32} />
+                  <Tooltip
+                    content={<CustomTooltip unit="h" />}
+                    wrapperStyle={{ zIndex: 999999, pointerEvents: 'none' }}
+                    allowEscapeViewBox={{ x: true, y: true }}
+                  />
 
                   {avgWeeklyHours > 0 && (
                     <ReferenceLine
@@ -152,7 +200,7 @@ export default function AnalyticsCharts({
       </section>
 
       {/* 2. Hours by Client (Donut Pie Chart or 2-Layer Bar View) */}
-      <section className="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-xs flex flex-col justify-between">
+      <section className="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-xs flex flex-col justify-between relative z-0 hover:z-50 focus-within:z-50 transition-all">
         <div className="mb-3.5 sm:mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h2 className="text-sm font-semibold text-slate-900">Hours by Client</h2>
@@ -160,17 +208,16 @@ export default function AnalyticsCharts({
           </div>
           <div className="flex items-center justify-between sm:justify-end gap-1.5 w-full sm:w-auto">
             <span className="text-xs font-mono font-medium text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
-              {allClientsData.length} clients
+              {visibleDonutClients.length}/{allClientsData.length} ON
             </span>
             <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50 p-0.5 text-xs">
               <button
                 type="button"
                 onClick={() => setClientChartMode('donut')}
-                className={`px-2 py-0.5 rounded-md font-medium transition cursor-pointer flex items-center gap-1 ${
-                  clientChartMode === 'donut'
-                    ? 'bg-white text-slate-900 shadow-xs'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
+                className={`px-2 py-0.5 rounded-md font-medium transition cursor-pointer flex items-center gap-1 ${clientChartMode === 'donut'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
+                  }`}
               >
                 <PieIcon size={12} />
                 <span className="inline">Donut</span>
@@ -178,11 +225,10 @@ export default function AnalyticsCharts({
               <button
                 type="button"
                 onClick={() => setClientChartMode('bar')}
-                className={`px-2 py-0.5 rounded-md font-medium transition cursor-pointer flex items-center gap-1 ${
-                  clientChartMode === 'bar'
-                    ? 'bg-white text-slate-900 shadow-xs'
-                    : 'text-slate-500 hover:text-slate-800'
-                }`}
+                className={`px-2 py-0.5 rounded-md font-medium transition cursor-pointer flex items-center gap-1 ${clientChartMode === 'bar'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800'
+                  }`}
               >
                 <BarChart2 size={12} />
                 <span className="inline">Bars</span>
@@ -198,33 +244,36 @@ export default function AnalyticsCharts({
                   <div className="h-56 w-full relative">
                     <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={200}>
                       <PieChart>
-                        <Pie
-                          key={`pie-${activePreset}-${donutClientsData.length}`}
-                          data={donutClientsData}
-                          dataKey="value"
-                          nameKey="name"
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={54}
-                          outerRadius={80}
-                          paddingAngle={3}
-                          startAngle={90}
-                          endAngle={-270}
-                          isAnimationActive={true}
-                          animationBegin={0}
-                          animationDuration={800}
-                          animationEasing="ease-out"
-                          stroke="#ffffff"
-                          strokeWidth={2}
-                        >
-                          {donutClientsData.map((entry, index) => (
-                            <Cell
-                              key={`cell-${entry.name}-${index}`}
-                              fill={CHART_COLORS[index % CHART_COLORS.length]}
-                              className="transition-all duration-150 hover:opacity-80 cursor-pointer"
-                            />
-                          ))}
-                        </Pie>
+                        {visibleDonutClients.length > 0 && (
+                          <Pie
+                            key={`pie-${activePreset}-${visibleDonutClients.length}-${hiddenClients.size}`}
+                            data={visibleDonutClients}
+                            dataKey="value"
+                            nameKey="name"
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={54}
+                            outerRadius={80}
+                            paddingAngle={visibleDonutClients.length > 1 ? 3 : 0}
+                            startAngle={90}
+                            endAngle={-270}
+                            isAnimationActive={true}
+                            animationBegin={0}
+                            animationDuration={600}
+                            animationEasing="ease-out"
+                            stroke="#ffffff"
+                            strokeWidth={2}
+                          >
+                            {visibleDonutClients.map((entry) => (
+                              <Cell
+                                key={`cell-${entry.name}`}
+                                fill={clientColorMap[entry.name] || '#6366f1'}
+                                className="transition-all duration-150 hover:opacity-80 cursor-pointer"
+                                onClick={() => toggleClient(entry.name)}
+                              />
+                            ))}
+                          </Pie>
+                        )}
                         <text
                           x="50%"
                           y="47%"
@@ -232,7 +281,7 @@ export default function AnalyticsCharts({
                           dominantBaseline="middle"
                           className="font-extrabold font-mono text-xl fill-slate-900 select-none"
                         >
-                          {totalDonutHours.toFixed(1)}h
+                          {activeDonutHours.toFixed(1)}h
                         </text>
                         <text
                           x="50%"
@@ -241,13 +290,17 @@ export default function AnalyticsCharts({
                           dominantBaseline="middle"
                           className="text-[10px] font-semibold uppercase tracking-wider fill-slate-400 select-none"
                         >
-                          Total Effort
+                          {hiddenClients.size > 0
+                            ? (visibleDonutClients.length === 0 ? 'All OFF' : `${visibleDonutClients.length} ON`)
+                            : 'Total Effort'}
                         </text>
                         <Tooltip
-                          formatter={(value, name, item) => [
-                            `${Number(value).toFixed(2)} h (${item.payload.percentage}%)`,
+                          formatter={(value, name) => [
+                            `${Number(value).toFixed(2)} h (${activeDonutHours > 0 ? ((Number(value) / activeDonutHours) * 100).toFixed(1) : '0.0'}%)`,
                             name,
                           ]}
+                          wrapperStyle={{ zIndex: 99999, pointerEvents: 'none' }}
+                          allowEscapeViewBox={{ x: true, y: true }}
                           contentStyle={{
                             backgroundColor: '#0f172a',
                             borderRadius: '10px',
@@ -255,28 +308,47 @@ export default function AnalyticsCharts({
                             color: '#fff',
                             fontSize: '11px',
                             boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
+                            zIndex: 99999,
                           }}
                           itemStyle={{ color: '#38bdf8', fontWeight: 600 }}
                         />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 px-2 max-h-20 overflow-y-auto [scrollbar-width:thin]">
-                    {donutClientsData.map((entry, index) => (
-                      <div
-                        key={entry.name}
-                        className="flex items-center gap-1.5 text-[11px] text-slate-600 bg-slate-50 px-2 py-0.5 rounded-md border border-slate-100"
-                      >
-                        <span
-                          className="w-2 h-2 rounded-full shrink-0 shadow-2xs"
-                          style={{ backgroundColor: CHART_COLORS[index % CHART_COLORS.length] }}
-                        />
-                        <span className="font-medium text-slate-700 truncate max-w-[110px] sm:max-w-[130px]">
-                          {entry.name}
-                        </span>
-                        <span className="font-mono text-slate-400 text-[10px]">({entry.percentage}%)</span>
-                      </div>
-                    ))}
+
+                  {/* Interactive Legends with ON/OFF Toggle */}
+                  <div className="mt-2.5 w-full flex flex-col items-center">
+
+                    <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5 px-1 max-h-24 overflow-y-auto [scrollbar-width:thin] w-full">
+                      {donutClientsData.map((entry) => {
+                        const isOff = hiddenClients.has(entry.name);
+                        const color = clientColorMap[entry.name] || '#6366f1';
+                        return (
+                          <button
+                            key={entry.name}
+                            type="button"
+                            onClick={() => toggleClient(entry.name)}
+                            title={isOff ? `Click to turn ${entry.name} ON` : `Click to turn ${entry.name} OFF`}
+                            className={`group inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-md border transition-all cursor-pointer select-none ${isOff
+                              ? 'bg-slate-100/70 text-slate-400 border-dashed border-slate-300 opacity-60 hover:opacity-100 hover:border-slate-400'
+                              : 'bg-white text-slate-700 border-slate-200/90 shadow-2xs hover:bg-slate-50 hover:border-slate-300'
+                              }`}
+                          >
+                            <span
+                              className={`w-2 h-2 rounded-full shrink-0 transition-transform ${isOff ? 'border border-slate-400 bg-transparent scale-90' : 'shadow-2xs group-hover:scale-110'
+                                }`}
+                              style={{ backgroundColor: isOff ? 'transparent' : color }}
+                            />
+                            <span className={`font-medium truncate max-w-[100px] sm:max-w-[120px] ${isOff ? 'line-through text-slate-400' : 'text-slate-700'}`}>
+                              {entry.name}
+                            </span>
+                            <span className={`font-mono text-[10px] ${isOff ? 'text-slate-400 font-semibold' : 'text-slate-500'}`}>
+                              {isOff ? 'OFF' : `${entry.percentage}%`}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -289,10 +361,10 @@ export default function AnalyticsCharts({
               )
             ) : (
               <div className="overflow-y-auto max-h-64 [scrollbar-width:thin] pr-1">
-                <div style={{ height: `${Math.max(220, allClientsData.length * 32)}px` }}>
+                <div style={{ height: `${Math.max(220, visibleAllClientsData.length * 32)}px` }}>
                   <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={200}>
                     <BarChart
-                      data={allClientsData}
+                      data={visibleAllClientsData}
                       layout="vertical"
                       margin={{ top: 5, right: 15, left: 0, bottom: 5 }}
                     >
@@ -312,9 +384,13 @@ export default function AnalyticsCharts({
                         tickLine={false}
                         width={85}
                       />
-                      <Tooltip content={<CustomTooltip unit="h" />} />
+                      <Tooltip
+                        content={<CustomTooltip unit="h" />}
+                        wrapperStyle={{ zIndex: 99999, pointerEvents: 'none' }}
+                        allowEscapeViewBox={{ x: true, y: true }}
+                      />
                       <Bar
-                        key={`bar-client-${activePreset}-${allClientsData.length}`}
+                        key={`bar-client-${activePreset}-${visibleAllClientsData.length}`}
                         dataKey="hours"
                         fill="url(#clientBarGrad)"
                         radius={[0, 8, 8, 0]}
@@ -339,7 +415,7 @@ export default function AnalyticsCharts({
       </section>
 
       {/* 3. Hours by Project (Bar Chart with dynamic scaling and scroll) */}
-      <section className="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-xs flex flex-col justify-between">
+      <section className="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-xs flex flex-col justify-between relative z-0 hover:z-50 focus-within:z-50 transition-all">
         <div className="mb-3.5 sm:mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h2 className="text-sm font-semibold text-slate-900">Hours by Project</h2>
@@ -385,7 +461,11 @@ export default function AnalyticsCharts({
                     tickLine={false}
                     width={90}
                   />
-                  <Tooltip content={<CustomTooltip unit="h" />} />
+                  <Tooltip
+                    content={<CustomTooltip unit="h" />}
+                    wrapperStyle={{ zIndex: 99999, pointerEvents: 'none' }}
+                    allowEscapeViewBox={{ x: true, y: true }}
+                  />
                   <Bar
                     key={`bar-project-${activePreset}-${projectLimitMode}-${displayedProjectsData.length}`}
                     dataKey="hours"
@@ -410,7 +490,7 @@ export default function AnalyticsCharts({
       </section>
 
       {/* 4. Hours by Employee (Bar Chart with horizontal scroll when many team members) */}
-      <section className="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-xs flex flex-col justify-between">
+      <section className="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-5 shadow-xs flex flex-col justify-between relative z-0 hover:z-50 focus-within:z-50 transition-all">
         <div className="mb-3.5 sm:mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h2 className="text-sm font-semibold text-slate-900">Hours by Team Member</h2>
@@ -462,7 +542,11 @@ export default function AnalyticsCharts({
                     height={55}
                   />
                   <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} unit="h" />
-                  <Tooltip content={<CustomTooltip unit="h" />} />
+                  <Tooltip
+                    content={<CustomTooltip unit="h" />}
+                    wrapperStyle={{ zIndex: 99999, pointerEvents: 'none' }}
+                    allowEscapeViewBox={{ x: true, y: true }}
+                  />
                   <Bar
                     key={`bar-emp-${activePreset}-${employeeLimitMode}-${displayedEmployeesData.length}`}
                     dataKey="hours"

@@ -238,3 +238,17 @@ input[type="radio"]:disabled {
   cursor: not-allowed;
   background-color: #f1f5f9;
 }
+
+/* Recharts tooltip stacking & overflow unconstrained visibility */
+.recharts-wrapper {
+  overflow: visible !important;
+}
+
+.recharts-surface {
+  overflow: visible !important;
+}
+
+.recharts-tooltip-wrapper {
+  z-index: 999999 !important;
+  pointer-events: none !important;
+}
